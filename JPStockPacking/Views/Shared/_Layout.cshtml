@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - JP Stock Packing</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/JPStockPacking.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/adminlte.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/plugins/select2/css/select2.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css" asp-append-version="true" />
+</head>
+<body class="hold-transition sidebar-mini">
+    @RenderBody()
+
+    <!-- Loading Indicator with Backdrop -->
+    <div id="loadingIndicator" class="loading-backdrop" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="custom-modal-overlay">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <div class="custom-modal-icon success"><i class="fa-solid fa-check"></i></div>
+                <h5 class="custom-modal-title">Success</h5>
+                <button class="custom-modal-close" onclick="closeModal('successModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <p id="successMessage">Operation completed successfully! Your data has been saved.</p>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-btn-modal success" onclick="closeModal('successModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="custom-modal-overlay custom-modal-danger">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <div class="custom-modal-icon danger"><i class="fa-solid fa-explosion"></i></div>
+                <h5 class="custom-modal-title">Error</h5>
+                <button class="custom-modal-close" onclick="closeModal('errorModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <p id="errorMessage">An error occurred. Please try again.</p>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-btn-modal danger" onclick="closeModal('errorModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="custom-modal-overlay custom-modal-info">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <div class="custom-modal-icon info"><i class="fa-solid fa-info"></i></div>
+                <h5 class="custom-modal-title">Information</h5>
+                <button class="custom-modal-close" onclick="closeModal('infoModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <p id="infoMessage">Here is some important information.</p>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-btn-modal info" onclick="closeModal('infoModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div id="warningModal" class="custom-modal-overlay custom-modal-warning">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <div class="custom-modal-icon warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <h5 class="custom-modal-title">Warning</h5>
+                <button class="custom-modal-close" onclick="closeModal('warningModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <p id="warningMessage">Please be aware of this warning.</p>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-btn-modal warning" onclick="closeModal('warningModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Confirmation Modal -->
+    <div id="saveConfirmModal" class="custom-modal-overlay custom-modal-confirm save">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <div class="custom-modal-icon confirm save"><i class="fa-solid fa-floppy-disk"></i></div>
+                <h5 class="custom-modal-title">Confirm Action</h5>
+                <button class="custom-modal-close" onclick="closeModal('saveConfirmModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <p id="saveConfirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-btn-modal cancel" onclick="closeModal('saveConfirmModal')">Cancel</button>
+                <button class="custom-btn-modal confirm save" id="saveConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="custom-modal-overlay custom-modal-confirm delete">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <div class="custom-modal-icon confirm delete"><i class="fa-solid fa-trash-can"></i></div>
+                <h5 class="custom-modal-title">Confirm Action</h5>
+                <button class="custom-modal-close" onclick="closeModal('deleteConfirmModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="custom-modal-body">
+                <p id="deleteConfirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-btn-modal cancel" onclick="closeModal('deleteConfirmModal')">Cancel</button>
+                <button class="custom-btn-modal confirm delete" id="deleteConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/adminlte.min.js" asp-append-version="true"></script>
+    <script src="~/lib/fontawesome/js/all.min.js" asp-append-version="true"></script>
+    <script src="~/plugins/select2/js/select2.full.min.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,85 @@
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="hold-transition login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <a href="#"><b>JP</b> STOCK PACKING</a>
+        </div>
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">Sign in to start your session</p>
+
+                <form id="frmSignIn">
+                    <div class="input-group mb-3">
+                        <input id="username" type="text" class="form-control" placeholder="Username" value="@ViewBag.RememberedUsername" required>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-user"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input id="password" type="password" class="form-control" placeholder="Password" required>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="icheck-primary">
+                                <input type="checkbox" id="remember" @(ViewBag.RememberMeChecked ? "checked" : "") />
+                                <label for="remember">
+                                    Remember Me
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#frmSignIn').on('submit', function (e) {
+                e.preventDefault();
+                $('#loadingIndicator').show();
+                console.log('Form submitted');
+
+                $.ajax({
+                    url: '@Url.Action("Login", "Auth")',
+                    type: 'POST',
+                    data: {
+                        username: $('#username').val(),
+                        password: $('#password').val(),
+                        remember: $('#remember').is(':checked')
+                    },
+                    success: function (response) {
+                        console.log(response);
+                        if (response.success) {
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            $('#loadingIndicator').hide();
+                            alert(response.message || 'Login failed.');
+                        }
+                    },
+                    error: function (err) {
+                        $('#loadingIndicator').hide();
+                        console.log(err);
+                        alert('Login error : ', err.message);
+                    }
+                });
+            });
+        });
+    </script>
+}
