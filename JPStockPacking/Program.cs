@@ -1,6 +1,9 @@
+using JPStockPacking.Data.JPDbContext;
+using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Services.Implement;
 using JPStockPacking.Services.Interface;
 using JPStockPacking.Services.Middleware;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +11,14 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
-//builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("JPDBEntries")));
+builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SPDBEntries")));
 
 builder.Services.AddScoped<ICookieAuthService, CookieAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IApiClientService, ApiClientService>();
+builder.Services.AddScoped<IPISService, PISService>();
+builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

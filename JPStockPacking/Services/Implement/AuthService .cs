@@ -30,18 +30,30 @@ namespace JPStockPacking.Services.Implement
             var exp = token.ValidTo;
             var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             var usernameFromToken = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            var role = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var roles = token.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
-            if (userId == null || usernameFromToken == null || role == null)
+            if (userId == null || usernameFromToken == null || roles.Count == 0)
                 return new LoginResult { Success = false, Message = "Invalid token claims" };
 
-            // Sign in ด้วย Cookie Authentication
+            var role = roles.Contains("1") ? "Admin" : roles.Contains("2") ? "User" : "Guest";
+
             await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, rememberMe);
 
-            // เก็บ Refresh Token ใน HttpOnly Cookie
             if (!string.IsNullOrEmpty(authResult.RefreshToken))
             {
                 var refreshTokenExpiry = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(24);
+
+                context.Response.Cookies.Append("AccessToken", authResult.AccessToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = rememberMe
+                        ? DateTimeOffset.UtcNow.AddDays(7)
+                        : DateTimeOffset.UtcNow.AddHours(1),
+                    IsEssential = true
+                });
+
 
                 context.Response.Cookies.Append("RefreshToken", authResult.RefreshToken, new CookieOptions
                 {
@@ -89,13 +101,23 @@ namespace JPStockPacking.Services.Implement
 
             try
             {
-                // เรียก API เพื่อ refresh token
                 var refreshResult = await CallRefreshTokenApi(refreshToken);
 
                 if (refreshResult == null || string.IsNullOrEmpty(refreshResult.AccessToken))
                     return new RefreshTokenResult { Success = false, Message = "Failed to refresh token" };
 
-                // อัพเดต Cookie ด้วย Refresh Token ใหม่
+                if (!string.IsNullOrEmpty(refreshResult.AccessToken))
+                {
+                    context.Response.Cookies.Append("AccessToken", refreshResult.AccessToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTimeOffset.UtcNow.AddHours(1),
+                        IsEssential = true
+                    });
+                }
+
                 if (!string.IsNullOrEmpty(refreshResult.RefreshToken))
                 {
                     context.Response.Cookies.Append("RefreshToken", refreshResult.RefreshToken, new CookieOptions
@@ -108,7 +130,6 @@ namespace JPStockPacking.Services.Implement
                     });
                 }
 
-                // Parse JWT token ใหม่
                 var handler = new JwtSecurityTokenHandler();
                 var token = handler.ReadJwtToken(refreshResult.AccessToken);
                 var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
@@ -118,7 +139,6 @@ namespace JPStockPacking.Services.Implement
                 if (userId == null || usernameFromToken == null || role == null)
                     return new RefreshTokenResult { Success = false, Message = "Invalid token claims" };
 
-                // อัพเดต Cookie Authentication
                 await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, false);
 
                 return new RefreshTokenResult
@@ -141,7 +161,6 @@ namespace JPStockPacking.Services.Implement
 
             try
             {
-                // Revoke refresh token ใน API
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
                     await CallRevokeTokenApi(refreshToken);
@@ -149,17 +168,14 @@ namespace JPStockPacking.Services.Implement
             }
             catch (Exception ex)
             {
-                // Log error แต่ไม่ต้อง throw เพราะ logout ต้องสำเร็จ
                 Console.WriteLine($"Error revoking token: {ex.Message}");
             }
             finally
             {
-                // ลบ cookies ทั้งหมด
                 context.Response.Cookies.Delete("RefreshToken");
                 context.Response.Cookies.Delete("RememberedUsername");
                 context.Response.Cookies.Delete("RememberMeChecked");
 
-                // Sign out จาก Cookie Authentication
                 await _cookieAuthService.SignOutAsync(context);
             }
 
@@ -220,7 +236,8 @@ namespace JPStockPacking.Services.Implement
                     var requestBody = new AuthRequestModel
                     {
                         ClientId = username,
-                        ClientSecret = password
+                        ClientSecret = password,
+                        Department = 1
                     };
                     var content = new StringContent(JsonSerializer.Serialize(requestBody, CachedJsonSerializerOptions), Encoding.UTF8, "application/json");
                     httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
@@ -257,6 +274,7 @@ namespace JPStockPacking.Services.Implement
         {
             public string? ClientId { get; set; }
             public string? ClientSecret { get; set; }
+            public int? Department { get; set; } = 0;
         }
 
         public class AuthResponseModel
@@ -267,7 +285,6 @@ namespace JPStockPacking.Services.Implement
             public int ExpiresIn { get; set; }
         }
 
-        // 5. Result Classes
         public class RefreshTokenResult
         {
             public bool Success { get; set; }

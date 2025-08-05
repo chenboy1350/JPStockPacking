@@ -1,0 +1,38 @@
+﻿using System;
+using System.Collections.Generic;
+using JPStockPacking.Data.SPDbContext.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace JPStockPacking.Data.SPDbContext;
+
+public partial class SPDbContext : DbContext
+{
+    public SPDbContext(DbContextOptions<SPDbContext> options)
+        : base(options)
+    {
+    }
+
+    public virtual DbSet<Lot> Lot { get; set; }
+
+    public virtual DbSet<LotNotify> LotNotify { get; set; }
+
+    public virtual DbSet<Order> Order { get; set; }
+
+    public virtual DbSet<OrderNotify> OrderNotify { get; set; }
+
+    public virtual DbSet<Received> Received { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.UseCollation("Thai_100_CI_AI");
+
+        modelBuilder.Entity<Received>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_Receive");
+        });
+
+        OnModelCreatingPartial(modelBuilder);
+    }
+
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+}

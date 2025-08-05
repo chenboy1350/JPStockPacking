@@ -54,8 +54,6 @@
             $('#frmSignIn').on('submit', function (e) {
                 e.preventDefault();
                 $('#loadingIndicator').show();
-                console.log('Form submitted');
-
                 $.ajax({
                     url: '@Url.Action("Login", "Auth")',
                     type: 'POST',
