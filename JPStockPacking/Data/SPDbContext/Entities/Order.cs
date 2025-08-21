@@ -29,6 +29,12 @@ public partial class Order
     [Column(TypeName = "datetime")]
     public DateTime? OrdDate { get; set; }
 
+    [Column(TypeName = "datetime")]
+    public DateTime? PackStartDate { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? PackEndDate { get; set; }
+
     public bool IsSuccess { get; set; }
 
     public bool IsActive { get; set; }

@@ -12,6 +12,12 @@ public partial class SPDbContext : DbContext
     {
     }
 
+    public virtual DbSet<Assignment> Assignment { get; set; }
+
+    public virtual DbSet<AssignmentMember> AssignmentMember { get; set; }
+
+    public virtual DbSet<AssignmentTable> AssignmentTable { get; set; }
+
     public virtual DbSet<Lot> Lot { get; set; }
 
     public virtual DbSet<LotNotify> LotNotify { get; set; }
@@ -22,6 +28,10 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<Received> Received { get; set; }
 
+    public virtual DbSet<WorkTable> WorkTable { get; set; }
+
+    public virtual DbSet<WorkTableMember> WorkTableMember { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("Thai_100_CI_AI");
@@ -29,6 +39,11 @@ public partial class SPDbContext : DbContext
         modelBuilder.Entity<Received>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_Receive");
+        });
+
+        modelBuilder.Entity<WorkTable>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_Table");
         });
 
         OnModelCreatingPartial(modelBuilder);

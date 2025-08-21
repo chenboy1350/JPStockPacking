@@ -93,3 +93,44 @@ document.addEventListener('keydown', function (e) {
         });
     }
 });
+
+// ===== Helper Functions =====
+function html(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"'`=\/]/g, function (c) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '/': '&#x2F;',
+            '`': '&#x60;',
+            '=': '&#x3D;'
+        }[c];
+    });
+}
+
+function num(v) {
+    if (v === null || v === undefined || v === '') return '';
+    const n = Number(v);
+    if (isNaN(n)) return html(v);
+    return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function numRaw(v) {
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}

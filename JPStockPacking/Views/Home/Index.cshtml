@@ -72,7 +72,16 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/ordermanagement.js"></script>
+    <script>
+        window.urlGetReceived = '@Url.Action("GetReceived", "Home")';
+        window.urlOrderMarkAsRead = '@Url.Action("OrderMarkAsRead", "Home")';
+        window.urlGetOrder = '@Url.Action("GetOrder", "Home")';
+        window.urlUpdateLotItems = '@Url.Action("UpdateLotItems", "Home")';
+        window.urlGetReceivedToAssign = '@Url.Action("GetReceivedToAssign", "Home")';
+        window.urlGetTableMember = '@Url.Action("GetTableMember", "Home")';
+        window.urlAssignToTable = '@Url.Action("AssignToTable", "Home")';
+    </script>
+    <script src="~/js/ordermanagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

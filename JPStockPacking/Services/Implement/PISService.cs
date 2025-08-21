@@ -27,7 +27,7 @@ namespace JPStockPacking.Services.Implement
             }
             else
             {
-                return response.Content.Content;
+                return response!.Content!.Content;
             }
 
         }

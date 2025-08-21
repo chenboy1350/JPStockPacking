@@ -778,3 +778,23 @@ body {
     .custom-btn-modal:active {
         transform: translateY(0);
     }
+
+/*custom color*/
+.badge-orange {
+    color: #ffffff;
+    background-color: #e85700;
+}
+
+.bg-orange {
+    background-color: #e85700 !important;
+}
+
+.badge-light-orange {
+    color: #ffffff;
+    background-color: #eb9c6d;
+}
+
+.bg-light-orange {
+    background-color: #eb9c6d !important;
+}
+/*custom*/

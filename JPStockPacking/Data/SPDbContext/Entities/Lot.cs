@@ -26,12 +26,14 @@ public partial class Lot
     [Unicode(false)]
     public string? CustPcode { get; set; }
 
-    [Column(TypeName = "numeric(18, 0)")]
+    [Column(TypeName = "numeric(18, 1)")]
     public decimal? TtQty { get; set; }
+
+    public double? TtWg { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
-    public string? Article { get; set; }
+    public string Article { get; set; } = null!;
 
     [StringLength(50)]
     [Unicode(false)]
@@ -47,12 +49,18 @@ public partial class Lot
     [Unicode(false)]
     public string? SaleRem { get; set; }
 
-    [Column(TypeName = "numeric(18, 0)")]
+    [Column(TypeName = "numeric(18, 1)")]
     public decimal? ReceivedQty { get; set; }
 
-    public int? AssignTo { get; set; }
+    public double? OperateDays { get; set; }
 
-    public bool IsPacked { get; set; }
+    [Column(TypeName = "numeric(18, 1)")]
+    public decimal? AssignedQty { get; set; }
+
+    [Column(TypeName = "numeric(18, 1)")]
+    public decimal? ReturnedQty { get; set; }
+
+    public bool IsSuccess { get; set; }
 
     public bool IsActive { get; set; }
 

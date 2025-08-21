@@ -6,27 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Received
+public partial class AssignmentTable
 {
     [Key]
-    public int Id { get; set; }
+    public int AssignmentTableId { get; set; }
 
-    [StringLength(50)]
-    [Unicode(false)]
-    public string ReceiveNo { get; set; } = null!;
+    public int AssignmentId { get; set; }
 
-    [StringLength(50)]
-    [Unicode(false)]
-    public string LotNo { get; set; } = null!;
-
-    [Column(TypeName = "numeric(18, 1)")]
-    public decimal? TtQty { get; set; }
-
-    public double? TtWg { get; set; }
-
-    public bool IsReceived { get; set; }
-
-    public bool IsAssigned { get; set; }
+    public int WorkTableId { get; set; }
 
     public bool IsActive { get; set; }
 
