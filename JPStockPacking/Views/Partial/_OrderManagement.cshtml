@@ -21,6 +21,15 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>OrderNo</label>
+                                            <input type="text" id="txtImportOrderNo" class="form-control">
+                                            <button class="btn btn-primary mt-2" id="btnImportOrder">นำเข้าออเดอร์</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>OrderNo</label>
                                             <input type="text" id="txtOrderNo" class="form-control">
                                         </div>
                                     </div>
@@ -45,16 +54,17 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
+@*                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="groupMode"></label>
                                             <input type="radio" name="groupMode" value="0" checked /> Day
-@*                                             <label for="groupMode2"></label>
-                                            <input type="radio" id="groupMode2" name="groupMode" value="1" /> Week *@
+                                            <label for="groupMode2"></label>
+                                            <input type="radio" id="groupMode2" name="groupMode" value="1" /> Week
                                         </div>
                                     </div>
-                                </div>
+                                </div> *@
+                                <button class="btn btn-primary" onclick="ClearFindBy()">Clear</button>
                                 <button class="btn btn-primary" onclick="fetchOrdersByDateRange()">Find</button>
                             </div>
                         </div>
@@ -72,422 +82,6 @@
             </div>
             <div class="card-body">
                 <div class="accordion" id="accordionOrder">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingOne1">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne1" aria-expanded="false" aria-controls="collapseOne1">
-                                <div class="d-flex justify-content-between w-100">
-                                    <div class="col-md-3">
-                                        <strong>
-                                            CCJ82/25000491 
-                                            <i class="fas fa-fire-alt" style="color: red;"></i> 
-                                            <span class="badge bg-danger" id="bgNew">ใหม่</span> 
-                                            <span class="badge bg-warning">มีการนำส่ง</span> 
-                                            <span class="badge bg-info">ถึงกำหนดเริ่ม</span>
-                                            <span class="badge bg-primary">ถึงกำหนดส่ง</span>
-                                            <span class="badge bg-green">เกินกำหนดส่ง</span>
-                                        </strong>
-                                    </div>
-                                    <div class="col-md-3"><i class="fas fa-calendar-alt"></i> 15/12/2012 - 17/12/2012</div>
-                                    <div class="col-md-1" style="color: orange;"><i class="fas fa-boxes"></i> 1/4</div>
-                                    <div class="col-md-1" style="color: orange;"><i class="fas fa-boxes"></i> 1/4</div>
-                                    <div class="col-md-1" style="color: orange;"><i class="fas fa-boxes"></i> 1/4</div>
-                                    <div class="col-md-2" style="color: red;"><i class="fas fa-stopwatch"></i> <strong>1 Day</strong></div>
-                                    <div></div>
-                                </div>
-                            </button>
-                        </h2>
-                        <div id="collapseOne1" class="accordion-collapse collapse" aria-labelledby="headingOne1" data-bs-parent="#accordionExample1">
-                            <div class="accordion-body" style="overflow: auto;">
-                                <table class="table table-striped projects">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 1%">
-                                                #
-                                            </th>
-                                            <th style="width: 15%">
-                                                Lot No
-                                            </th>
-                                            <th style="width: 10%">
-                                                List No
-                                            </th>
-                                            <th style="width: 25%">
-                                                Assign To
-                                            </th>
-                                            <th>
-                                                Receiving/Packing Progress
-                                            </th>
-                                            <th style="width: 10%" class="text-center">
-                                                Status
-                                            </th>
-                                            <th style="width: 20%">
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010702
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.01.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                1.1
-                                            </td>
-                                            <td>
-
-                                                <a>
-                                                    Table 1 (Jun)
-                                                </a>
-                                                <br />
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a><strong>Jun</strong></a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>New</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Keaw</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Sax</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>JakaJun</a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    500/1000 (50%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-warning">Packing</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-                                                <button class="btn btn-danger btn-sm" onclick="showModalReturn()">
-                                                    <i class="fas fa-folder">
-                                                    </i>
-                                                    Return
-                                                </button>
-                                                <button class="btn btn-primary btn-sm" onclick="showModalAssign()">
-                                                    <i class="fas fa-folder">
-                                                    </i>
-                                                    ReAssign
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010703
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.03.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                2
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    -
-                                                </a>
-
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    250/500 (50%)
-                                                </small>
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 20%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    100/500 (20%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-secondary">Waiting</span>
-                                                <span class="badge badge-warning">Packing</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-                                                <button class="btn btn-danger btn-sm" onclick="showModalReturn()">
-                                                    <i class="fas fa-folder">
-                                                    </i>
-                                                    Return
-                                                </button>
-                                                <button class="btn btn-primary btn-sm" onclick="showModalAssign()">
-                                                    <i class="fas fa-folder">
-                                                    </i>
-                                                    Assign
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010704
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.06.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                10
-                                            </td>
-                                            <td>
-
-                                                <a>
-                                                    Table 3 (Tay)
-                                                </a>
-                                                <br />
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a><strong>Tay</strong></a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Pung</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Pa</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Nagn</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Koy</a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-green" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    200/200 (100%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-success">Success</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010705
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.06.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                12
-                                            </td>
-                                            <td>
-
-                                                <a>
-                                                    -
-                                                </a>
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-primary" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    600/600 (100%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-primary">Ready</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-                                                <button class="btn btn-primary btn-sm" onclick="showModalAssign()">
-                                                    <i class="fas fa-folder">
-                                                    </i>
-                                                    Assign
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010706
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.01.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                1.2
-                                            </td>
-                                            <td>
-
-                                                <a>
-                                                    Table 1 (Jun)
-                                                </a>
-                                                <br />
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a><strong>Jun</strong></a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>New</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Keaw</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>Sax</a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <a>JakaJun</a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-info" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    1000/1000 (100%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-info">Packed</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-@*                                                 <button class="btn btn-info btn-sm" onclick="showModalSendTo()">
-                                                    <i class="fas fa-pencil-alt">
-                                                    </i>
-                                                    Send to 925
-                                                </button> *@
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010707
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.06.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                13
-                                            </td>
-                                            <td>
-
-                                                <a>
-                                                    -
-                                                </a>
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    0/850 (0%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-secondary">Waiting</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                #
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    2500010708 <span class="badge bg-warning">UPDATE</span>
-                                                </a>
-                                                <br />
-                                                <small>
-                                                    Updated 01.01.2019
-                                                </small>
-                                            </td>
-                                            <td>
-                                                14
-                                            </td>
-                                            <td>
-                                                <a>
-                                                    -
-                                                </a>
-                                            </td>
-                                            <td class="project_progress">
-                                                <div class="progress progress-sm">
-                                                    <div class="progress-bar bg-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                                    </div>
-                                                </div>
-                                                <small>
-                                                    0/900 (0%)
-                                                </small>
-                                            </td>
-                                            <td class="project-state">
-                                                <span class="badge badge-secondary">Waiting</span>
-                                            </td>
-                                            <td class="project-actions text-right">
-                                                <button class="btn btn-warning btn-sm" onclick="showModalUpdate()">
-                                                    <i class="fas fa-pencil-alt">
-                                                    </i>
-                                                    Update Lot
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* render result *@
                     @foreach (var order in Model.Days)
                     {
                         foreach (var item in order.Orders)
@@ -499,18 +93,18 @@
                                             <div class="col-md-3">
                                                 <strong>
                                                     @item.CustCode/@item.OrderNo
-                                                    @Html.Raw(item.OrderDate <= today.AddDays(-1) ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
-                                                    @Html.Raw(item.SeldDate1 <= today ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
+                                                    @Html.Raw(item.IsReceivedLate == true ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
+                                                    @Html.Raw(item.IsPackingLate == true ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
                                                     @Html.Raw(item.IsNew == true ? "<span class='badge bg-danger new'>ใหม่</span>" : "")
                                                     @Html.Raw(item.IsUpdate == true ? "<span class='badge bg-warning'>มีการนำส่ง</span>" : "")
                                                 </strong>
                                             </div>
                                             <div class="col-md-3">
-                                                <i class="fas fa-clipboard-check"></i> @item.OrderDate.ToString("dd-MM-yyyy")
-                                                <i class="fas fa-box-open"></i> @item.SeldDate1.ToString("dd-MM-yyyy")
+                                                <i class="fas fa-clipboard-check"></i> @item.OrderDate
+                                                <i class="fas fa-box-open"></i> @item.SeldDate1
                                             </div>
                                             <div class="col-md-2">
-                                                <i class="fas fa-business-time"></i> @item.StartDate.ToString("dd-MM-yyyy")
+                                                <i class="fas fa-business-time"></i> @item.StartDateTH
                                             </div>
                                             <div class="col-md-1">
                                                 <i class="fas fa-boxes"></i> @item.CompleteLot/@item.TotalLot
@@ -565,13 +159,13 @@
                                                         <td>
                                                             <a>
                                                                 <strong>@lot.LotNo</strong>
-                                                                @Html.Raw((item.OrderDate <= today.AddDays(-1) && lot.IsUpdate) ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
-                                                                @Html.Raw(item.SeldDate1 <= today ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
+                                                                @Html.Raw((item.IsReceivedLate == true && lot.IsPacked != true) ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
+                                                                @Html.Raw((item.IsPackingLate == true && lot.IsPacked != true) ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
                                                                 @Html.Raw(lot.IsUpdate ? "<span class='badge bg-warning update'>มีการนำส่ง</span>" : "")
                                                             </a>
                                                             <br />
                                                             <small>
-                                                                ปรับปรุงล่าสุด : @(lot.UpdateDate.ToString("dd-MM-yyyy") ?? "N/A")
+                                                                ปรับปรุงล่าสุด : @(lot.UpdateDate ?? "N/A")
                                                             </small>
                                                         </td>
                                                         <td>
@@ -579,19 +173,63 @@
                                                         </td>
                                                         <td>
                                                             <a>
-                                                                -
+                                                                @lot.AssignTo
                                                             </a>
                                                         </td>
                                                         <td class="project_progress">
                                                             <div class="progress progress-sm">
-                                                                @{  
-                                                                    var percent = lot.TtQty > 0 ? (lot.ReceivedQty * 100 / lot.TtQty).ToString("N2") : "0";  
-                                                                }
-                                                                @Html.Raw(lot.IsAllReceived ? string.Format("<div class='progress-bar bg-light-orange' role='progressbar' aria-valuenow='{0}' aria-valuemin='0' aria-valuemax='100' style='width: {0}% '></div>", @percent) : string.Format("<div class='progress-bar bg-orange' role='progressbar' aria-valuenow='{0}' aria-valuemin='0' aria-valuemax='100' style='width: {0}% '></div>", @percent))
+                                                                @{
+                                                                    var percent = lot.TtQty > 0 ? (lot.ReceivedQty * 100 / lot.TtQty) : 0;
+                                                                    var progressHtml = "";
 
+                                                                    if (!lot.IsAllReceived)
+                                                                    {
+                                                                        // ยังรับของไม่ครบ
+                                                                        progressHtml = $"<div class='progress-bar bg-orange' role='progressbar' aria-valuenow='{percent}' aria-valuemin='0' aria-valuemax='100' style='width: {percent}% '></div>";
+                                                                    }
+                                                                    else if (lot.IsAllReceived && !lot.IsPacking)
+                                                                    {
+                                                                        // รับของครบแล้ว แต่ยังไม่เริ่มบรรจุ
+                                                                        progressHtml = $"<div class='progress-bar bg-light-orange' role='progressbar' aria-valuenow='{percent}' aria-valuemin='0' aria-valuemax='100' style='width: {percent}% '></div>";
+                                                                    }
+                                                                    else if (lot.IsPacking && !lot.IsAllPacking)
+                                                                    {
+                                                                        // กำลังบรรจุ
+                                                                        var packPercent = lot.TtQty > 0 ? (lot.PackedQty * 100 / lot.TtQty) : 0;
+                                                                        progressHtml = $"<div class='progress-bar bg-green' role='progressbar' aria-valuenow='{packPercent}' aria-valuemin='0' aria-valuemax='100' style='width: {packPercent}% '></div>";
+                                                                    }
+                                                                    else if (lot.IsAllPacking)
+                                                                    {
+                                                                        // บรรจุครบแล้ว
+                                                                        progressHtml = $"<div class='progress-bar bg-info' role='progressbar' aria-valuenow='100' aria-valuemin='0' aria-valuemax='100' style='width: 100% '></div>";
+                                                                    }
+                                                                }
+                                                                @Html.Raw(progressHtml)
                                                             </div>
                                                             <small>
-                                                                @lot.ReceivedQty / @lot.TtQty (@percent%)
+                                                                @{
+                                                                    string progressText = "";
+
+                                                                    if (!lot.IsAllReceived)
+                                                                    {
+                                                                        progressText = $"{lot.ReceivedQty} / {lot.TtQty}";
+                                                                    }
+                                                                    else if (lot.IsAllReceived && !lot.IsPacking)
+                                                                    {
+                                                                        progressText = $"{lot.ReceivedQty} / {lot.TtQty} ";
+                                                                    }
+                                                                    else if (lot.IsPacking && !lot.IsAllPacking)
+                                                                    {
+                                                                        var packPercent = lot.TtQty > 0 ? (lot.PackedQty * 100 / lot.TtQty) : 0;
+                                                                        progressText = $"{lot.PackedQty} / {lot.TtQty}";
+                                                                    }
+                                                                    else if (lot.IsAllPacking)
+                                                                    {
+                                                                        progressText = $"{lot.TtQty} / {lot.TtQty}";
+                                                                    }
+                                                                }
+
+                                                                @progressText
                                                             </small>
                                                         </td>
                                                         <td class="project-state">
@@ -599,15 +237,31 @@
                                                             {
                                                                 <span class="badge badge-orange">รอนำส่ง</span>
                                                             }
-                                                            else if (lot.ReceivedQty >= lot.TtQty)
+
+                                                            @if (lot.TtQty > 0 && lot.ReceivedQty >= lot.TtQty)
                                                             {
                                                                 <span class="badge badge-orange">รับครบแล้ว</span>
+                                                            }
+
+                                                            @if (lot.IsAllReceived && !lot.IsPacking)
+                                                            {
                                                                 <span class="badge badge-light-orange">รอจ่ายงาน</span>
+                                                            }
+
+                                                            @if (lot.IsPacking && !lot.IsAllPacking)
+                                                            {
+                                                                <span class="badge badge-warning">กำลังบรรจุ</span>
+                                                            }
+
+                                                            @if (lot.IsAllPacking)
+                                                            {
+                                                                <span class="badge badge-info">บรรจุครบแล้ว</span>
                                                             }
                                                         </td>
                                                         <td class="project-actions text-right">
                                                             @Html.Raw(lot.IsUpdate ? string.Format("<button class='btn btn-warning btn-sm' onclick='showModalUpdateLot({0})'><i class='fas fa-folder-plus'></i> ตรวจสอบ</button>", lot.LotNo) : "")
-                                                            @Html.Raw((item.IsReceivedLate || lot.IsAllReceived) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
+                                                            @Html.Raw(((item.IsReceivedLate || lot.IsAllReceived) && !lot.IsAllPacking && lot.TtQty != 0) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
+                                                            @Html.Raw((lot.IsPacking && !lot.IsAllPacking) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
                                                         </td>
                                                     </tr>
                                                 }
@@ -685,84 +339,8 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleAssign">Assigning Lot : [LotNo]</h4>
+                <h4 class="modal-title" id="txtTitleAssign">รายการมอบหมายงาน : [LotNo]</h4>
                 <input type="hidden" id="hddAssignLotNo" value="" />
-                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <h5 class="mb-2">Select ReceivedNo</h5>
-                <div class="card-body table-responsive p-0" style="height: 200px; overflow: auto;">
-                    <table class="table table-head-fixed text-nowrap">
-                        <thead>
-                            <tr>
-                                <th>เลขที่ใบรับ</th>
-                                <th>หมายเลขล็อต</th>
-                                <th>เลขที่คำสั่งซื้อ</th>
-                                <th>ลำดับที่</th>
-                                <th>เลขที่งาน</th>
-                                <th>รหัสสินค้า</th>
-                                <th>จำนวน</th>
-                                <th>น้ำหนักรวม(g)</th>
-                                <th>เลือก</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-receivedToAssign-body">
-                            <tr>
-                                <td>[ReceivedNo]</td>
-                                <td>[LotNo]</td>
-                                <td>[OrderNo]</td>
-                                <td>[ListNo]</td>
-                                <td>[Barcode]</td>
-                                <td>[Article]</td>
-                                <td>[Ttqty]</td>
-                                <td>[Ttwg]</td>
-                                <td>
-                                    <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="checkboxReceivedN">
-                                        <label for="checkboxReceivedNo">
-                                        </label>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <h5 class="mt-4 mb-2">Select Table</h5>
-                <div class="card-body" style="overflow: auto;">
-                    <select class="custom-select rounded-0" id="cbxTables">
-                        <option value="" selected>- Select Table -</option>
-                        @foreach (var table in ViewBag.Tables)
-                        {
-                            <option value="@table.Id">@table.Name</option>
-                        }
-                    </select>
-                    <table class="table table-head-fixed text-nowrap">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Select</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tblMembers">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmAssign">Assign</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modal-return">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Return Lot : 2500010702 From Table 1 (Jun)</h4>
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
                     <span>&times;</span>
                 </button>
@@ -770,7 +348,7 @@
             <div class="modal-body">
                 <div class="card card-default" style="overflow: auto;">
                     <div class="card-header">
-                        <h3 class="card-title">Assigning ReceivedNo</h3>
+                        <h3 class="card-title">เลือกใบนำส่ง</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -782,61 +360,31 @@
                             <table class="table table-head-fixed text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>ReceivedNo</th>
-                                        <th>LotNo</th>
-                                        <th>OrderNo</th>
-                                        <th>ListNo</th>
-                                        <th>Article</th>
-                                        <th>Ttqty</th>
-                                        <th>Ttwg</th>
-                                        <th>Select</th>
+                                        <th>เลขที่ใบรับ</th>
+                                        <th>หมายเลขล็อต</th>
+                                        <th>เลขที่คำสั่งซื้อ</th>
+                                        <th>ลำดับที่</th>
+                                        <th>เลขที่งาน</th>
+                                        <th>รหัสสินค้า</th>
+                                        <th>จำนวน</th>
+                                        <th>น้ำหนักรวม(g)</th>
+                                        <th>เลือก</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tbl-receivedToAssign-body">
                                     <tr>
-                                        <td>25RS070074</td>
-                                        <td>2500010703</td>
-                                        <td>25000492</td>
-                                        <td>2</td>
-                                        <td>220550111.6.1</td>
-                                        <td>200</td>
-                                        <td>100.57</td>
+                                        <td>[ReceivedNo]</td>
+                                        <td>[LotNo]</td>
+                                        <td>[OrderNo]</td>
+                                        <td>[ListNo]</td>
+                                        <td>[Barcode]</td>
+                                        <td>[Article]</td>
+                                        <td>[Ttqty]</td>
+                                        <td>[Ttwg]</td>
                                         <td>
                                             <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary9" checked disabled>
-                                                <label for="checkboxPrimary9">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>25RS070075</td>
-                                        <td>2500010703</td>
-                                        <td>25000492</td>
-                                        <td>2</td>
-                                        <td>220550111.6.1</td>
-                                        <td>35</td>
-                                        <td>50.57</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary10" checked disabled>
-                                                <label for="checkboxPrimary10">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>25RS070076</td>
-                                        <td>2500010703</td>
-                                        <td>25000492</td>
-                                        <td>2</td>
-                                        <td>220550111.6.1</td>
-                                        <td>15</td>
-                                        <td>25.57</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary11" checked disabled>
-                                                <label for="checkboxPrimary11">
+                                                <input type="checkbox" id="checkboxReceivedN">
+                                                <label for="checkboxReceivedNo">
                                                 </label>
                                             </div>
                                         </td>
@@ -846,10 +394,9 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="card card-default">
+                <div class="card card-default" style="overflow: auto;">
                     <div class="card-header">
-                        <h3 class="card-title">Assigning Table</h3>
+                        <h3 class="card-title">เลือกโต๊ะ และสมาชิก</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -858,79 +405,49 @@
                     </div>
                     <div class="card-body" style="display: block;">
                         <div class="row">
-                            <select class="custom-select rounded-0" id="exampleSelectRounded0" disabled>
-                                <option value="">- Select Table -</option>
-                                <option value="" selected>Table 1 (Jun)</option>
-                                <option value="">Table 2 (Ree)</option>
-                                <option value="">Table 3 (Tay)</option>
+                            <select class="custom-select rounded-0" id="cbxTables">
+                                <option value="" selected>- เลือกโต๊ะ -</option>
+                                @foreach (var table in ViewBag.Tables)
+                                {
+                                    <option value="@table.Id">@table.Name</option>
+                                }
                             </select>
-                            <table class="table table-head-fixed text-nowrap mt-2">
+                            <table class="table table-head-fixed text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>Select</th>
+                                        <th>ชื่อ</th>
+                                        <th>เลือก</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Suchila (Jun)</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary12" checked disabled>
-                                                <label for="checkboxPrimary12">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Temsiri (JukaJun)</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary13" checked disabled>
-                                                <label for="checkboxPrimary13">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Nada (New)</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary14" checked disabled>
-                                                <label for="checkboxPrimary14">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Paweena (Keaw)</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary15" checked disabled>
-                                                <label for="checkboxPrimary15">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rattasart (Sax)</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxPrimary16" checked disabled>
-                                                <label for="checkboxPrimary16">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                <tbody id="tblMembers">
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-primary" id="btnConfirmAssign">มอบหมาย</button>
+                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <div class="card card-default">
+<div class="modal fade" id="modal-return">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleReturn">รายการรับงานคืน : 2500010702 From Table 1 (Jun)</h4>
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-default" style="overflow: auto;">
                     <div class="card-header">
-                        <h3 class="card-title">Return Detail</h3>
+                        <h3 class="card-title"></h3>
+                        <input type="hidden" id="hddReturnLotNo" />
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -939,31 +456,55 @@
                     </div>
                     <div class="card-body" style="display: block;">
                         <div class="row">
-                            <div class="form-group">
-                                <div class="col-3">
-                                    <label>Return</label>
-                                    <input type="text" class="form-control" placeholder="Enter ...">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <label>Lost</label>
-                                    <input type="text" class="form-control" placeholder="Enter ...">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <label>Break</label>
-                                    <input type="text" class="form-control" placeholder="Enter ...">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <label>Total</label>
-                                    <input type="text" class="form-control" placeholder="">
+                            <label for="cbxTableToReturn">เลือกโต๊ะที่มีการมอบหมาย</label>
+                            <select class="custom-select rounded-0" id="cbxTableToReturn">
+                                <option value="" selected>- เลือกโต๊ะ -</option>
+                            </select>
+                            <table class="table table-head-fixed text-nowrap">
+                                <thead>
+                                    <tr>
+                                        <th>เลขที่ใบรับ</th>
+                                        <th>หมายเลขล็อต</th>
+                                        <th>เลขที่คำสั่งซื้อ</th>
+                                        <th>ลำดับที่</th>
+                                        <th>เลขที่งาน</th>
+                                        <th>รหัสสินค้า</th>
+                                        <th>จำนวน</th>
+                                        <th>น้ำหนักรวม(g)</th>
+                                        <th>เลือก</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbl-receivedReturn-body">
+                                </tbody>
+                            </table>
+                            <div class="row">
+                                <div class="form-group">
+                                    <div class="col-3">
+                                        <label>จำนวนจากใบรับที่เลือก</label>
+                                        <input type="number" min="0" max="999999" id="txtReurnQty" class="form-control" readonly>
+                                    </div>
+                                    <div class="col-3 mt-2">
+                                        <label>จำนวนที่ศูนย์หาย</label>
+                                        <input type="number" min="0" max="999999" id="txtLostQty" class="form-control" placeholder="Enter Lost">
+                                    </div>
+                                    <div class="col-3 mt-2">
+                                        <label>ขำนวนที่ชำรุด</label>
+                                        <input type="number" min="0" max="999999" id="txtBreakQty" class="form-control" placeholder="Enter Break">
+                                    </div>
+                                    <div class="col-3 mt-2">
+                                        <label>ส่งคืนรวมทั้งสิ้น</label>
+                                        <input type="number" min="0" max="999999" id="txtTotalReurnQty" class="form-control">
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
-                <button type="button" class="btn btn-danger">Confirm</button>
+            <div class="modal-footer justify-content-end">
+                <button type="button" id="btnConfirmReturn" class="btn btn-danger">ยืนยัน</button>
+                <button type="button" id="btnLostAndRepair" class="btn btn-danger" style="display:none;">ส่งซ่อมหรือสูญหาย</button>
+                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
     </div>

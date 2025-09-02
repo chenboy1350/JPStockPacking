@@ -1,4 +1,6 @@
-﻿using JPStockPacking.Data.JPDbContext.Entities;
+﻿using System;
+using System.Collections.Generic;
+using JPStockPacking.Data.JPDbContext.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.JPDbContext;
@@ -13,6 +15,8 @@ public partial class JPDbContext : DbContext
     public virtual DbSet<CpriceSale> CpriceSale { get; set; }
 
     public virtual DbSet<Cprofile> Cprofile { get; set; }
+
+    public virtual DbSet<JobBillSendStock> JobBillSendStock { get; set; }
 
     public virtual DbSet<JobCost> JobCost { get; set; }
 
@@ -117,6 +121,14 @@ public partial class JPDbContext : DbContext
             entity.Property(e => e.PendantType).HasDefaultValue("");
             entity.Property(e => e.PictureScale).HasDefaultValue("");
             entity.Property(e => e.SupArticle).HasDefaultValue("");
+        });
+
+        modelBuilder.Entity<JobBillSendStock>(entity =>
+        {
+            entity.Property(e => e.ItemSend).HasDefaultValue("");
+            entity.Property(e => e.Doc).HasDefaultValue("");
+            entity.Property(e => e.MdateSend).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Numsend).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<JobCost>(entity =>

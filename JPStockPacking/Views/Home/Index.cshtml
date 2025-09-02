@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    ViewData["PageTitle"] = "Order Management";
+    ViewData["PageTitle"] = "Home";
 }
 
 <div class="wrapper">
@@ -38,19 +38,37 @@
             <img src="~/img/logo.png" alt="JP" class="brand-image img-circle elevation-3" style="background-color: #FFFFFF; width: 45px; height: 45px; border-radius: 50%;">
             <span class="brand-text font-weight-light">JP StockPacking</span>
         </a>
-        <div class="sidebar">
-            <nav class="mt-2">
-                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+        <div class="sidebar d-flex flex-column">
+            <nav class="mt-2 d-flex flex-column flex-grow-1">
+                <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-item">
-                        <a href="#" class="nav-link active" data-action="@Url.Action("OrderManagement", "Home")">
+                        <a href="#" class="nav-link" data-action="@Url.Action("DashBoard", "Home")">
                             <i class="nav-icon fas fa-receipt"></i>
-                            <p>Order Management</p>
+                            <p>ภาพรวมของแผนก</p>
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="#" class="nav-link" data-action="@Url.Action("OrderManagement", "Home")">
+                            <i class="nav-icon fas fa-receipt"></i>
+                            <p>จัดการคำสั่งซื้อ</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-receipt"></i>
+                            <p>จัดการการส่งออก</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-receipt"></i>
+                            <p>แจ้งยอดบรรจุ</p>
+                        </a>
+                    </li>
+                    <li class="nav-item mt-auto">
                         <a href="#" id="btnSignOut" class="nav-link">
                             <i class="nav-icon fas fa-sign-out-alt"></i>
-                            <p>Sign Out</p>
+                            <p>ออกจากระบบ</p>
                         </a>
                     </li>
                 </ul>
@@ -61,9 +79,7 @@
     <div class="content-wrapper">
         <section class="content mt-2">
             <div id="content-container">
-                <div id="orderManagementContainer">
-                    <p>กำลังโหลดข้อมูล...</p>
-                </div>
+
             </div>
         </section>
     </div>
@@ -80,12 +96,17 @@
         window.urlGetReceivedToAssign = '@Url.Action("GetReceivedToAssign", "Home")';
         window.urlGetTableMember = '@Url.Action("GetTableMember", "Home")';
         window.urlAssignToTable = '@Url.Action("AssignToTable", "Home")';
+        window.urlGetTableToReturn = '@Url.Action("GetTableToReturn", "Home")';
+        window.urlGetRecievedToReturn = '@Url.Action("GetRecievedToReturn", "Home")';
+        window.urlReturnAssignment = '@Url.Action("ReturnAssignment", "Home")';
+        window.urlImportOrder = '@Url.Action("ImportOrder", "Home")';
+        window.urlLostAndRepair = '@Url.Action("LostAndRepair", "Home")';
     </script>
     <script src="~/js/ordermanagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {
-            $("#orderManagementContainer").load("@Url.Action("OrderManagement", "Home")");
+            // $("#dashBoardContainer").load("@Url.Action("DashBoard", "Home")");
 
             $('.nav-sidebar .nav-link').on('click', function(e) {
                 e.preventDefault();

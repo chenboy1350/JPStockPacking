@@ -22,10 +22,10 @@
     {
         public string OrderNo { get; set; } = string.Empty;
         public string CustCode { get; set; } = string.Empty;
-        public DateTime FactoryDate { get; set; }
-        public DateTime OrderDate { get; set; }
-        public DateTime SeldDate1 { get; set; }
-        public DateTime OrdDate { get; set; }
+        public string FactoryDate { get; set; } = string.Empty;
+        public string OrderDate { get; set; } = string.Empty;
+        public string SeldDate1 { get; set; } = string.Empty;
+        public string OrdDate { get; set; } = string.Empty;
         public int TotalLot { get; set; } = 0;
         public int SumTtQty { get; set; } = 0;
         public int CompleteLot { get; set; } = 0;
@@ -33,6 +33,7 @@
         public bool IsActive { get; set; } = false;
         public bool IsNew { get; set; } = false;
         public bool IsUpdate { get; set; } = false;
+        public string StartDateTH { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public int PackDaysRemain { get; set; } = 0;
         public int ExportDaysRemain { get; set; } = 0;
@@ -55,13 +56,15 @@
         public string MarkCenter { get; set; } = string.Empty;
         public string SaleRem { get; set; } = string.Empty;
         public decimal ReceivedQty { get; set; }
-        public int AssignTo { get; set; } = 0;
+        public decimal PackedQty { get; set; }
+        public string AssignTo { get; set; } = string.Empty;
         public bool IsSuccess { get; set; } = false;
         public bool IsActive { get; set; } = false;
         public bool IsUpdate { get; set; } = false;
-        public DateTime UpdateDate { get; set; }
+        public string UpdateDate { get; set; } = string.Empty;
         public bool IsAllReceived { get; set; } = false;
+        public bool IsAllPacking { get; set; } = false;
         public bool IsPacking { get; set; } = false;
-        public bool IsAllReturned { get; set; } = false;
+        public bool IsPacked { get; set; } = false;
     }
 }

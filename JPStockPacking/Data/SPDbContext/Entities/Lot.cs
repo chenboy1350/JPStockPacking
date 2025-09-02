@@ -19,7 +19,7 @@ public partial class Lot
 
     [StringLength(50)]
     [Unicode(false)]
-    public string? ListNo { get; set; }
+    public string ListNo { get; set; } = null!;
 
     [Column("CustPCode")]
     [StringLength(50)]
@@ -33,7 +33,7 @@ public partial class Lot
 
     [StringLength(50)]
     [Unicode(false)]
-    public string Article { get; set; } = null!;
+    public string? Article { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]

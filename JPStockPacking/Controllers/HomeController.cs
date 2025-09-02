@@ -19,11 +19,27 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> OrderManagement()
         {
-            await _orderManagementService.ImportOrderAsync();
+            //await _orderManagementService.ImportOrderAsync();
             await _orderManagementService.GetUpdateLotAsync();
             ViewBag.Tables = await _orderManagementService.GetTableAsync();
             var result = await _orderManagementService.GetOrderAndLotByRangeAsync(GroupMode.Day, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue);
             return PartialView("~/Views/Partial/_OrderManagement.cshtml", result);
+        }
+
+        [Authorize]
+        public IActionResult DashBoard()
+        {
+            return PartialView("~/Views/Partial/_DashBoardPartial.cshtml");
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ImportOrder(string orderNo)
+        {
+            if (orderNo == string.Empty && orderNo == null) return BadRequest();
+            await _orderManagementService.ImportOrderAsync(orderNo);
+            await _orderManagementService.GetUpdateLotAsync();
+            return Ok();
         }
 
         [HttpGet]
@@ -50,12 +66,12 @@ namespace JPStockPacking.Controllers
 
         [HttpPatch]
         [Authorize]
-        public async Task<IActionResult> UpdateLotItems([FromForm] string lotNo, [FromForm] string[] receivedNo)
+        public async Task<IActionResult> UpdateLotItems([FromForm] string lotNo, [FromForm] int[] receivedIDs)
         {
-            if (string.IsNullOrWhiteSpace(lotNo) || receivedNo == null || receivedNo.Length == 0)
+            if (string.IsNullOrWhiteSpace(lotNo) || receivedIDs == null || receivedIDs.Length == 0)
                 return BadRequest("ข้อมูลไม่ครบถ้วน");
 
-            await _orderManagementService.UpdateReceivedItemsAsync(lotNo, receivedNo);
+            await _orderManagementService.UpdateReceivedItemsAsync(lotNo, receivedIDs);
 
             var updatedLot = await _orderManagementService.GetCustomLotAsync(lotNo);
 
@@ -67,11 +83,11 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] string[] receivedNo, [FromForm] string tableId, [FromForm] string[] memberIds)
+        public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds)
         {
-            if (string.IsNullOrWhiteSpace(lotNo) || receivedNo == null || receivedNo.Length == 0 || string.IsNullOrWhiteSpace(tableId) || memberIds == null || memberIds.Length == 0)
+            if (string.IsNullOrWhiteSpace(lotNo) || receivedIDs == null || receivedIDs.Length == 0 || string.IsNullOrWhiteSpace(tableId) || memberIds == null || memberIds.Length == 0)
                 return BadRequest("ข้อมูลไม่ครบถ้วน");
-            await _orderManagementService.AssignReceivedAsync(lotNo, receivedNo, tableId, memberIds);
+            await _orderManagementService.AssignReceivedAsync(lotNo, receivedIDs, tableId, memberIds);
             return Ok();
         }
 
@@ -81,6 +97,39 @@ namespace JPStockPacking.Controllers
         {
             var result = await _orderManagementService.GetTableMemberAsync(tableID);
             return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetTableToReturn(string LotNo)
+        {
+            var result = await _orderManagementService.GetTableToReturnAsync(LotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetRecievedToReturn(string LotNo, int TableID)
+        {
+            var result = await _orderManagementService.GetRecievedToReturnAsync(LotNo, TableID);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ReturnAssignment([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal lostQty, [FromForm] decimal breakQty, [FromForm] decimal returnQty)
+        {
+
+            await _orderManagementService.ReturnReceivedAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty);
+            return Ok();
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> LostAndRepair([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal lostQty, [FromForm] decimal breakQty, [FromForm] decimal returnQty)
+        {
+            await _orderManagementService.LostAndRepairAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty);
+            return Ok();
         }
 
         [HttpGet]

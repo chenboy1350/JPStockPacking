@@ -28,6 +28,10 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<Received> Received { get; set; }
 
+    public virtual DbSet<Returned> Returned { get; set; }
+
+    public virtual DbSet<ReturnedDetail> ReturnedDetail { get; set; }
+
     public virtual DbSet<WorkTable> WorkTable { get; set; }
 
     public virtual DbSet<WorkTableMember> WorkTableMember { get; set; }
@@ -38,7 +42,17 @@ public partial class SPDbContext : DbContext
 
         modelBuilder.Entity<Received>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK_Receive");
+            entity.HasKey(e => e.ReceivedId).HasName("PK_Receive");
+        });
+
+        modelBuilder.Entity<Returned>(entity =>
+        {
+            entity.HasKey(e => e.ReturnId).HasName("PK_Returned_1");
+        });
+
+        modelBuilder.Entity<ReturnedDetail>(entity =>
+        {
+            entity.HasKey(e => e.ReturnDetailId).HasName("PK_Returned");
         });
 
         modelBuilder.Entity<WorkTable>(entity =>

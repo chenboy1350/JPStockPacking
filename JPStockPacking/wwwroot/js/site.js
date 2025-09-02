@@ -1,24 +1,29 @@
 ﻿
-function showModal(modalId, message = null, title = null) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
+function showModalAsync(modalId, message = null, title = null) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById(modalId);
+        if (!modal) return resolve(false);
 
-    if (message) {
-        const messageElement = modal.querySelector(`#${modalId.replace('Modal', 'Message')}`);
-        if (messageElement) {
-            messageElement.textContent = message;
+        if (message) {
+            const el = modal.querySelector(`#${modalId.replace('Modal', 'Message')}`);
+            if (el) el.textContent = message;
         }
-    }
-
-    if (title) {
-        const titleElement = modal.querySelector('.custom-modal-title');
-        if (titleElement) {
-            titleElement.textContent = title;
+        if (title) {
+            const t = modal.querySelector('.custom-modal-title');
+            if (t) t.textContent = title;
         }
-    }
 
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        const onClosed = (e) => {
+            if (e.detail?.modalId === modalId) {
+                window.removeEventListener('modalClosed', onClosed);
+                resolve(true);
+            }
+        };
+        window.addEventListener('modalClosed', onClosed, { once: true });
+    });
 }
 
 function closeModal(modalId) {
@@ -31,22 +36,24 @@ function closeModal(modalId) {
     if (modalId === 'confirmModal') {
         document.getElementById('confirmBtn').onclick = null;
     }
+
+    window.dispatchEvent(new CustomEvent('modalClosed', { detail: { modalId } }));
 }
 
 function showSuccess(message = 'Operation completed successfully!', title = 'Success') {
-    showModal('successModal', message, title);
+    return showModalAsync('successModal', message, title);
 }
 
 function showError(message = 'An error occurred. Please try again.', title = 'Error') {
-    showModal('errorModal', message, title);
+    return showModalAsync('errorModal', message, title);
 }
 
 function showInfo(message = 'Here is some important information.', title = 'Information') {
-    showModal('infoModal', message, title);
+    return showModalAsync('infoModal', message, title);
 }
 
 function showWarning(message = 'Please be aware of this warning.', title = 'Warning') {
-    showModal('warningModal', message, title);
+    return showModalAsync('warningModal', message, title);
 }
 
 function showSaveConfirm(
