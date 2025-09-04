@@ -13,6 +13,7 @@
         public string Barcode { get; set; } = string.Empty;
         public string CustPCode { get; set; } = string.Empty;
         public int AssignmentID { get; set; } = 0;
+        public bool IsReceived { get; set; } = false;
 
     }
 }

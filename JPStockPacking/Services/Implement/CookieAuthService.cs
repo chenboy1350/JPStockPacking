@@ -6,13 +6,14 @@ namespace JPStockPacking.Services.Implement
 {
     public class CookieAuthService : ICookieAuthService
     {
-        public async Task SignInAsync(HttpContext context, int id, string username, string role, bool rememberMe)
+        public async Task SignInAsync(HttpContext context, int id, string username, string role, string department, bool rememberMe)
         {
             var claims = new List<Claim>
             {
                 new (ClaimTypes.NameIdentifier, id.ToString()),
                 new (ClaimTypes.Name, username),
-                new (ClaimTypes.Role, role)
+                new (ClaimTypes.Role, role),
+                new ("Department", department)
             };
 
             var identity = new ClaimsIdentity(claims, "AppCookieAuth");

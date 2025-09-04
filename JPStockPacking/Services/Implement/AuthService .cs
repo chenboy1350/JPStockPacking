@@ -19,76 +19,85 @@ namespace JPStockPacking.Services.Implement
 
         public async Task<LoginResult> LoginUserAsync(string username, string password, bool rememberMe)
         {
-            var context = _contextAccessor.HttpContext!;
-            var authResult = await ValidateUserAsync(username, password);
-
-            if (authResult == null || string.IsNullOrEmpty(authResult.AccessToken))
-                return new LoginResult { Success = false, Message = "Invalid credentials" };
-
-            var handler = new JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(authResult.AccessToken);
-            var exp = token.ValidTo;
-            var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            var usernameFromToken = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            var roles = token.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
-
-            if (userId == null || usernameFromToken == null || roles.Count == 0)
-                return new LoginResult { Success = false, Message = "Invalid token claims" };
-
-            var role = roles.Contains("1") ? "Admin" : roles.Contains("2") ? "User" : "Guest";
-
-            await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, rememberMe);
-
-            if (!string.IsNullOrEmpty(authResult.RefreshToken))
+            try
             {
-                var refreshTokenExpiry = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(24);
+                var context = _contextAccessor.HttpContext!;
+                var authResult = await ValidateUserAsync(username, password);
 
-                context.Response.Cookies.Append("AccessToken", authResult.AccessToken, new CookieOptions
+                if (authResult == null || string.IsNullOrEmpty(authResult.AccessToken))
+                    return new LoginResult { Success = false, Message = "Invalid credentials" };
+
+                var handler = new JwtSecurityTokenHandler();
+                var token = handler.ReadJwtToken(authResult.AccessToken);
+                var exp = token.ValidTo;
+                var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                var usernameFromToken = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+                var department = token.Claims.FirstOrDefault(c => c.Type == "Departments")?.Value;
+                var roles = token.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+
+                if (userId == null || usernameFromToken == null || roles.Count == 0)
+                    return new LoginResult { Success = false, Message = "Invalid token claims" };
+
+                var role = roles.Contains("1") ? "Admin" : roles.Contains("2") ? "User" : "Guest";
+
+                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, department, rememberMe);
+
+                if (!string.IsNullOrEmpty(authResult.RefreshToken))
                 {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = rememberMe
-                        ? DateTimeOffset.UtcNow.AddDays(7)
-                        : DateTimeOffset.UtcNow.AddHours(1),
-                    IsEssential = true
-                });
+                    var refreshTokenExpiry = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(24);
+
+                    context.Response.Cookies.Append("AccessToken", authResult.AccessToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = rememberMe
+                            ? DateTimeOffset.UtcNow.AddDays(7)
+                            : DateTimeOffset.UtcNow.AddHours(1),
+                        IsEssential = true
+                    });
 
 
-                context.Response.Cookies.Append("RefreshToken", authResult.RefreshToken, new CookieOptions
+                    context.Response.Cookies.Append("RefreshToken", authResult.RefreshToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = refreshTokenExpiry,
+                        IsEssential = true
+                    });
+                }
+
+                if (rememberMe)
                 {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = refreshTokenExpiry,
-                    IsEssential = true
-                });
+                    context.Response.Cookies.Append("RememberedUsername", username, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        Expires = DateTimeOffset.UtcNow.AddDays(7),
+                        IsEssential = true
+                    });
+                    context.Response.Cookies.Append("RememberMeChecked", "true", new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        Expires = DateTimeOffset.UtcNow.AddDays(7),
+                        IsEssential = true
+                    });
+                }
+                else
+                {
+                    context.Response.Cookies.Delete("RememberedUsername");
+                    context.Response.Cookies.Delete("RememberMeChecked");
+                }
+
+                return new LoginResult { Success = true };
+
             }
-
-            if (rememberMe)
+            catch (Exception ex)
             {
-                context.Response.Cookies.Append("RememberedUsername", username, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    Expires = DateTimeOffset.UtcNow.AddDays(7),
-                    IsEssential = true
-                });
-                context.Response.Cookies.Append("RememberMeChecked", "true", new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    Expires = DateTimeOffset.UtcNow.AddDays(7),
-                    IsEssential = true
-                });
+                return new LoginResult { Success = false, Message = ex.Message };
             }
-            else
-            {
-                context.Response.Cookies.Delete("RememberedUsername");
-                context.Response.Cookies.Delete("RememberMeChecked");
-            }
-
-            return new LoginResult { Success = true };
         }
 
         public async Task<RefreshTokenResult> RefreshTokenAsync()
@@ -134,12 +143,13 @@ namespace JPStockPacking.Services.Implement
                 var token = handler.ReadJwtToken(refreshResult.AccessToken);
                 var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
                 var usernameFromToken = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+                var department = token.Claims.FirstOrDefault(c => c.Type == "Departments")?.Value;
                 var role = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
                 if (userId == null || usernameFromToken == null || role == null)
                     return new RefreshTokenResult { Success = false, Message = "Invalid token claims" };
 
-                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, false);
+                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, department!, false);
 
                 return new RefreshTokenResult
                 {
@@ -209,7 +219,7 @@ namespace JPStockPacking.Services.Implement
         {
             var apiSettings = _configuration.GetSection("ApiSettings");
             var apiKey = apiSettings["APIKey"];
-            var urlAccessToken = apiSettings["AccessToken"];
+            var urlRevokeToken = apiSettings["RevokeToken"];
 
             using var httpClient = new HttpClient();
 
@@ -217,7 +227,7 @@ namespace JPStockPacking.Services.Implement
             var json = JsonSerializer.Serialize(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync("https://localhost/JPWEBAPI/api/auth/RevokeToken", content);
+            var response = await httpClient.PostAsync(urlRevokeToken, content);
             return response.IsSuccessStatusCode;
         }
 
@@ -259,9 +269,9 @@ namespace JPStockPacking.Services.Implement
                     throw new ArgumentException("Invalid input provided.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new InvalidOperationException("An error occurred while validating the user.", ex);
+                throw;
             }
         }
 

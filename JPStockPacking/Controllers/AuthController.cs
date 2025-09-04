@@ -21,12 +21,24 @@ namespace JPStockPacking.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password, bool remember)
         {
-            var result = await _authService.LoginUserAsync(username, password, remember);
+            try
+            {
+                var result = await _authService.LoginUserAsync(username, password, remember);
 
-            if (!result.Success)
-                return Json(new { success = false, message = result.Message });
+                if (!result.Success)
+                    return Json(new { success = false, message = result.Message });
 
-            return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+                return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "EX: " + ex.Message,
+                    stack = ex.StackTrace
+                });
+            }
         }
 
         [HttpPost]

@@ -25,6 +25,14 @@
                                             <button class="btn btn-primary mt-2" id="btnImportOrder">นำเข้าออเดอร์</button>
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>ReceivedNo</label>
+                                            <input type="text" id="txtImportReceivedNo" class="form-control">
+                                            <button class="btn btn-primary mt-2" id="btnImportReceivedNo">นำเข้าใบรับ</button>
+                                            <button class="btn btn-primary mt-2" id="btnViewReceivedNo">ดูรายการใบรับ</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6">
@@ -123,7 +131,7 @@
                                     </button>
                                 </h2>
                                 <div id="collapse@(item.OrderNo)" class="accordion-collapse collapse" aria-labelledby="heading@(item.OrderNo)" data-bs-parent="#accordionOrder">
-                                    <div class="accordion-body" style="overflow: auto;">
+                                    <div class="accordion-body table-responsive" style="overflow: auto;">
                                         <table class="table table-striped projects">
                                             <thead>
                                                 <tr>
@@ -289,7 +297,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="card-body table-responsive p-0" style="height: 300px;">
+                <div class="card-body table-responsive p-0">
                     <table class="table table-head-fixed text-nowrap">
                         <thead>
                             <tr>
@@ -372,23 +380,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tbl-receivedToAssign-body">
-                                    <tr>
-                                        <td>[ReceivedNo]</td>
-                                        <td>[LotNo]</td>
-                                        <td>[OrderNo]</td>
-                                        <td>[ListNo]</td>
-                                        <td>[Barcode]</td>
-                                        <td>[Article]</td>
-                                        <td>[Ttqty]</td>
-                                        <td>[Ttwg]</td>
-                                        <td>
-                                            <div class="icheck-primary d-inline">
-                                                <input type="checkbox" id="checkboxReceivedN">
-                                                <label for="checkboxReceivedNo">
-                                                </label>
-                                            </div>
-                                        </td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -510,6 +501,47 @@
     </div>
 </div>
 
+<div class="modal fade" id="modal-update-all">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleUpdateAll">Rev No : </h4>
+                <input type="hidden" id="hddUpdateReceiveNo" value="" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card-body" style="display: block;">
+                    <div class="row">
+                        <table class="table table-head-fixed text-nowrap" style="overflow: auto;">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>หมายเลขล็อต</th>
+                                    <th>เลขที่คำสั่งซื้อ</th>
+                                    <th>ลำดับที่</th>
+                                    <th>เลขที่งาน</th>
+                                    <th>รหัสสินค้า</th>
+                                    <th>จำนวน</th>
+                                    <th>น้ำหนักรวม(g)</th>
+                                    <th>เลือก</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-all-received">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-warning" id="btnAllUpdateLot">รับเข้า</button>
+                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modal-Sendto">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -561,4 +593,4 @@
     </div>
 </div>
 
-<div id="page-title" data-title="Order Management"></div>
+<div id="page-title" data-title="จัดการคำสั่งซื้อ"></div>

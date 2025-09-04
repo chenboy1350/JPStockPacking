@@ -18,7 +18,7 @@
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
                     <i class="fas fa-user img-size-32 img-circle mr-2"></i>
-                    <span>Admin</span>
+                    <span>@ViewBag.Username</span>
                 </a>
 @*                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     <div class="dropdown-divider"></div>
@@ -41,30 +41,56 @@
         <div class="sidebar d-flex flex-column">
             <nav class="mt-2 d-flex flex-column flex-grow-1">
                 <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
-                    <li class="nav-item">
-                        <a href="#" class="nav-link" data-action="@Url.Action("DashBoard", "Home")">
-                            <i class="nav-icon fas fa-receipt"></i>
-                            <p>ภาพรวมของแผนก</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link" data-action="@Url.Action("OrderManagement", "Home")">
-                            <i class="nav-icon fas fa-receipt"></i>
-                            <p>จัดการคำสั่งซื้อ</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-receipt"></i>
-                            <p>จัดการการส่งออก</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-receipt"></i>
-                            <p>แจ้งยอดบรรจุ</p>
-                        </a>
-                    </li>
+                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("DashBoard", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>ภาพรวมของแผนก</p>
+                            </a>
+                        </li>                        
+                    }
+
+                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("OrderManagement", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>จัดการคำสั่งซื้อ</p>
+                            </a>
+                        </li>                        
+                    }
+
+                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link data-action=" "@Url.Action("RecievedManagement", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>ใบส่งสินค้า</p>
+                            </a>
+                        </li>                        
+                    }
+
+                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>จัดการการส่งออก</p>
+                            </a>
+                        </li>                        
+                    }
+
+                    @if (ViewBag.Username == "test1" || ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("CheckQtyToPack", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>แจ้งยอดบรรจุ</p>
+                            </a>
+                        </li>
+                    }
+
                     <li class="nav-item mt-auto">
                         <a href="#" id="btnSignOut" class="nav-link">
                             <i class="nav-icon fas fa-sign-out-alt"></i>
@@ -79,7 +105,7 @@
     <div class="content-wrapper">
         <section class="content mt-2">
             <div id="content-container">
-
+                <h1 class="text-center">Welcome to JP StockPacking System</h1>
             </div>
         </section>
     </div>
@@ -101,13 +127,17 @@
         window.urlReturnAssignment = '@Url.Action("ReturnAssignment", "Home")';
         window.urlImportOrder = '@Url.Action("ImportOrder", "Home")';
         window.urlLostAndRepair = '@Url.Action("LostAndRepair", "Home")';
+        window.urlImportReceiveNo = '@Url.Action("ImportReceiveNo", "Home")';
+        window.urlUpdateLotByRevNoItems = '@Url.Action("UpdateLotByRevNoItems", "Home")';
+        window.urlGetOrderToSendQty = '@Url.Action("GetOrderToSendQty", "Home")';
+        window.urlDefineToPack = '@Url.Action("DefineToPack", "Home")';
     </script>
-    <script src="~/js/ordermanagement.js" asp-append-version="true"></script>
+
+    <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
+    <script src="~/js/CheckQtyToPack.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {
-            // $("#dashBoardContainer").load("@Url.Action("DashBoard", "Home")");
-
             $('.nav-sidebar .nav-link').on('click', function(e) {
                 e.preventDefault();
                 var actionUrl = $(this).data('action');

@@ -22,5 +22,9 @@ namespace JPStockPacking.Services.Interface
         Task<List<ReceivedListModel>> GetRecievedToReturnAsync(string LotNo, int TableID);
         Task ReturnReceivedAsync(string LotNo, int[] assignmentIDs, decimal lostQty, decimal breakQty, decimal returnQty);
         Task LostAndRepairAsync(string lotNo, int[] assignmentIDs, decimal lostQty, decimal breakQty, decimal returnQty);
+        Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo);
+        Task UpdateAllReceivedItemsAsync(string receiveNo);
+        Task<List<SendToPackModel>> GetOrderToSendQtyAsync(string orderNo);
+        Task DefineToPackAsync(string orderNo, List<LotToPackDto> lots);
     }
 }

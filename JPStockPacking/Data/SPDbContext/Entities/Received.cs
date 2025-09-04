@@ -30,6 +30,9 @@ public partial class Received
 
     public double? TtWg { get; set; }
 
+    [Column(TypeName = "datetime")]
+    public DateTime? Mdate { get; set; }
+
     public bool IsReceived { get; set; }
 
     public bool IsAssigned { get; set; }

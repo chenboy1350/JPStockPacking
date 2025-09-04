@@ -1,3 +1,4 @@
+using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public IActionResult Index()
         {
+            ViewBag.Username = User.Identity?.Name!.ToLower();
             return View();
         }
 
@@ -20,7 +22,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> OrderManagement()
         {
             //await _orderManagementService.ImportOrderAsync();
-            await _orderManagementService.GetUpdateLotAsync();
+            //await _orderManagementService.GetUpdateLotAsync();
             ViewBag.Tables = await _orderManagementService.GetTableAsync();
             var result = await _orderManagementService.GetOrderAndLotByRangeAsync(GroupMode.Day, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue);
             return PartialView("~/Views/Partial/_OrderManagement.cshtml", result);
@@ -32,14 +34,35 @@ namespace JPStockPacking.Controllers
             return PartialView("~/Views/Partial/_DashBoardPartial.cshtml");
         }
 
+        [Authorize]
+        public IActionResult RecievedManagement()
+        {
+            return PartialView("~/Views/Partial/_RecievedManagement.cshtml");
+        }
+
+        [Authorize]
+        public IActionResult CheckQtyToPack()
+        {
+            return PartialView("~/Views/Partial/_CheckQtyToPack.cshtml");
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> ImportOrder(string orderNo)
         {
             if (orderNo == string.Empty && orderNo == null) return BadRequest();
             await _orderManagementService.ImportOrderAsync(orderNo);
-            await _orderManagementService.GetUpdateLotAsync();
+            //await _orderManagementService.GetUpdateLotAsync();
             return Ok();
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ImportReceiveNo(string receiveNo)
+        {
+            if (receiveNo == string.Empty && receiveNo == null) return BadRequest();
+            var res = await _orderManagementService.GetJPReceivedByReceiveNoAsync(receiveNo);
+            return Ok(res);
         }
 
         [HttpGet]
@@ -79,6 +102,17 @@ namespace JPStockPacking.Controllers
                 return NotFound();
 
             return Ok(updatedLot);
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> UpdateLotByRevNoItems([FromForm] string receiveNo)
+        {
+            if (string.IsNullOrWhiteSpace(receiveNo)) return BadRequest("ข้อมูลไม่ครบถ้วน");
+
+            await _orderManagementService.UpdateAllReceivedItemsAsync(receiveNo);
+
+            return Ok();
         }
 
         [HttpPost]
@@ -131,6 +165,37 @@ namespace JPStockPacking.Controllers
             await _orderManagementService.LostAndRepairAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty);
             return Ok();
         }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetOrderToSendQty(string orderNo)
+        {
+            var result = await _orderManagementService.GetOrderToSendQtyAsync(orderNo);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> DefineToPack([FromForm] DefineToPackRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.OrderNo) || request.Lots == null || request.Lots.Count == 0)
+                return BadRequest("ข้อมูลไม่ครบถ้วน");
+
+            try
+            {
+                await _orderManagementService.DefineToPackAsync(request.OrderNo, request.Lots);
+                return Ok("บันทึกข้อมูลเรียบร้อย");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            { 
+                return StatusCode(500, "เกิดข้อผิดพลาดภายในระบบ");
+            }
+        }
+
 
         [HttpGet]
         [Authorize]

@@ -32,6 +32,10 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<ReturnedDetail> ReturnedDetail { get; set; }
 
+    public virtual DbSet<SendQtyToPack> SendQtyToPack { get; set; }
+
+    public virtual DbSet<SendQtyToPackDetail> SendQtyToPackDetail { get; set; }
+
     public virtual DbSet<WorkTable> WorkTable { get; set; }
 
     public virtual DbSet<WorkTableMember> WorkTableMember { get; set; }
