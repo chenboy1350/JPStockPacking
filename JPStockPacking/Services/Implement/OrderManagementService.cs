@@ -1,12 +1,15 @@
 ﻿using JPStockPacking.Data.JPDbContext;
+using JPStockPacking.Data.JPDbContext.Entities;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
-using static JPStockPacking.Services.Helper.Enum;
+using Microsoft.Extensions.Options;
 using System.Globalization;
+using System.Threading.Tasks;
+using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
 {
@@ -29,7 +32,7 @@ namespace JPStockPacking.Services.Implement
                 var today = DateTime.Now.Date;
 
                 var orders = await _sPDbContext.Order
-                    .Where(x => x.IsActive && !x.IsSuccess)
+                    .Where(x => x.IsActive)
                     .ToListAsync();
 
                 var orderNotifies = await _sPDbContext.OrderNotify
@@ -41,24 +44,9 @@ namespace JPStockPacking.Services.Implement
                     .GroupBy(l => l.OrderNo)
                     .ToDictionaryAsync(g => g.Key, g => g.ToList());
 
-                var updatedLotNos = await _sPDbContext.LotNotify
-                    .Where(x => x.IsActive && x.IsUpdate)
-                    .Select(x => x.LotNo)
-                    .ToHashSetAsync();
+                var result = new List<CustomOrder>();
 
-                var tablesByLot = await (
-                    from lot in _sPDbContext.Lot
-                    join rec in _sPDbContext.Received on lot.LotNo equals rec.LotNo
-                    join ass in _sPDbContext.Assignment on rec.ReceivedId equals ass.ReceivedId
-                    join at in _sPDbContext.AssignmentTable on ass.AssignmentId equals at.AssignmentId
-                    join wt in _sPDbContext.WorkTable on at.WorkTableId equals wt.Id
-                    where lot.IsActive && rec.IsActive && ass.IsActive && at.IsActive && wt.IsActive
-                    select new { lot.LotNo, TableName = wt.Name }
-                )
-                .GroupBy(x => x.LotNo)
-                .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.TableName).Distinct().ToList());
-
-                var result = orders.Select(order =>
+                foreach (var order in orders)
                 {
                     orderNotifies.TryGetValue(order.OrderNo, out var notify);
                     var relatedLots = lots.TryGetValue(order.OrderNo, out var lotGroup) ? lotGroup : new List<Lot>();
@@ -73,7 +61,61 @@ namespace JPStockPacking.Services.Implement
                     var packDaysRemain = (packDate - today).Days;
                     var exportDaysRemain = (exportDate - today).Days;
 
-                    return new CustomOrder
+                    var customLots = new List<CustomLot>();
+
+                    foreach (var l in relatedLots)
+                    {
+                        var assignedTable = await (
+                            from rec in _sPDbContext.Received
+                            join ass in _sPDbContext.Assignment on rec.ReceivedId equals ass.ReceivedId
+                            join at in _sPDbContext.AssignmentTable on ass.AssignmentId equals at.AssignmentId
+                            join wt in _sPDbContext.WorkTable on at.WorkTableId equals wt.Id
+                            where rec.LotNo == l.LotNo && rec.IsActive && ass.IsActive && at.IsActive && wt.IsActive
+                            select new AssignedWorkTableModel
+                            {
+                                AssignmentId = ass.AssignmentId,
+                                TableName = wt.Name!
+                            }).Distinct().ToListAsync();
+
+                        bool IsLotUpdate = await _sPDbContext.LotNotify.Where(w => w.LotNo == l.LotNo).AnyAsync(a => a.IsActive && a.IsUpdate);
+                        bool HasLostOrRepair = await _sPDbContext.Received.Where(w => w.LotNo == l.LotNo).AnyAsync(r => r.IsSendRepair);
+                        bool IsAllReturned = l.TtQty.GetValueOrDefault() > 0 && l.ReturnedQty.GetValueOrDefault() >= l.TtQty.GetValueOrDefault();
+                        bool IsAllReceived = l.TtQty.GetValueOrDefault() > 0 && l.ReceivedQty.GetValueOrDefault() >= l.TtQty.GetValueOrDefault();
+                        bool IsPacking = l.TtQty.GetValueOrDefault() > 0 && l.AssignedQty.GetValueOrDefault() > 0;
+                        bool IsPacked = l.ReturnedQty >= l.TtQty.GetValueOrDefault();
+
+                        customLots.Add(new CustomLot
+                        {
+                            LotNo = l.LotNo,
+                            OrderNo = l.OrderNo,
+                            ListNo = l.ListNo!,
+                            CustPcode = l.CustPcode!,
+                            TtQty = l.TtQty.GetValueOrDefault(),
+                            Article = l.Article!,
+                            Barcode = l.Barcode!,
+                            TdesArt = l.TdesArt!,
+                            MarkCenter = l.MarkCenter!,
+                            SaleRem = l.SaleRem!,
+                            IsSuccess = l.IsSuccess,
+                            IsActive = l.IsActive,
+                            IsUpdate = IsLotUpdate,
+                            UpdateDate = l.UpdateDate.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                            AssignTo = assignedTable,
+
+                            IsPacking = IsPacking,
+                            IsPacked = IsPacked,
+
+                            ReceivedQty = l.ReceivedQty.GetValueOrDefault(),
+                            ReturnedQty = l.ReturnedQty.GetValueOrDefault(),
+
+                            IsAllReceived = IsAllReceived,
+
+                            HasLostOrRepair = HasLostOrRepair,
+                            IsAllReturned = IsAllReturned
+                        });
+                    }
+
+                    result.Add(new CustomOrder
                     {
                         OrderNo = order.OrderNo,
                         CustCode = order.CustCode ?? "",
@@ -95,44 +137,10 @@ namespace JPStockPacking.Services.Implement
                         IsSuccess = order.IsSuccess,
                         IsReceivedLate = packDaysRemain <= 1 && !order.IsSuccess,
                         IsPackingLate = exportDaysRemain <= 1 && !order.IsSuccess,
+                        CustomLot = customLots
+                    });
+                }
 
-                        CustomLot = [.. relatedLots.Select(l =>
-                        {
-                            var assignedTable = tablesByLot.TryGetValue(l.LotNo, out var ids)? ids: new List<string>();
-
-                            return new CustomLot
-                            {
-                                LotNo = l.LotNo,
-                                OrderNo = l.OrderNo,
-                                ListNo = l.ListNo!,
-                                CustPcode = l.CustPcode!,
-                                TtQty = l.TtQty.GetValueOrDefault(),
-                                Article = l.Article!,
-                                Barcode = l.Barcode!,
-                                TdesArt = l.TdesArt!,
-                                MarkCenter = l.MarkCenter!,
-                                SaleRem = l.SaleRem!,
-                                ReceivedQty = l.ReceivedQty.GetValueOrDefault(),
-                                PackedQty = l.ReturnedQty.GetValueOrDefault(),
-                                IsPacking = l.TtQty.GetValueOrDefault() > 0 && l.AssignedQty.GetValueOrDefault() > 0,
-                                IsPacked = l.ReturnedQty >= l.TtQty.GetValueOrDefault(),
-                                IsSuccess = l.IsSuccess,
-                                IsActive = l.IsActive,
-                                IsUpdate = updatedLotNos.Contains(l.LotNo),
-                                UpdateDate = l.UpdateDate.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-
-                                IsAllReceived = l.TtQty.GetValueOrDefault() > 0 && l.ReceivedQty.GetValueOrDefault() >= l.TtQty.GetValueOrDefault(),
-                                IsAllPacking = l.TtQty.GetValueOrDefault() > 0 && l.ReturnedQty.GetValueOrDefault() >= l.TtQty.GetValueOrDefault(),
-
-                                AssignTo = string.Join(", ", assignedTable)
-                            };
-                        })]
-                    };
-                })
-                .OrderBy(o => o.StartDate)
-                .ToList();
-
-                // 4) Filters
                 if (!string.IsNullOrEmpty(orderNo))
                     result = [.. result.Where(o => o.OrderNo.Contains(orderNo, StringComparison.OrdinalIgnoreCase))];
 
@@ -150,7 +158,6 @@ namespace JPStockPacking.Services.Implement
                         result = [.. result.Where(o => o.StartDate.Date <= toDate.Date)];
                 }
 
-                // 5) Group → Schedule
                 var schedule = new ScheduleListModel();
 
                 if (groupMode == GroupMode.Day)
@@ -240,6 +247,12 @@ namespace JPStockPacking.Services.Implement
 
             var newLots = new List<Lot>();
 
+            var existingOrder = await _sPDbContext.Order.AnyAsync(o => o.OrderNo == orderNo && o.IsActive); 
+            if (existingOrder)
+            {
+                throw new InvalidOperationException("Order นี้มีอยู่ในระบบแล้ว");
+            }
+
             var newOrders = await GetJPOrderAsync(orderNo);
 
             if (newOrders.Count != 0)
@@ -276,6 +289,10 @@ namespace JPStockPacking.Services.Implement
                     });
                 }
             }
+            else
+            {
+                throw new InvalidOperationException("ไม่พบ Order ที่ต้องการนำเข้า");
+            }
 
             using var transaction = _sPDbContext.Database.BeginTransaction();
             try
@@ -296,118 +313,6 @@ namespace JPStockPacking.Services.Implement
             }
 
             await RecalculateScheduleAsync();
-        }
-
-        public async Task GetUpdateLotAsync()
-        {
-            var newReceiveds = await GetJPReceivedAsync();
-
-            if (newReceiveds.Count == 0) return;
-
-            var lotNos = newReceiveds.Select(x => x.LotNo).Distinct().ToList();
-
-            using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
-            try
-            {
-                _sPDbContext.Received.AddRange(newReceiveds);
-
-                var existingLotNotifies = await _sPDbContext.LotNotify
-                    .Where(x => lotNos.Contains(x.LotNo))
-                    .ToListAsync();
-
-                var existingOrderNotifies = await (from a in _sPDbContext.OrderNotify
-                                                   join b in _sPDbContext.Lot
-                                                   on a.OrderNo equals b.OrderNo
-                                                   where lotNos.Contains(b.LotNo)
-                                                   select a).ToListAsync();
-
-                foreach (var lotNotify in existingLotNotifies)
-                {
-                    lotNotify.IsUpdate = true;
-                    lotNotify.UpdateDate = DateTime.Now;
-                }
-
-                foreach (var orderNotify in existingOrderNotifies)
-                {
-                    orderNotify.IsUpdate = true;
-                    orderNotify.UpdateDate = DateTime.Now;
-                }
-
-                await _sPDbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
-
-        public async Task UpdateReceivedItemsAsync(string lotNo, int[] receivedIDs)
-        {
-            using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
-            try
-            {
-                decimal totalReceivedQty = 0;
-
-                var Lot = await _sPDbContext.Lot.FirstOrDefaultAsync(o => o.LotNo == lotNo);
-                if (Lot != null)
-                {
-                    foreach (var item in receivedIDs)
-                    {
-                        var receive = await _sPDbContext.Received.FirstOrDefaultAsync(o => o.ReceivedId == item && o.LotNo == lotNo && !o.IsReceived);
-
-                        totalReceivedQty += receive?.TtQty ?? 0;
-
-                        if (receive != null)
-                        {
-                            receive.IsReceived = true;
-                            receive.UpdateDate = DateTime.Now;
-
-                            await _sPDbContext.SaveChangesAsync();
-                        }
-                    }
-
-                    if (totalReceivedQty <= 0) return;
-
-                    Lot.ReceivedQty = totalReceivedQty;
-                    Lot.UpdateDate = DateTime.Now;
-
-                    var lotNotify = await _sPDbContext.LotNotify.FirstOrDefaultAsync(x => x.LotNo == lotNo);
-                    if (lotNotify != null)
-                    {
-                        lotNotify.IsUpdate = false;
-                        lotNotify.UpdateDate = DateTime.Now;
-                    }
-
-                    var lstLotNotic = await (from a in _sPDbContext.Order
-                                             join b in _sPDbContext.Lot on a.OrderNo equals b.OrderNo into abGroup
-                                             from b in abGroup.DefaultIfEmpty()
-                                             join c in _sPDbContext.LotNotify on b.LotNo equals c.LotNo into bcGroup
-                                             from c in bcGroup.DefaultIfEmpty()
-                                             where a.OrderNo == Lot.OrderNo
-                                             select c).ToListAsync();
-
-                    var hasIsUpdate = lstLotNotic.Any(x => x.IsUpdate == true);
-                    if (!hasIsUpdate)
-                    {
-                        var orderNotify = await _sPDbContext.OrderNotify.FirstOrDefaultAsync(x => x.OrderNo == Lot.OrderNo);
-                        if (orderNotify != null)
-                        {
-                            orderNotify.IsUpdate = false;
-                            orderNotify.UpdateDate = DateTime.Now;
-                        }
-                    }
-                }
-
-                await _sPDbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
         }
 
         public async Task UpdateAllReceivedItemsAsync(string receiveNo)
@@ -434,8 +339,7 @@ namespace JPStockPacking.Services.Implement
                     }
                 ).ToListAsync();
 
-                if (allReceived.Count == 0)
-                    return;
+                if (allReceived.Count == 0) throw new InvalidOperationException("ไม่พบใบรับ"); ;
 
                 var validOrderNos = await _sPDbContext.Order
                     .Select(x => x.OrderNo)
@@ -445,8 +349,7 @@ namespace JPStockPacking.Services.Implement
                     .Where(x => validOrderNos.Contains(x.OrderNo))
                     .ToList();
 
-                if (filtered.Count == 0)
-                    return;
+                if (filtered.Count == 0) throw new InvalidOperationException("ไม่มีออเดอร์ที่สามารถนำเข้าได้");
 
                 var existingKeys = await _sPDbContext.Received
                     .Where(x => x.ReceiveNo == receiveNo)
@@ -464,7 +367,7 @@ namespace JPStockPacking.Services.Implement
                         Barcode = x.Barcode,
                         BillNumber = x.Billnumber,
                         Mdate = x.Mdate,
-                        IsReceived = false,
+                        IsReceived = true,
                         IsActive = true,
                         CreateDate = DateTime.Now,
                         UpdateDate = DateTime.Now
@@ -472,10 +375,7 @@ namespace JPStockPacking.Services.Implement
                     .ToList();
 
                 if (toInsert.Count == 0)
-                {
-                    await transaction.CommitAsync();
-                    return;
-                }
+                    throw new InvalidOperationException("ไม่มีรายการที่สามารถนำเข้าได้");
 
                 await _sPDbContext.Received.AddRangeAsync(toInsert);
 
@@ -693,6 +593,8 @@ namespace JPStockPacking.Services.Implement
                     ReturnTtQty = returnQty,
                     LostQty = lostQty,
                     BreakQty = breakQty,
+                    HasRepair = breakQty != 0,
+                    HasLost = lostQty != 0,
                     IsSuccess = false,
                     IsActive = true,
                     CreateDate = DateTime.Now,
@@ -723,11 +625,13 @@ namespace JPStockPacking.Services.Implement
                             if (repairQty < 0) repairQty = 0;
 
                             decimal repairWg = (ttQty > 0) ? repairQty * (ttWg / ttQty) : 0;
-
+                            
                             await UpdateJobBillSendStockAndSpdreceive(item.Received.BillNumber, repairQty, Math.Round(repairWg, 2));
 
+                            item.Received.TtQty = repairQty;
                             item.Received.IsSendRepair = true;
-                            item.Received.RepairTtQty = ttQty - repairQty;
+
+                            lot.ReceivedQty -= breakQty;
 
                             breakQty -= ttQty;
                         }
@@ -789,7 +693,7 @@ namespace JPStockPacking.Services.Implement
                     jobBillSendStock.Ttwg = TtWg;
                 }
 
-                //await _jPDbContext.SaveChangesAsync();
+                await _jPDbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch (Exception)
@@ -799,7 +703,7 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task DefineToPackAsync(string orderNo, List<LotToPackDto> lots)
+        public async Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots)
         {
             await using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
 
@@ -843,6 +747,16 @@ namespace JPStockPacking.Services.Implement
                             existing.IsActive = false;
                             existing.UpdateDate = now;
 
+                            var oldSizes = await _sPDbContext.SendQtyToPackDetailSize
+                                .Where(s => s.SendQtyToPackDetailId == existing.SendQtyToPackDetailId && s.IsActive)
+                                .ToListAsync();
+
+                            foreach (var s in oldSizes)
+                            {
+                                s.IsActive = false;
+                                s.UpdateDate = now;
+                            }
+
                             var newDetail = new SendQtyToPackDetail
                             {
                                 SendQtyToPackId = header.SendQtyToPackId,
@@ -853,6 +767,21 @@ namespace JPStockPacking.Services.Implement
                                 UpdateDate = now
                             };
                             _sPDbContext.SendQtyToPackDetail.Add(newDetail);
+
+                            foreach (var size in lot.Sizes)
+                            {
+                                var newSizeDetail = new SendQtyToPackDetailSize
+                                {
+                                    SendQtyToPackDetailId = newDetail.SendQtyToPackDetailId,
+                                    SizeIndex = size.SizeIndex,
+                                    TtQty = size.TtQty,
+                                    IsActive = true,
+                                    CreateDate = now,
+                                    UpdateDate = now
+                                };
+
+                                _sPDbContext.SendQtyToPackDetailSize.Add(newSizeDetail);
+                            }
 
                             hasChanges = true;
                         }
@@ -869,6 +798,22 @@ namespace JPStockPacking.Services.Implement
                             UpdateDate = now
                         };
                         _sPDbContext.SendQtyToPackDetail.Add(newDetail);
+                        await _sPDbContext.SaveChangesAsync();
+
+                        foreach (var size in lot.Sizes)
+                        {
+                            var newSizeDetail = new SendQtyToPackDetailSize
+                            {
+                                SendQtyToPackDetailId = newDetail.SendQtyToPackDetailId,
+                                SizeIndex = size.SizeIndex,
+                                TtQty = size.TtQty,
+                                IsActive = true,
+                                CreateDate = now,
+                                UpdateDate = now
+                            };
+
+                            _sPDbContext.SendQtyToPackDetailSize.Add(newSizeDetail);
+                        }
 
                         hasChanges = true;
                     }
@@ -888,8 +833,6 @@ namespace JPStockPacking.Services.Implement
                 throw;
             }
         }
-
-
 
         public async Task<List<Order>> GetJPOrderAsync(string orderNo)
         {
@@ -986,89 +929,6 @@ namespace JPStockPacking.Services.Implement
             return [.. existingLots];
         }
 
-        public async Task<List<Received>> GetJPReceivedAsync()
-        {
-            var allReceived = await (
-                from a in _jPDbContext.Spdreceive
-                join c in _jPDbContext.OrdLotno on a.Lotno equals c.LotNo
-                join d in _jPDbContext.OrdHorder on c.OrderNo equals d.OrderNo
-                where d.FactoryDate.HasValue && d.FactoryDate.Value.Year == DateTime.Now.Year
-                      && a.Mdate >= DateTime.Now.AddMonths(-3)
-                select new Received
-                {
-                    ReceiveNo = a.ReceiveNo,
-                    LotNo = a.Lotno,
-                    TtQty = a.Ttqty,
-                    TtWg = (double)a.Ttwg,
-                    Barcode = a.Barcode,
-                    BillNumber = a.Billnumber,
-                    Mdate = a.Mdate,
-                    IsReceived = false,
-                    IsActive = true,
-                    CreateDate = DateTime.Now,
-                    UpdateDate = DateTime.Now
-                }
-            ).ToListAsync();
-
-            var incompleteLotNos = await _sPDbContext.Lot
-                .Where(x => !x.IsSuccess && x.ReceivedQty < x.TtQty)
-                .Select(x => x.LotNo)
-                .ToHashSetAsync();
-
-            var existingReceiveNos = await _sPDbContext.Received
-                .Where(x => incompleteLotNos.Contains(x.LotNo))
-                .Select(x => x.ReceiveNo)
-                .ToHashSetAsync();
-
-            var receivedToInsert = allReceived
-                .Where(x => !existingReceiveNos.Contains(x.ReceiveNo) && incompleteLotNos.Contains(x.LotNo))
-                .ToList();
-
-            return [.. receivedToInsert];
-        }
-
-        public async Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo)
-        {
-            var allReceived = await (
-                from a in _jPDbContext.Spdreceive
-                join c in _jPDbContext.OrdLotno on a.Lotno equals c.LotNo
-                join d in _jPDbContext.OrdHorder on c.OrderNo equals d.OrderNo
-                where a.ReceiveNo == receiveNo
-                select new
-                {
-                    a.ReceiveNo,
-                    a.Lotno,
-                    a.Ttqty,
-                    a.Ttwg,
-                    a.Barcode,
-                    a.Article,
-                    d.OrderNo,
-                    c.ListNo
-                }
-            ).ToListAsync();
-
-            var existingKeys = await _sPDbContext.Received
-                .Where(x => x.ReceiveNo == receiveNo)
-                .Select(x => new { x.ReceiveNo, x.LotNo, x.Barcode })
-                .ToHashSetAsync();
-
-            var result = allReceived.Select(x => new ReceivedListModel
-            {
-                ReceiveNo = x.ReceiveNo,
-                LotNo = x.Lotno,
-                TtQty = x.Ttqty,
-                TtWg = (double)x.Ttwg,
-                Barcode = x.Barcode,
-                Article = x.Article,
-                OrderNo = x.OrderNo,
-                ListNo = x.ListNo,
-                IsReceived = existingKeys.Contains(new { x.ReceiveNo, LotNo = x.Lotno, x.Barcode })
-            }).ToList();
-
-            return result;
-        }
-
-
         public async Task<List<ReceivedListModel>> GetReceivedAsync(string lotNo)
         {
             var result = await (from a in _sPDbContext.Received
@@ -1128,6 +988,20 @@ namespace JPStockPacking.Services.Implement
             return [.. tables];
         }
 
+        public async Task<List<BreakDescription>> GetBreakDescriptionsAsync()
+        {
+            var des = await _sPDbContext.BreakDescription
+                .Where(x => x.IsActive)
+                .Select(x => new BreakDescription
+                {
+                    BreakDescriptionId = x.BreakDescriptionId,
+                    Name = x.Name,
+                })
+                .ToListAsync();
+
+            return [.. des];
+        }
+
         public async Task<List<TableMemberModel>> GetTableMemberAsync(int tableID)
         {
             var employees = await _pISService.GetEmployeeAsync();
@@ -1171,12 +1045,6 @@ namespace JPStockPacking.Services.Implement
             return result;
         }
 
-        public class TableModel
-        {
-            public int Id { get; set; } = 0;
-            public string Name { get; set; } = string.Empty;
-        }
-
         public async Task<List<ReceivedListModel>> GetRecievedToReturnAsync(string LotNo, int TableID)
         {
             var result = await (from wt in _sPDbContext.WorkTable
@@ -1207,14 +1075,22 @@ namespace JPStockPacking.Services.Implement
             return result;
         }
 
-        public async Task<List<SendToPackModel>> GetOrderToSendQtyAsync(string orderNo)
+        public async Task<SendToPackModel> GetOrderToSendQtyAsync(string orderNo)
         {
-            var baseQuery =
+            var baseData = await (
                 from a in _jPDbContext.OrdHorder
                 join b in _jPDbContext.OrdLotno on a.OrderNo equals b.OrderNo into gj
                 from b in gj.DefaultIfEmpty()
                 join c in _jPDbContext.CpriceSale on b.Barcode equals c.Barcode into gj2
                 from c in gj2.DefaultIfEmpty()
+                join e in _jPDbContext.JobCost
+                    on new { b.LotNo, b.OrderNo } equals new { LotNo = e.Lotno, OrderNo = e.Orderno }
+                    into gj4
+                from e in gj4.DefaultIfEmpty()
+                join f in _jPDbContext.CfnCode on c.FnCode equals f.FnCode into gj5
+                from f in gj5.DefaultIfEmpty()
+                join g in _jPDbContext.Cprofile on c.Article equals g.Article into gj6
+                from g in gj6.DefaultIfEmpty()
                 join d in
                     (
                         from spd in _jPDbContext.Spdreceive
@@ -1224,7 +1100,7 @@ namespace JPStockPacking.Services.Implement
                         select new
                         {
                             Lotno = g.Key,
-                            TTQty = g.Sum(x => x.Ttqty)
+                            TTQty = g.Sum(x => (decimal?)x.Ttqty)
                         }
                     )
                     on b.LotNo equals d.Lotno into gj3
@@ -1233,12 +1109,29 @@ namespace JPStockPacking.Services.Implement
                 orderby b.LotNo
                 select new
                 {
+                    a.OrderNo,
+                    a.CustCode,
+                    a.Grade,
+                    a.Scountry,
+                    a.Special,
                     b.LotNo,
+                    b.ListNo,
+                    b.Barcode,
+                    Article = c.Article ?? string.Empty,
+                    g.Tunit,
+                    g.TdesArt,
+                    f.EdesFn,
+                    f.TdesFn,
+                    c.Picture,
                     b.TtQty,
-                    SendPack_Qty = d.TTQty
-                };
+                    QtySi = e != null ? e.QtySi : 0,
+                    SendPack_Qty = d != null ? (d.TTQty ?? 0) : 0
+                }).ToListAsync();
 
-            var baseData = await baseQuery.ToListAsync();
+            if (baseData == null || baseData.Count == 0)
+            {
+                throw new InvalidOperationException($"Order '{orderNo}' not found or has no lots.");
+            }
 
             var headerId = await _sPDbContext.SendQtyToPack
                 .Where(x => x.OrderNo == orderNo && x.IsActive)
@@ -1259,28 +1152,182 @@ namespace JPStockPacking.Services.Implement
                     .ToDictionary(g => g.Key, g => g.Last().TtQty);
             }
 
-            var result = baseData.Select(x =>
+            var lotNos = baseData.Select(x => x.LotNo).Where(x => x != null).Distinct().ToList();
+            var sizeMap = await GetSizeByLotBulkAsync(orderNo, lotNos);
+
+            var lots = new List<SendToPackLots>();
+
+            foreach (var x in baseData)
             {
-                var lotNo = x.LotNo ?? string.Empty;
-                var ttQty = (decimal)x.TtQty!;
-                var sendTtQty = x.SendPack_Qty;
+                detailDict.TryGetValue(x.LotNo ?? "", out var planQty);
+                sizeMap.TryGetValue(x.LotNo ?? "", out var sizes);
 
-                detailDict.TryGetValue(lotNo, out var planQty);
-
-                return new SendToPackModel
+                var lot = new SendToPackLots
                 {
-                    LotNo = lotNo,
-                    TtQty = ttQty,
-                    SendTtQty = sendTtQty,
+                    LotNo = x.LotNo ?? string.Empty,
+                    ListNo = x.ListNo ?? string.Empty,
+                    Barcode = x.Barcode ?? string.Empty,
+                    Article = x.Article ?? string.Empty,
+                    Tunit = x.Tunit ?? string.Empty,
+                    EdesFn = x.EdesFn ?? string.Empty,
+                    TdesFn = x.TdesFn ?? string.Empty,
+                    TdesArt = x.TdesArt ?? string.Empty,
+                    Picture = x.Picture!.Split("\\", StringSplitOptions.None).Last() ?? string.Empty,
+                    ImagePath = x.Picture ?? string.Empty,
+                    TtQty = (decimal)x.TtQty!,
+                    QtySi = x.QtySi,
+                    SendTtQty = x.SendPack_Qty,
                     TtQtyToPack = planQty,
-                    IsDefined = planQty > 0
+                    IsDefined = planQty > 0,
+                    Size = sizes ?? []
                 };
-            })
-            .ToList();
+
+                lots.Add(lot);
+            }
+
+            var result = new SendToPackModel
+            {
+                OrderNo = orderNo,
+                CustCode = baseData.FirstOrDefault()?.CustCode ?? string.Empty,
+                Grade = baseData.FirstOrDefault()?.Grade ?? string.Empty,
+                SCountry = baseData.FirstOrDefault()?.Scountry ?? string.Empty,
+                Special = baseData.FirstOrDefault()?.Special ?? string.Empty,
+                Lots = lots
+            };
 
             return result;
         }
 
+        private async Task<Dictionary<string, List<Size>>> GetSizeByLotBulkAsync(string orderNo, List<string> lotNos)
+        {
+            if (lotNos == null || lotNos.Count == 0) return [];
+
+            var ordLots = await _jPDbContext.OrdLotno.Where(l => l.OrderNo == orderNo).ToListAsync();
+
+            var filteredLots = ordLots
+                .Where(l => l.OrderNo == orderNo && lotNos.Contains(l.LotNo!))
+                .Select(l => new
+                {
+                    l.LotNo,
+                    l.S1,
+                    l.S2,
+                    l.S3,
+                    l.S4,
+                    l.S5,
+                    l.S6,
+                    l.S7,
+                    l.S8,
+                    l.S9,
+                    l.S10,
+                    l.S11,
+                    l.S12,
+                    l.Q1,
+                    l.Q2,
+                    l.Q3,
+                    l.Q4,
+                    l.Q5,
+                    l.Q6,
+                    l.Q7,
+                    l.Q8,
+                    l.Q9,
+                    l.Q10,
+                    l.Q11,
+                    l.Q12,
+                    l.Cs1,
+                    l.Cs2,
+                    l.Cs3,
+                    l.Cs4,
+                    l.Cs5,
+                    l.Cs6,
+                    l.Cs7,
+                    l.Cs8,
+                    l.Cs9,
+                    l.Cs10,
+                    l.Cs11,
+                    l.Cs12
+                }).ToList();
+
+            var savedSizes = await (
+                from header in _sPDbContext.SendQtyToPack
+                join detail in _sPDbContext.SendQtyToPackDetail on header.SendQtyToPackId equals detail.SendQtyToPackId
+                join size in _sPDbContext.SendQtyToPackDetailSize on detail.SendQtyToPackDetailId equals size.SendQtyToPackDetailId
+                where header.OrderNo == orderNo && header.IsActive && detail.IsActive && size.IsActive
+                select new
+                {
+                    detail.LotNo,
+                    SizeIndex = EF.Property<int>(size, "SizeIndex"),
+                    Qty = size.TtQty ?? 0
+                }
+            ).ToListAsync();
+
+            var savedSizeDict = savedSizes
+                .GroupBy(x => x.LotNo)
+                .ToDictionary(g => g.Key, g => g.ToDictionary(s => s.SizeIndex, s => s.Qty));
+
+            var result = new Dictionary<string, List<Size>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var lot in ordLots)
+            {
+                var sizes = new List<Size>();
+                var type = lot.GetType();
+
+                var allValues = type.GetProperties()
+                    .Where(p => p.Name.StartsWith("S") || p.Name.StartsWith("Q") || p.Name.StartsWith("Cs"))
+                    .Select(p => p.GetValue(lot));
+
+                var hasAny = allValues.Any(v =>
+                    v is string s && !string.IsNullOrWhiteSpace(s) ||
+                    v is decimal d && d != 0 ||
+                    v is int i && i != 0
+                );
+
+                if (!hasAny)
+                {
+                    result[lot.LotNo!] = [];
+                    continue;
+                }
+
+                for (int i = 1; i <= 12; i++)
+                {
+                    string? s = (string?)type.GetProperty($"S{i}")?.GetValue(lot);
+                    string? cs = (string?)type.GetProperty($"Cs{i}")?.GetValue(lot);
+                    decimal q = Convert.ToDecimal(type.GetProperty($"Q{i}")?.GetValue(lot) ?? 0);
+
+                    decimal qtyToPack = 0;
+                    if (savedSizeDict.TryGetValue(lot.LotNo!, out var lotSizes))
+                    {
+                        lotSizes.TryGetValue(i, out qtyToPack);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(s) || !string.IsNullOrWhiteSpace(cs) || q > 0)
+                    {
+                        sizes.Add(new Size
+                        {
+                            S = s ?? "",
+                            CS = cs ?? "",
+                            Q = q,
+                            TtQtyToPack = qtyToPack
+                        });
+                    }
+                }
+
+                result[lot.LotNo!] = sizes;
+            }
+
+            return result;
+        }
+
+        public async Task<Userid> GetJPUser(string username, string password)
+        {
+            var user = await _jPDbContext.Userid.FirstOrDefaultAsync(u => u.Userid1 == username && u.Password == password);
+            return user == null ? throw new UnauthorizedAccessException("Invalid username or password.") : user!;
+        }
+
+        public class TableModel
+        {
+            public int Id { get; set; } = 0;
+            public string Name { get; set; } = string.Empty;
+        }
 
         public async Task RecalculateScheduleAsync()
         {

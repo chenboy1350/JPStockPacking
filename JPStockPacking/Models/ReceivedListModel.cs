@@ -14,6 +14,8 @@
         public string CustPCode { get; set; } = string.Empty;
         public int AssignmentID { get; set; } = 0;
         public bool IsReceived { get; set; } = false;
+        public bool HasRevButNotAll { get; set; } = false;
+        public string Mdate { get; set; } = string.Empty;
 
     }
 }

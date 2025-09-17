@@ -12,6 +12,8 @@ public partial class JPDbContext : DbContext
     {
     }
 
+    public virtual DbSet<CfnCode> CfnCode { get; set; }
+
     public virtual DbSet<CpriceSale> CpriceSale { get; set; }
 
     public virtual DbSet<Cprofile> Cprofile { get; set; }
@@ -34,8 +36,29 @@ public partial class JPDbContext : DbContext
 
     public virtual DbSet<Sphreceive> Sphreceive { get; set; }
 
+    public virtual DbSet<Userid> Userid { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CfnCode>(entity =>
+        {
+            entity.HasKey(e => e.FnCode).HasFillFactor(90);
+
+            entity.ToTable("CFnCode", "dbo", tb =>
+                {
+                    tb.HasTrigger("trg_CFnCode_Insert");
+                    tb.HasTrigger("trg_CFnCode_Update");
+                });
+
+            entity.HasIndex(e => e.FnCode, "IX_CFnCode")
+                .IsUnique()
+                .HasFillFactor(90);
+
+            entity.Property(e => e.Case1).HasComment("<10");
+            entity.Property(e => e.Case2).HasComment(">=10 and <=20");
+            entity.Property(e => e.Case3).HasComment(">20");
+        });
+
         modelBuilder.Entity<CpriceSale>(entity =>
         {
             entity.HasKey(e => e.Barcode)
@@ -437,6 +460,21 @@ public partial class JPDbContext : DbContext
             entity.Property(e => e.Remark).HasDefaultValue("");
             entity.Property(e => e.Upday).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Username).HasDefaultValue("");
+        });
+
+        modelBuilder.Entity<Userid>(entity =>
+        {
+            entity.HasKey(e => e.Num).IsClustered(false);
+
+            entity.HasIndex(e => new { e.Userid1, e.Password, e.Useridgroup }, "IX_Userid")
+                .IsUnique()
+                .IsClustered()
+                .HasFillFactor(90);
+
+            entity.Property(e => e.Description).HasDefaultValue("");
+            entity.Property(e => e.Mdate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Password).HasDefaultValue("");
+            entity.Property(e => e.Useridgroup).HasDefaultValue("");
         });
 
         OnModelCreatingPartial(modelBuilder);

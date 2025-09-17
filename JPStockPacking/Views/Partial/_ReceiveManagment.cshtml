@@ -1,0 +1,146 @@
+﻿@model List<JPStockPacking.Models.ReceivedListModel>
+@{
+    
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="accordion" id="accordionFilter">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFilter">
+                            <button class="accordion-button collapsed show" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
+                                <strong>ค้นหา</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>เลขใบส่ง</label>
+                                            <input type="text" id="txtFindReceivedNo" class="form-control" placeholder="กรอก ReceiveNo">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="ClearFindBy()">Clear</button>
+                                <button class="btn btn-primary" onclick="findReceive()">ค้นหา</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="card d-flex">
+            <div class="card-header justify-content-between align-content-center">
+                <div class="justify-content-center">
+                    <h3 class="card-title">รายการใบส่ง</h3>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0" style="height:87vh">
+                <table id="tbl-main" class="table table-head-fixed text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="text-start">#</th>
+                            <th class="text-start">เลขที่ใบส่ง</th>
+                            <th class="text-start">วันที่ส่ง</th>
+                            <th class="text-start">สถานะ</th>
+                            <th class="text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-receive-list-body">
+                        @foreach (var item in Model)
+                        {
+                            <tr data-receive-no="@item.ReceiveNo">
+                                <td>#</td>
+                                <td class="col-receiveno"><strong>@item.ReceiveNo</strong></td>
+                                <td class="col-mdate">@item.Mdate</td>
+
+                                @if (item.IsReceived && !item.HasRevButNotAll)
+                                {
+                                    <td class="col-status">
+                                        <span class="badge badge-success">รับเข้าครบแล้ว</span>
+                                    </td>
+                                    <td class="col-action"></td>
+                                }
+                                else if (item.HasRevButNotAll && !item.IsReceived)
+                                {
+                                    <td class="col-status">
+                                        <span class="badge badge-warning">รับเข้ายังไม่ครบ</span>
+                                    </td>
+                                    <td class="col-action">
+                                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
+                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                        </button>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td class="col-status">
+                                        <span class="badge badge-secondary">รอรับเข้า</span>
+                                    </td>
+                                    <td class="col-action">
+                                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
+                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                        </button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-update">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ :</h4>
+                <input type="hidden" id="hddReceiveNo" value="" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-head-fixed text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>เลขที่ใบรับ</th>
+                                <th>หมายเลขล็อต</th>
+                                <th>เลขที่คำสั่งซื้อ</th>
+                                <th>ลำดับที่</th>
+                                <th>เลขที่งาน</th>
+                                <th>รหัสสินค้า</th>
+                                <th>จำนวน</th>
+                                <th>น้ำหนักรวม(g)</th>
+                                <th class="text-center">
+                                    <div class="icheck-primary d-inline">
+                                        <input type="checkbox" id="chkSelectAll" checked>
+                                        <label for="chkSelectAll">เลือก</label>
+                                    </div>
+                                </th>
+
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-received-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-warning" id="btnUpdateLot">รับเข้า</button>
+                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="จัดการใบรับ"></div>

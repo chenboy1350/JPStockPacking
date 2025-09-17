@@ -798,3 +798,29 @@ body {
     background-color: #eb9c6d !important;
 }
 /*custom*/
+
+#btnTop {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    display: none;
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    z-index: 1030;
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
+    padding: 0;
+    line-height: 70px;
+    text-align: center;
+    border-radius: 50%;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+    #btnTop:hover {
+        background-color: #0b5ed7;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    }
+

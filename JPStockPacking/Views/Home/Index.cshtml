@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    ViewData["PageTitle"] = "Home";
+    ViewData["PageTitle"] = "หน้าแรก";
 }
 
 <div class="wrapper">
@@ -34,7 +34,7 @@
         </ul>
     </nav>
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="#" class="brand-link">
+        <a href="@Url.Action("Index", "Home")" class="brand-link">
             <img src="~/img/logo.png" alt="JP" class="brand-image img-circle elevation-3" style="background-color: #FFFFFF; width: 45px; height: 45px; border-radius: 50%;">
             <span class="brand-text font-weight-light">JP StockPacking</span>
         </a>
@@ -43,12 +43,22 @@
                 <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
                     @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
                     {
-                        <li class="nav-item">
+@*                         <li class="nav-item">
                             <a href="#" class="nav-link" data-action="@Url.Action("DashBoard", "Home")">
                                 <i class="nav-icon fas fa-receipt"></i>
                                 <p>ภาพรวมของแผนก</p>
                             </a>
-                        </li>                        
+                        </li> *@
+                    }
+
+                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("Receive", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>จัดการใบรับ</p>
+                            </a>
+                        </li>
                     }
 
                     @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
@@ -63,22 +73,12 @@
 
                     @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
                     {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link data-action=" "@Url.Action("RecievedManagement", "Home")">
-                                <i class="nav-icon fas fa-receipt"></i>
-                                <p>ใบส่งสินค้า</p>
-                            </a>
-                        </li>                        
-                    }
-
-                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
-                    {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
+@*                         <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("Export", "Home")">
                                 <i class="nav-icon fas fa-receipt"></i>
                                 <p>จัดการการส่งออก</p>
                             </a>
-                        </li>                        
+                        </li> *@
                     }
 
                     @if (ViewBag.Username == "test1" || ViewBag.Username == "test2" || ViewBag.Username == "admin")
@@ -131,10 +131,17 @@
         window.urlUpdateLotByRevNoItems = '@Url.Action("UpdateLotByRevNoItems", "Home")';
         window.urlGetOrderToSendQty = '@Url.Action("GetOrderToSendQty", "Home")';
         window.urlDefineToPack = '@Url.Action("DefineToPack", "Home")';
+        window.urlGetTableMemberByAssignedID = '@Url.Action("GetTableMemberByAssignedID", "Home")';
+        window.urlGetImage = '@Url.Action("GetImage", "Home")';
+        window.urlSendQtyToPackReport = '@Url.Action("SendQtyToPackReport", "Home")';
+        window.urlGetReceiveRow = '@Url.Action("GetReceiveRow", "Home")';
+        window.urlCheckUser = '@Url.Action("CheckUser", "Home")';
+        window.urlGetReceiveList = '@Url.Action("GetReceiveList", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
     <script src="~/js/CheckQtyToPack.js" asp-append-version="true"></script>
+    <script src="~/js/ReceiveManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

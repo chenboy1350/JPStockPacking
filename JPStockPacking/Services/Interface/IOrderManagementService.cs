@@ -1,4 +1,5 @@
-﻿using JPStockPacking.Data.SPDbContext.Entities;
+﻿using JPStockPacking.Data.JPDbContext.Entities;
+using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using static JPStockPacking.Services.Helper.Enum;
 using static JPStockPacking.Services.Implement.OrderManagementService;
@@ -9,8 +10,6 @@ namespace JPStockPacking.Services.Interface
     public interface IOrderManagementService
     {
         Task ImportOrderAsync(string orderNo);
-        Task GetUpdateLotAsync();
-        Task UpdateReceivedItemsAsync(string lotNo, int[] receivedIDs);
         Task<List<ReceivedListModel>> GetReceivedAsync(string lotNo);
         Task<List<ReceivedListModel>> GetReceivedToAssignAsync(string lotNo);
         Task<CustomLot?> GetCustomLotAsync(string lotNo);
@@ -22,9 +21,10 @@ namespace JPStockPacking.Services.Interface
         Task<List<ReceivedListModel>> GetRecievedToReturnAsync(string LotNo, int TableID);
         Task ReturnReceivedAsync(string LotNo, int[] assignmentIDs, decimal lostQty, decimal breakQty, decimal returnQty);
         Task LostAndRepairAsync(string lotNo, int[] assignmentIDs, decimal lostQty, decimal breakQty, decimal returnQty);
-        Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo);
         Task UpdateAllReceivedItemsAsync(string receiveNo);
-        Task<List<SendToPackModel>> GetOrderToSendQtyAsync(string orderNo);
-        Task DefineToPackAsync(string orderNo, List<LotToPackDto> lots);
+        Task<SendToPackModel> GetOrderToSendQtyAsync(string orderNo);
+        Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots);
+        Task<Userid> GetJPUser(string username, string password);
+        Task<List<BreakDescription>> GetBreakDescriptionsAsync();
     }
 }

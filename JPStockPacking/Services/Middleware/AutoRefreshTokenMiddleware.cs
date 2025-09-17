@@ -9,6 +9,7 @@ namespace JPStockPacking.Services.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            // Step 1: ถ้า user login อยู่ ให้เช็คว่า AuthTime หมดอายุหรือยัง
             if (context.User.Identity?.IsAuthenticated == true)
             {
                 var authTime = context.User.FindFirst("AuthTime")?.Value;
@@ -30,7 +31,28 @@ namespace JPStockPacking.Services.Middleware
                 }
             }
 
+            // Step 2: ดัก response จาก pipeline
+            var originalBody = context.Response.Body;
+            using var newBody = new MemoryStream();
+            context.Response.Body = newBody;
+
             await _next(context);
+
+            // ถ้า API ตอบกลับ 401 → บังคับ logout + redirect ไป login
+            if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+
+                await authService.LogoutAsync();
+                context.Response.Redirect("/login");
+                return;
+            }
+
+            // Copy response body กลับไป
+            newBody.Seek(0, SeekOrigin.Begin);
+            await newBody.CopyToAsync(originalBody);
+            context.Response.Body = originalBody;
         }
     }
 }

@@ -18,6 +18,8 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<AssignmentTable> AssignmentTable { get; set; }
 
+    public virtual DbSet<BreakDescription> BreakDescription { get; set; }
+
     public virtual DbSet<Lot> Lot { get; set; }
 
     public virtual DbSet<LotNotify> LotNotify { get; set; }
@@ -35,6 +37,8 @@ public partial class SPDbContext : DbContext
     public virtual DbSet<SendQtyToPack> SendQtyToPack { get; set; }
 
     public virtual DbSet<SendQtyToPackDetail> SendQtyToPackDetail { get; set; }
+
+    public virtual DbSet<SendQtyToPackDetailSize> SendQtyToPackDetailSize { get; set; }
 
     public virtual DbSet<WorkTable> WorkTable { get; set; }
 

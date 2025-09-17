@@ -25,6 +25,9 @@ public partial class Returned
 
     public bool HasRepair { get; set; }
 
+    [Column("BreakDescriptionID")]
+    public int? BreakDescriptionId { get; set; }
+
     public bool IsSuccess { get; set; }
 
     public bool IsActive { get; set; }

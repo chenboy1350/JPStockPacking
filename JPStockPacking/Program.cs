@@ -1,5 +1,6 @@
 using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.SPDbContext;
+using JPStockPacking.Models;
 using JPStockPacking.Services.Implement;
 using JPStockPacking.Services.Interface;
 using JPStockPacking.Services.Middleware;
@@ -22,6 +23,8 @@ builder.Services.AddScoped<IPISService, PISService>();
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 builder.Services.AddScoped<IProductionPlanningService, ProductionPlanningService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReceiveManagementService, ReceiveManagementService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

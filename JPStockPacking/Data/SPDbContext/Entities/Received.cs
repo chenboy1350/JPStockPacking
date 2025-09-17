@@ -11,6 +11,8 @@ public partial class Received
     [Key]
     public int ReceivedId { get; set; }
 
+    public int ReceiveId { get; set; }
+
     [StringLength(50)]
     [Unicode(false)]
     public string ReceiveNo { get; set; } = null!;

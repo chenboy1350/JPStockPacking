@@ -12,28 +12,27 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingFilter">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
-                                <strong>Find By</strong>
+                                <strong>ตัวกรอง ค้นหา</strong>
                             </button>
                         </h2>
                         <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
                             <div class="accordion-body">
-                                <div class="row">
+@*                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>OrderNo</label>
-                                            <input type="text" id="txtImportOrderNo" class="form-control">
+                                            <label>เลขคำสั่งซื้อ</label>
+                                            <input type="text" id="txtImportOrderNo" class="form-control" placeholder="กรอก OrderNo ที่จะนำเข้า">
                                             <button class="btn btn-primary mt-2" id="btnImportOrder">นำเข้าออเดอร์</button>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>ReceivedNo</label>
-                                            <input type="text" id="txtImportReceivedNo" class="form-control">
-                                            <button class="btn btn-primary mt-2" id="btnImportReceivedNo">นำเข้าใบรับ</button>
-                                            <button class="btn btn-primary mt-2" id="btnViewReceivedNo">ดูรายการใบรับ</button>
+                                            <label>เลขใบส่ง</label>
+                                            <input type="text" id="txtImportReceivedNo" class="form-control" placeholder="กรอก เลขใบส่ง ที่ต้องการรับเข้า">
+                                            <button class="btn btn-primary mt-2" id="btnImportReceivedNo">นำเข้าใบส่ง</button>
                                         </div>
                                     </div>
-                                </div>
+                                </div> *@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -72,7 +71,7 @@
                                         </div>
                                     </div>
                                 </div> *@
-                                <button class="btn btn-primary" onclick="ClearFindBy()">Clear</button>
+                                <button class="btn btn-secondary" onclick="ClearFindBy()">Clear</button>
                                 <button class="btn btn-primary" onclick="fetchOrdersByDateRange()">Find</button>
                             </div>
                         </div>
@@ -84,9 +83,15 @@
 
 
     <div class="row">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Day List</h3>
+        <div class="card d-flex">
+            <div class="card-header justify-content-between align-content-center">
+                <div class="justify-content-center">
+                    <h3 class="card-title">รายการคำสั่งซื้อ</h3>
+                    <div class="d-flex justify-content-end">
+                        <input type="text" class="form-control me-2" id="txtGoTo" placeholder="ไปที่ OrderNo/LotNo" style="width:180px">
+                        <button class="btn btn-primary" id="btnGoTo">ไปที่</button>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="accordion" id="accordionOrder">
@@ -104,7 +109,6 @@
                                                     @Html.Raw(item.IsReceivedLate == true ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
                                                     @Html.Raw(item.IsPackingLate == true ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
                                                     @Html.Raw(item.IsNew == true ? "<span class='badge bg-danger new'>ใหม่</span>" : "")
-                                                    @Html.Raw(item.IsUpdate == true ? "<span class='badge bg-warning'>มีการนำส่ง</span>" : "")
                                                 </strong>
                                             </div>
                                             <div class="col-md-3">
@@ -169,7 +173,6 @@
                                                                 <strong>@lot.LotNo</strong>
                                                                 @Html.Raw((item.IsReceivedLate == true && lot.IsPacked != true) ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
                                                                 @Html.Raw((item.IsPackingLate == true && lot.IsPacked != true) ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
-                                                                @Html.Raw(lot.IsUpdate ? "<span class='badge bg-warning update'>มีการนำส่ง</span>" : "")
                                                             </a>
                                                             <br />
                                                             <small>
@@ -180,9 +183,12 @@
                                                             @lot.ListNo
                                                         </td>
                                                         <td>
-                                                            <a>
-                                                                @lot.AssignTo
-                                                            </a>
+                                                            @foreach (var asnt in lot.AssignTo)
+                                                            {
+                                                                <a>
+                                                                    <span class="badge badge-secondary" onclick="showModalTableMember(@asnt.AssignmentId)">@asnt.TableName</span>
+                                                                </a>
+                                                            }
                                                         </td>
                                                         <td class="project_progress">
                                                             <div class="progress progress-sm">
@@ -200,13 +206,13 @@
                                                                         // รับของครบแล้ว แต่ยังไม่เริ่มบรรจุ
                                                                         progressHtml = $"<div class='progress-bar bg-light-orange' role='progressbar' aria-valuenow='{percent}' aria-valuemin='0' aria-valuemax='100' style='width: {percent}% '></div>";
                                                                     }
-                                                                    else if (lot.IsPacking && !lot.IsAllPacking)
+                                                                    else if (lot.IsPacking && !lot.IsAllReturned)
                                                                     {
                                                                         // กำลังบรรจุ
-                                                                        var packPercent = lot.TtQty > 0 ? (lot.PackedQty * 100 / lot.TtQty) : 0;
+                                                                        var packPercent = lot.TtQty > 0 ? (lot.ReturnedQty * 100 / lot.TtQty) : 0;
                                                                         progressHtml = $"<div class='progress-bar bg-green' role='progressbar' aria-valuenow='{packPercent}' aria-valuemin='0' aria-valuemax='100' style='width: {packPercent}% '></div>";
                                                                     }
-                                                                    else if (lot.IsAllPacking)
+                                                                    else if (lot.IsAllReturned)
                                                                     {
                                                                         // บรรจุครบแล้ว
                                                                         progressHtml = $"<div class='progress-bar bg-info' role='progressbar' aria-valuenow='100' aria-valuemin='0' aria-valuemax='100' style='width: 100% '></div>";
@@ -226,12 +232,12 @@
                                                                     {
                                                                         progressText = $"{lot.ReceivedQty} / {lot.TtQty} ";
                                                                     }
-                                                                    else if (lot.IsPacking && !lot.IsAllPacking)
+                                                                    else if (lot.IsPacking && !lot.IsAllReturned)
                                                                     {
-                                                                        var packPercent = lot.TtQty > 0 ? (lot.PackedQty * 100 / lot.TtQty) : 0;
-                                                                        progressText = $"{lot.PackedQty} / {lot.TtQty}";
+                                                                        var packPercent = lot.TtQty > 0 ? (lot.ReturnedQty * 100 / lot.TtQty) : 0;
+                                                                        progressText = $"{lot.ReturnedQty} / {lot.TtQty}";
                                                                     }
-                                                                    else if (lot.IsAllPacking)
+                                                                    else if (lot.IsAllReturned)
                                                                     {
                                                                         progressText = $"{lot.TtQty} / {lot.TtQty}";
                                                                     }
@@ -256,20 +262,24 @@
                                                                 <span class="badge badge-light-orange">รอจ่ายงาน</span>
                                                             }
 
-                                                            @if (lot.IsPacking && !lot.IsAllPacking)
+                                                            @if (lot.IsPacking && !lot.IsAllReturned)
                                                             {
                                                                 <span class="badge badge-warning">กำลังบรรจุ</span>
                                                             }
 
-                                                            @if (lot.IsAllPacking)
+                                                            @if (lot.IsAllReturned)
                                                             {
                                                                 <span class="badge badge-info">บรรจุครบแล้ว</span>
                                                             }
+
+                                                            @if (lot.HasLostOrRepair)
+                                                            {
+                                                                <span class="badge badge-danger">สูญหาย/ส่งซ่อม</span>
+                                                            }
                                                         </td>
                                                         <td class="project-actions text-right">
-                                                            @Html.Raw(lot.IsUpdate ? string.Format("<button class='btn btn-warning btn-sm' onclick='showModalUpdateLot({0})'><i class='fas fa-folder-plus'></i> ตรวจสอบ</button>", lot.LotNo) : "")
-                                                            @Html.Raw(((item.IsReceivedLate || lot.IsAllReceived) && !lot.IsAllPacking && lot.TtQty != 0) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
-                                                            @Html.Raw((lot.IsPacking && !lot.IsAllPacking) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
+                                                            @Html.Raw(((item.IsReceivedLate || lot.IsAllReceived) && !lot.IsAllReturned && lot.TtQty != 0) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
+                                                            @Html.Raw((lot.IsPacking && !lot.IsAllReturned) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
                                                         </td>
                                                     </tr>
                                                 }
@@ -407,7 +417,12 @@
                                 <thead>
                                     <tr>
                                         <th>ชื่อ</th>
-                                        <th>เลือก</th>
+                                        <th>
+                                            <div class="icheck-primary d-inline">
+                                                <input type="checkbox" id="chkSelectAllMembers">
+                                                <label for="chkSelectAllMembers">เลือกทั้งหมด</label>
+                                            </div>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody id="tblMembers">
@@ -469,22 +484,57 @@
                                 </tbody>
                             </table>
                             <div class="row">
-                                <div class="form-group">
-                                    <div class="col-3">
+                                <div class="col-3 mt-2">
+                                    <div class="form-group">
                                         <label>จำนวนจากใบรับที่เลือก</label>
                                         <input type="number" min="0" max="999999" id="txtReurnQty" class="form-control" readonly>
                                     </div>
-                                    <div class="col-3 mt-2">
-                                        <label>จำนวนที่ศูนย์หาย</label>
-                                        <input type="number" min="0" max="999999" id="txtLostQty" class="form-control" placeholder="Enter Lost">
+                                </div>
+                                <div class="col-3 mt-2">
+                                    <div class="form-group">
+                                        <label>จำนวนที่สูญหาย</label>
+                                        <input type="number" min="0" max="999999" id="txtLostQty" class="form-control" readonly>
                                     </div>
-                                    <div class="col-3 mt-2">
-                                        <label>ขำนวนที่ชำรุด</label>
-                                        <input type="number" min="0" max="999999" id="txtBreakQty" class="form-control" placeholder="Enter Break">
-                                    </div>
-                                    <div class="col-3 mt-2">
+                                </div>
+                                <div class="col-3 mt-2">
+                                    <label>จำนวนที่ชำรุด</label>
+                                    <input type="number" min="0" max="999999" id="txtBreakQty" class="form-control" readonly>
+                                </div>
+                                <div class="col-3 mt-2">
+                                    <div class="form-group">
                                         <label>ส่งคืนรวมทั้งสิ้น</label>
-                                        <input type="number" min="0" max="999999" id="txtTotalReurnQty" class="form-control">
+                                        <input type="number" min="0" max="999999" id="txtTotalReurnQty" class="form-control" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3 mt-2">
+                                </div>
+                                <div class="col-3 mt-2">
+                                </div>
+                                <div class="col-3 mt-2">
+                                    <div id="breakDes" style="display:none;">
+                                        @*<label><span style="color:red;">*</span> อาการที่ชำรุด</label>
+                                        <input type="text" id="txtBreakDes" class="form-control" placeholder="Enter Break Description">*@
+                                        <label for="ddlBreakDes"><span style="color:red;">*</span> อาการที่ชำรุด</label>
+                                        <select id="ddlBreakDes" name="ddlBreakDes" class="form-control" style="width: 100%">
+                                            <option value="" selected>-- เลือกอาการ --</option>
+                                            @foreach (var des in ViewBag.BreakDescriptions)
+                                            {
+                                                <option value="@des.BreakDescriptionId">@des.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-3 mt-2">
+                                    <div id="breakDes2" style="display:none;">
+                                        <label for="txtAddBreakDes">เพิ่มใหม่</label>
+                                        <div class="input-group">
+                                            <input type="text" id="txtAddBreakDes" class="form-control" placeholder="อาการที่ชำรุด" style="display:none;">
+                                            <span class="input-group-append">
+                                                <button type="button" id="btnAddBreakDes" class="btn btn-info btn-flat"><i class="fas fa-plus"></i></button>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -501,12 +551,12 @@
     </div>
 </div>
 
-<div class="modal fade" id="modal-update-all">
+<div class="modal fade" id="modal-table-member">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleUpdateAll">Rev No : </h4>
-                <input type="hidden" id="hddUpdateReceiveNo" value="" />
+                <h4 class="modal-title" id="txtTitleTableMember">Table : </h4>
+                <input type="hidden" id="hddTableID" value="" />
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
                     <span>&times;</span>
                 </button>
@@ -518,24 +568,17 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>หมายเลขล็อต</th>
-                                    <th>เลขที่คำสั่งซื้อ</th>
-                                    <th>ลำดับที่</th>
-                                    <th>เลขที่งาน</th>
-                                    <th>รหัสสินค้า</th>
-                                    <th>จำนวน</th>
-                                    <th>น้ำหนักรวม(g)</th>
-                                    <th>เลือก</th>
+                                    <th>ชื่อ</th>
+                                    <th>มาไหม</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbl-all-received">
+                            <tbody id="tbl-table-member">
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-warning" id="btnAllUpdateLot">รับเข้า</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>

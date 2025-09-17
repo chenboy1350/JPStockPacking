@@ -23,132 +23,6 @@
         }
     });
 
-    $(document).on('click', '#btnImportOrder', async function () {
-        $('#loadingIndicator').show();
-        const orderNo = $('#txtImportOrderNo').val();
-
-        const formData = new FormData();
-        formData.append("orderNo", orderNo);
-
-        $.ajax({
-            url: urlImportOrder,
-            type: 'POST',
-            processData: false,
-            contentType: false,
-            data: formData,
-            success: async function () {
-                $('#loadingIndicator').hide();
-                await showSuccess("นำเข้าสำเร็จ");
-                $("#txtImportOrderNo").val("");
-                fetchOrdersByDateRange()
-            },
-            error: async function (xhr) {
-                $('#loadingIndicator').hide();
-                await showError(`เกิดข้อผิดพลาด (${xhr.status})`);
-            }
-        });
-    });
-
-    $(document).on('click', '#btnAllUpdateLot', async function () {
-        const receiveNo = $('#hddUpdateReceiveNo').val();
-
-        if (receiveNo == "" && receiveNo == null) {
-            await showWarning('กรุณาเลือกข้อมูลที่จะนำเข้า');
-            $('#loadingIndicator').hide();
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("receiveNo", receiveNo);
-
-        $.ajax({
-            url: urlUpdateLotByRevNoItems,
-            type: 'PATCH',
-            processData: false,
-            contentType: false,
-            data: formData,
-            success: async function (lot) {
-                $('#loadingIndicator').hide();
-                await showSuccess("อัปเดตสำเร็จ");
-                $("#txtImportReceivedNo").val("");
-                fetchOrdersByDateRange()
-                
-            },
-            error: async function (xhr) {
-                $('#loadingIndicator').hide();
-                await showError(`เกิดข้อผิดพลาด (${xhr.status})`);
-            }
-        });
-    });
-
-    $(document).on('click', '#btnUpdateLot', async function () {
-        const lotNo = $('#hddUpdateLotNo').val();
-        $('#loadingIndicator').show();
-
-        const tbody = $('#tbl-received-body');
-        const receivedIDs = [];
-
-        tbody.find('tr').each(function () {
-            const chk = $(this).find('.chk-row');
-            if (chk.is(':checked')) {
-                const receivedID = $(this).data('received-no');
-                if (receivedID) receivedIDs.push(receivedID);
-            }
-        });
-
-        if (receivedIDs.length === 0) {
-            await showWarning('กรุณาเลือกข้อมูลที่จะนำเข้า');
-            $('#loadingIndicator').hide();
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("lotNo", lotNo);
-        receivedIDs.forEach(no => formData.append("receivedIDs", no));
-
-        $.ajax({
-            url: urlUpdateLotItems,
-            type: 'PATCH',
-            processData: false,
-            contentType: false,
-            data: formData,
-            success: async function (lot) {
-                $('#loadingIndicator').hide();
-                await showSuccess("อัปเดตสำเร็จ");
-
-                const tr = $(`tr[data-lot-no="${lot.lotNo}"]`);
-                const table = tr.closest("table");
-                const tbody = tr.closest("tbody");
-                tr.remove();
-
-                const orderNo = table.closest(".accordion-item").data("order-no");
-                const res = await $.get(urlGetOrder, {
-                    orderNo: orderNo,
-                    custCode: '',
-                    fdate: '',
-                    edate: '',
-                    groupMode: 'Day'
-                });
-
-                const order = res.days?.flatMap(day => day.orders)?.find(o => o.orderNo === orderNo);
-                const updatedLot = order?.customLot?.find(l => l.lotNo === lot.lotNo);
-
-                if (order && updatedLot) {
-                    const newTrHtml = renderLotRow(order, updatedLot);
-                    tbody.append(newTrHtml);
-                }
-            },
-            error: async function (xhr) {
-                $('#loadingIndicator').hide();
-                await showError(`เกิดข้อผิดพลาด (${xhr.status})`);
-            }
-        });
-    });
-
-    $(document).on('click', '#btnImportReceivedNo', async function () {
-        showModalUpdateAllLot()
-    });
-
     $(document).on("change", "#cbxTables", async function () {
         const tableId = $(this).val();
 
@@ -178,7 +52,7 @@
                 $("#tblMembers").html(html);
             },
             error: async function (xhr) {
-                await showError(`เกิดข้อผิดพลาด (${xhr.status})`);
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
             }
         });
     });
@@ -239,7 +113,7 @@
             },
             error: async (err) => {
                 $('#loadingIndicator').hide();
-                await showError("เกิดข้อผิดพลาดในการมอบหมายงาน" + err);
+                await showWarning("เกิดข้อผิดพลาดในการมอบหมายงาน" + err);
             }
         });
     });
@@ -297,6 +171,9 @@
 
                 calcReturnTotal();
 
+                $('#txtLostQty').prop('readonly', false);
+                $('#txtBreakQty').prop('readonly', false);
+
                 tbody.on('change', '.chk-row', function () {
                     calcReturnTotal();
                 });
@@ -322,12 +199,12 @@
             $('#sumRTQty').text(num(sumQty));
             $('#sumRTWg').text(num(sumWg));
 
+            $("#txtBreakQty").attr("max", sumQty);
             $('#txtReurnQty').val(sumQty);
 
             calcTotalReturnQty();
         }
     });
-
 
     $(document).on('click', '#btnConfirmReturn', async function () {
         const lotNo = $('#hddReturnLotNo').val();
@@ -373,7 +250,7 @@
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
-                await showError("เกิดข้อผิดพลาดในการคืนงาน (" + xhr.status + ")");
+                await showWarning("เกิดข้อผิดพลาดในการคืนงาน (" + xhr.status + ")");
             }
         });
     });
@@ -383,6 +260,7 @@
         const txtReurnQty = $('#txtReurnQty').val();
         const txtLostQty = $('#txtLostQty').val();
         const txtBreakQty = $('#txtBreakQty').val();
+        const ddlBreakDes = $('#ddlBreakDes').val();
         const txtTotalReurnQty = $('#txtTotalReurnQty').val();
 
         const trebody = $('#tbl-receivedReturn-body');
@@ -396,12 +274,17 @@
             }
         });
 
+        if (txtBreakQty > 0 && ddlBreakDes == '') {
+            await showWarning('กรุณาเลือกอาการที่ชำรุด');
+            return;
+        }
+
         if (assignmentIDs.length === 0) {
             await showWarning('กรุณาเลือกใบนำเข้าที่จะรับคืน');
             return;
         }
 
-        if (txtBreakQty > txtReurnQty) {
+        if (Number(txtBreakQty) > Number(txtReurnQty)) {
             await showWarning('จำนวนสินค้าที่ชำรุดมากกว่าจำนวนสินค้าที่รับคืน');
             return;
         }
@@ -427,7 +310,7 @@
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
-                await showError("เกิดข้อผิดพลาดในการคืนงาน (" + xhr.status + ")");
+                await showWarning("เกิดข้อผิดพลาดในการคืนงาน (" + xhr.status + ")");
             }
         });
     });
@@ -447,18 +330,97 @@
         }
     });
 
-    function calcTotalReturnQty() {
-        const lostQty = parseFloat($("#txtLostQty").val()) || 0;
-        const breakQty = parseFloat($("#txtBreakQty").val()) || 0;
-        const reurnQty = parseFloat($("#txtReurnQty").val()) || 0;
-
-        const totalReturn = reurnQty - (breakQty + lostQty);
-
-        $("#txtTotalReurnQty").val(totalReturn);
-    }
-
     $(document).on("input", "#txtLostQty, #txtBreakQty, #txtReurnQty", function () {
         calcTotalReturnQty();
+    });
+
+    $(document).on('change', '#chkSelectAllMembers', function () {
+        const isChecked = $(this).is(':checked');
+        $('#tblMembers .chk-row:enabled').prop('checked', isChecked);
+    });
+
+    $(document).on("click", "#btnGoTo", async function () {
+        const keyword = $("#txtGoTo").val().trim().toLowerCase();
+        $("#txtGoTo").val('')
+
+        if (!keyword) return;
+
+        let $target = $(`.accordion-item[data-order-no="${keyword}"]`);
+
+        if ($target.length > 0) {
+            const collapseId = $target.find(".accordion-collapse").attr("id");
+            const $button = $target.find(`button[data-bs-target="#${collapseId}"]`);
+
+            if (!$target.find(".accordion-collapse").hasClass("show")) {
+                $button.click();
+            }
+
+            $("html, body").animate({
+                scrollTop: $target.offset().top - 100
+            }, 200);
+
+            return;
+        }
+
+        $target = $(`tr[data-lot-no="${keyword}"]`);
+        if ($target.length > 0) {
+            const $accordionItem = $target.closest(".accordion-item");
+            const collapseId = $accordionItem.find(".accordion-collapse").attr("id");
+            const $button = $accordionItem.find(`button[data-bs-target="#${collapseId}"]`);
+
+            if (!$accordionItem.find(".accordion-collapse").hasClass("show")) {
+                $button.click();
+            }
+
+            setTimeout(() => {
+                $("html, body").animate({
+                    scrollTop: $target.offset().top - 100
+                }, 200);
+                $target.addClass("table-warning");
+                setTimeout(() => $target.removeClass("table-warning"), 2000);
+            }, 400);
+
+            return;
+        }
+
+        await showWarning("ไม่พบข้อมูล Lot หรือ Order ที่ค้นหา");
+    });
+
+
+    $(document).on("keydown", "#txtGoTo", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            $("#btnGoTo").click();
+        }
+    });
+
+    $(document).on("change", "#txtBreakQty", function () {
+        console.log('asdasdasd')
+        let val = parseInt($(this).val()) || 0;
+
+        console.log('val', val)
+        if (val > 0) {
+            $("#breakDes").show();
+            $("#breakDes2").show();
+            $("#ddlBreakDes").prop("required", true); // บังคับกรอกถ้าแสดง
+        } else {
+            $("#breakDes").hide();
+            $("#breakDes2").hide();
+            $("#ddlBreakDes").prop("required", false).val(""); // ซ่อนและล้างค่า
+        }
+    });
+
+    $(document).on("click", "#btnAddBreakDes", async function () {
+        let txtAddBreakDes = $('#txtAddBreakDes').val();
+        if (txtAddBreakDes == '') {
+            $('#txtAddBreakDes').show();
+        } else {
+            await showSaveConfirm(
+                `ต้องการเพิ่มอาการ "${txtAddBreakDes}" ใช่หรือไม่`, "ยืนยันการเพิ่มอาการใหม่", async () => {
+
+                }
+            );
+        }
     });
 
 });
@@ -543,9 +505,6 @@ function renderOrderList(data) {
                 }
 
                 let actionsHtml = '';
-                if (lot.isUpdate) {
-                    actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showModalUpdateLot("${lot.lotNo}")'><i class='fas fa-folder-plus'></i> ตรวจสอบ</button>`;
-                }
                 if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllPacking && lot.ttQty != 0) {
                     actionsHtml += `<button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button>`;
                 }
@@ -560,7 +519,6 @@ function renderOrderList(data) {
                             <a><strong>${lot.lotNo}</strong>
                             ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
                             ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
-                            ${lot.isUpdate ? "<span class='badge bg-warning update'>มีการนำส่ง</span>" : ""}
                             </a><br/>
                             <small>ปรับปรุงล่าสุด : ${lot.updateDate}</small>
                         </td>
@@ -586,7 +544,6 @@ function renderOrderList(data) {
                                     ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
                                     ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
                                     ${order.isNew ? "<span class='badge bg-danger new'>ใหม่</span>" : ""}
-                                    ${order.isUpdate ? "<span class='badge bg-warning'>มีการนำส่ง</span>" : ""}
                                 </strong>
                             </div>
                             <div class="col-md-3">
@@ -670,7 +627,6 @@ function renderLotRow(order, lot) {
     if (lot.isAllPacking) statusHtml += `<span class="badge badge-info">บรรจุครบแล้ว</span>`;
 
     let actionsHtml = '';
-    if (lot.isUpdate) actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showModalUpdateLot("${lot.lotNo}")'><i class='fas fa-folder-plus'></i> ตรวจสอบ</button>`;
     if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllPacking && lot.ttQty != 0) actionsHtml += `<button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button>`;
     if (lot.isPacking && !lot.isAllPacking) actionsHtml += `<button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button>`;
 
@@ -696,178 +652,25 @@ function renderLotRow(order, lot) {
         </tr>`;
 }
 
-function showModalUpdateLot(lotNo) {
-    const modal = $('#modal-update');
-    const tbody = modal.find('#tbl-received-body');
+async function showModalTableMember(assignedID) {
+    console.log(assignedID)
 
-    tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
-
-    modal.find('#txtTitleUpdate').html(
-        "<i class='fas fa-folder-plus'></i> รายการนำเข้าของล็อต : " + html(lotNo)
+    const modal = $('#modal-table-member');
+    modal.find('#txtTitleTableMember').html(
+        "<i class='fas fa-folder-plus'></i> โต๊ะทำงาน : " + html(assignedID)
     );
-
     modal.modal('show');
 
     $.ajax({
-        url: urlGetReceived,
-        method: 'GET',
-        data: { lotNo: lotNo },
-        dataType: 'json',
-        cache: false
-    })
-    .done(function (items) {
-        tbody.empty();
-
-        $('#hddUpdateLotNo').val(lotNo);
-
-        if (!items || items.length === 0) {
-            tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
-
-        const rows = items.map(function (x, i) {
-            const safeId = ('chk_' + String(x.receiveNo ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
-
-            return `
-            <tr data-received-no="${html(x.receivedID)}" data-ttqty="${numRaw(x.ttQty)}" data-ttwg="${numRaw(x.ttWg)}">
-                <td><strong>${html(x.receiveNo)}</strong></td>
-                <td>${html(x.lotNo)}</td>
-                <td>${html(x.orderNo)}</td>
-                <td class="text-center">${html(x.listNo)}</td>
-                <td>${html(x.barcode)}</td>
-                <td>${html(x.article)}</td>
-                <td class="text-end">${num(x.ttQty)}</td>
-                <td class="text-end">${num(x.ttWg)}</td>
-                <td class="text-center">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="${safeId}_${i}" class="chk-row" checked>
-                        <label for="${safeId}_${i}"></label>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-
-        tbody.append(rows);
-
-        tbody.append(`
-            <tr class="table-secondary fw-bold" id="totalRow">
-                <td colspan="6" class="text-end">รวม</td>
-                <td class="text-end" id="sumTtQty">0</td>
-                <td class="text-end" id="sumTtWg">0</td>
-                <td></td>
-            </tr>
-        `);
-
-
-        calcTotal();
-
-        tbody.on('change', '.chk-row', function () {
-            calcTotal();
-        });
-
-        modal.find('#txtTitleUpdate').html(
-            "<i class='fas fa-folder-plus'></i> รายการนำเข้าล็อต : " + html(items[0].lotNo ?? lotNo)
-        );
-    })
-    .fail(function (xhr) {
-        tbody.empty().append(
-            `<tr><td colspan="10" class="text-danger text-center">
-                เกิดข้อผิดพลาดในการโหลดข้อมูล (${xhr.status} ${xhr.statusText})
-            </td></tr>`
-        );
-    });
-
-    function calcTotal() {
-        let sumQty = 0;
-        let sumWg = 0;
-        tbody.find('tr').each(function () {
-            const tr = $(this);
-            const chk = tr.find('.chk-row');
-            if (chk.length && chk.is(':checked')) {
-                sumQty += Number(tr.data('ttqty')) || 0;
-                sumWg += Number(tr.data('ttwg')) || 0;
-            }
-        });
-        $('#sumTtQty').text(num(sumQty));
-        $('#sumTtWg').text(num(sumWg));
-    }
-}
-
-async function showModalUpdateAllLot() {
-    const receiveNo = $('#txtImportReceivedNo').val().trim();
-    const modal = $('#modal-update-all');
-    const tbody = modal.find('#tbl-all-received');
-
-    if (!receiveNo) {
-        showWarning("กรุณาระบุเลขที่ใบนำเข้า (ReceiveNo)");
-        return;
-    }
-
-    tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
-
-    modal.find('#txtTitleUpdateAll').html(
-        "<i class='fas fa-folder-plus'></i> เลขที่ใบนำเข้า : " + html(receiveNo)
-    );
-
-    $.ajax({
-        url: urlImportReceiveNo,
-        method: 'GET',
-        data: { receiveNo },
-        dataType: 'json',
-        cache: false
-    })
-    .done(async function (items) {
-        tbody.empty();
-
-        $('#hddUpdateReceiveNo').val(receiveNo);
-
-        if (!items || items.length === 0) {
-            tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
-
-        const allReceived = items.every(x => x.isReceived === true);
-        if (allReceived) {
-            await showInfo("รายการนี้รับเข้าทั้งหมดแล้ว");
-            tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
-
-        modal.modal('show');
-
-        const rows = items.map(function (x, i) {
-            const safeId = `chk_${x.lotNo}_${i}`.replace(/[^A-Za-z0-9_-]/g, '_');
-            const rowClass = x.isReceived ? 'text-decoration-line-through text-muted' : '';
-            const checkedAttr = x.isReceived ? '' : 'checked';
-            const disabledAttr = x.isReceived ? 'disabled' : '';
-
-            return `
-            <tr class="${rowClass}" data-lot-no="${html(x.lotNo)}" data-ttqty="${numRaw(x.ttQty)}" data-ttwg="${numRaw(x.ttWg)}">
-                <td><strong>${html(x.receiveNo)}</strong></td>
-                <td>${html(x.lotNo)}</td>
-                <td>${html(x.orderNo)}</td>
-                <td class="text-center">${html(x.listNo)}</td>
-                <td>${html(x.barcode)}</td>
-                <td>${html(x.article)}</td>
-                <td class="text-end">${num(x.ttQty)}</td>
-                <td class="text-end">${num(x.ttWg)}</td>
-                <td class="text-center">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="${safeId}" class="chk-row" ${checkedAttr} ${disabledAttr}>
-                        <label for="${safeId}"></label>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-
-        tbody.append(rows);
-    })
-    .fail(function (xhr) {
-        tbody.empty().append(
-            `<tr><td colspan="10" class="text-danger text-center">
-            เกิดข้อผิดพลาดในการโหลดข้อมูล (${xhr.status} ${xhr.statusText})
-        </td></tr>`
-        );
+        url: urlGetTableMemberByAssignedID,
+        type: 'GET',
+        data: { assignedID: assignedID },
+        success: function (res) {
+            console.log(res)
+        },
+        error: async function (xhr) {
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+        },
     });
 }
 
@@ -975,6 +778,16 @@ async function showModalReturn(lotNo) {
     const modal = $('#modal-return');
     const select = modal.find('#cbxTableToReturn');
 
+    $("#breakDes").hide();
+    $("#breakDes2").hide();
+    $("#txtBreakDes").prop("required", false).val("");
+    $("#txtAddBreakDes").val('').hide();
+    $('#txtLostQty').prop('readonly', true);
+    $('#txtBreakQty').prop('readonly', true);
+    $('#ddlBreakDes').val(null)
+    $("#btnConfirmReturn").show();
+    $("#btnLostAndRepair").hide();
+
     modal.find('#txtTitleReturn').html(
         "<i class='fas fa-undo'></i> รายการรับงานคืน : " + html(lotNo)
     );
@@ -1001,12 +814,22 @@ async function showModalReturn(lotNo) {
         },
         error: async function (xhr) {
             select.empty().append('<option value="">โหลดข้อมูลไม่สำเร็จ</option>');
-            showError(`เกิดข้อผิดพลาด (${xhr.status})`);
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
         },
         complete: function () {
             select.prop('disabled', false);
         }
     });
+}
+
+function calcTotalReturnQty() {
+    const lostQty = parseFloat($("#txtLostQty").val()) || 0;
+    const breakQty = parseFloat($("#txtBreakQty").val()) || 0;
+    const reurnQty = parseFloat($("#txtReurnQty").val()) || 0;
+
+    const totalReturn = reurnQty - (breakQty + lostQty);
+
+    $("#txtTotalReurnQty").val(totalReturn);
 }
 
 function clearModalAssignValues() {
@@ -1038,4 +861,5 @@ function ClearFindBy() {
     $("#toDate").val("");
     $("#txtOrderNo").val("");
     $("#txtCustCode").val("");
+    //fetchOrdersByDateRange()
 }

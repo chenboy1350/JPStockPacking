@@ -1,4 +1,6 @@
-﻿namespace JPStockPacking.Models
+﻿using JPStockPacking.Data.SPDbContext.Entities;
+
+namespace JPStockPacking.Models
 {
     public class ScheduleListModel
     {
@@ -56,15 +58,17 @@
         public string MarkCenter { get; set; } = string.Empty;
         public string SaleRem { get; set; } = string.Empty;
         public decimal ReceivedQty { get; set; }
-        public decimal PackedQty { get; set; }
-        public string AssignTo { get; set; } = string.Empty;
+        public decimal ReturnedQty { get; set; }
+        public List<AssignedWorkTableModel> AssignTo { get; set; } = [];
         public bool IsSuccess { get; set; } = false;
         public bool IsActive { get; set; } = false;
         public bool IsUpdate { get; set; } = false;
         public string UpdateDate { get; set; } = string.Empty;
         public bool IsAllReceived { get; set; } = false;
-        public bool IsAllPacking { get; set; } = false;
         public bool IsPacking { get; set; } = false;
         public bool IsPacked { get; set; } = false;
+        public bool HasLostOrRepair { get; set; } = false;
+        public bool IsAllReturned { get; set; } = false;
+        public List<TableMemberModel> TableMembers { get; set; } = [];
     }
 }

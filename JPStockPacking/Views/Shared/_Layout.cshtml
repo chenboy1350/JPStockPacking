@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="~/JPStockPacking.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/adminlte.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/plugins/select2/css/select2.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/plugins/select2/css/select2.min.css" />
     <link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css" asp-append-version="true" />
 </head>
 <body class="hold-transition sidebar-mini">
@@ -30,7 +30,7 @@
     <div id="successModal" class="custom-modal-overlay">
         <div class="custom-modal-content">
             <div class="custom-modal-header">
-                <div class="custom-modal-icon success"><i class="fa-solid fa-check"></i></div>
+                <div class="custom-modal-icon success"><i class="fas fa-check"></i></div>
                 <h5 class="custom-modal-title">Success</h5>
                 <button class="custom-modal-close" onclick="closeModal('successModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -38,7 +38,7 @@
                 <p id="successMessage">Operation completed successfully! Your data has been saved.</p>
             </div>
             <div class="custom-modal-footer">
-                <button class="custom-btn-modal success" onclick="closeModal('successModal')">Close</button>
+                <button class="custom-btn-modal success cancel" tabindex="0" onclick="closeModal('successModal')">ปิด</button>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
     <div id="errorModal" class="custom-modal-overlay custom-modal-danger">
         <div class="custom-modal-content">
             <div class="custom-modal-header">
-                <div class="custom-modal-icon danger"><i class="fa-solid fa-explosion"></i></div>
+                <div class="custom-modal-icon danger"><i class="fas fa-exclamation"></i></div>
                 <h5 class="custom-modal-title">Error</h5>
                 <button class="custom-modal-close" onclick="closeModal('errorModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -55,7 +55,7 @@
                 <p id="errorMessage">An error occurred. Please try again.</p>
             </div>
             <div class="custom-modal-footer">
-                <button class="custom-btn-modal danger" onclick="closeModal('errorModal')">Close</button>
+                <button class="custom-btn-modal danger cancel" tabindex="0" onclick="closeModal('errorModal')">ปิด</button>
             </div>
         </div>
     </div>
@@ -64,15 +64,15 @@
     <div id="infoModal" class="custom-modal-overlay custom-modal-info">
         <div class="custom-modal-content">
             <div class="custom-modal-header">
-                <div class="custom-modal-icon info"><i class="fa-solid fa-info"></i></div>
+                <div class="custom-modal-icon info"><i class="fas fa-exclamation"></i></div>
                 <h5 class="custom-modal-title">Information</h5>
-                <button class="custom-modal-close" onclick="closeModal('infoModal')"><i class="fa-solid fa-xmark"></i></button>
+                <button class="custom-modal-close " onclick="closeModal('infoModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="custom-modal-body">
                 <p id="infoMessage">Here is some important information.</p>
             </div>
             <div class="custom-modal-footer">
-                <button class="custom-btn-modal info" onclick="closeModal('infoModal')">Close</button>
+                <button class="custom-btn-modal info cancel" tabindex="0" onclick="closeModal('infoModal')">ปิด</button>
             </div>
         </div>
     </div>
@@ -81,7 +81,7 @@
     <div id="warningModal" class="custom-modal-overlay custom-modal-warning">
         <div class="custom-modal-content">
             <div class="custom-modal-header">
-                <div class="custom-modal-icon warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="custom-modal-icon warning"><i class="fas fa-exclamation"></i></div>
                 <h5 class="custom-modal-title">Warning</h5>
                 <button class="custom-modal-close" onclick="closeModal('warningModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -89,7 +89,7 @@
                 <p id="warningMessage">Please be aware of this warning.</p>
             </div>
             <div class="custom-modal-footer">
-                <button class="custom-btn-modal warning" onclick="closeModal('warningModal')">Close</button>
+                <button class="custom-btn-modal warning cancel" tabindex="0" onclick="closeModal('warningModal')">ปิด</button>
             </div>
         </div>
     </div>
@@ -98,7 +98,7 @@
     <div id="saveConfirmModal" class="custom-modal-overlay custom-modal-confirm save">
         <div class="custom-modal-content">
             <div class="custom-modal-header">
-                <div class="custom-modal-icon confirm save"><i class="fa-solid fa-floppy-disk"></i></div>
+                <div class="custom-modal-icon confirm save"><i class="fas fa-question"></i></div>
                 <h5 class="custom-modal-title">Confirm Action</h5>
                 <button class="custom-modal-close" onclick="closeModal('saveConfirmModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -106,8 +106,8 @@
                 <p id="saveConfirmMessage">Are you sure you want to proceed?</p>
             </div>
             <div class="custom-modal-footer">
-                <button class="custom-btn-modal cancel" onclick="closeModal('saveConfirmModal')">Cancel</button>
-                <button class="custom-btn-modal confirm save" id="saveConfirmBtn">Confirm</button>
+                <button class="custom-btn-modal cancel" tabindex="0" onclick="closeModal('saveConfirmModal')">ปิด</button>
+                <button class="custom-btn-modal confirm save" id="saveConfirmBtn">ยืนยัน</button>
             </div>
         </div>
     </div>
@@ -124,18 +124,23 @@
                 <p id="deleteConfirmMessage">Are you sure you want to proceed?</p>
             </div>
             <div class="custom-modal-footer">
-                <button class="custom-btn-modal cancel" onclick="closeModal('deleteConfirmModal')">Cancel</button>
-                <button class="custom-btn-modal confirm delete" id="deleteConfirmBtn">Confirm</button>
+                <button class="custom-btn-modal cancel" tabindex="0" onclick="closeModal('deleteConfirmModal')">ปิด</button>
+                <button class="custom-btn-modal confirm delete" id="deleteConfirmBtn">ยืนยัน</button>
             </div>
         </div>
     </div>
+
+    <button type="button" class="btn" id="btnTop" onclick="scrollToTop()">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/adminlte.min.js" asp-append-version="true"></script>
     <script src="~/lib/fontawesome/js/all.min.js" asp-append-version="true"></script>
-    <script src="~/plugins/select2/js/select2.full.min.js" asp-append-version="true"></script>
+    <script src="~/plugins/select2/js/select2.full.min.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

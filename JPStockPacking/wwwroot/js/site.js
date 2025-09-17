@@ -1,5 +1,5 @@
 ﻿
-function showModalAsync(modalId, message = null, title = null) {
+async function showModalAsync(modalId, message = null, title = null) {
     return new Promise((resolve) => {
         const modal = document.getElementById(modalId);
         if (!modal) return resolve(false);
@@ -16,13 +16,31 @@ function showModalAsync(modalId, message = null, title = null) {
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
 
-        const onClosed = (e) => {
-            if (e.detail?.modalId === modalId) {
-                window.removeEventListener('modalClosed', onClosed);
-                resolve(true);
-            }
+        const clear = () => {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
         };
-        window.addEventListener('modalClosed', onClosed, { once: true });
+
+        const btnConfirm = modal.querySelector('#saveConfirmBtn');
+        const btnCancel = modal.querySelector('.custom-btn-modal.cancel');
+
+        const onConfirm = () => {
+            cleanup();
+            resolve(true);
+        };
+        const onCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            btnConfirm?.removeEventListener('click', onConfirm);
+            btnCancel?.removeEventListener('click', onCancel);
+            clear();
+        };
+
+        btnConfirm?.addEventListener('click', onConfirm);
+        btnCancel?.addEventListener('click', onCancel);
     });
 }
 
@@ -56,18 +74,15 @@ function showWarning(message = 'Please be aware of this warning.', title = 'Warn
     return showModalAsync('warningModal', message, title);
 }
 
-function showSaveConfirm(
+async function showSaveConfirm(
     message = "Are you sure you want to proceed?",
-    onConfirm = null,
-    title = "Confirm Action"
+    title = "Confirm Action",
+    onConfirm = null
 ) {
-    showModal("saveConfirmModal", message, title);
+    const confirmed = await showModalAsync("saveConfirmModal", message, title);
 
-    if (onConfirm && typeof onConfirm === "function") {
-        document.getElementById("saveConfirmBtn").onclick = function () {
-            onConfirm();
-            closeModal("saveConfirmModal");
-        };
+    if (confirmed && typeof onConfirm === "function") {
+        await onConfirm();
     }
 }
 
@@ -140,4 +155,13 @@ function addDays(date, days) {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
+}
+
+window.onscroll = function () {
+    const btn = document.getElementById("btnTop");
+    btn.style.display = (document.documentElement.scrollTop > 200) ? "block" : "none";
+};
+
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
