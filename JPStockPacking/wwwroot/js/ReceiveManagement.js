@@ -76,7 +76,7 @@ function showModalUpdateLot(receiveNo) {
     tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
 
     modal.find('#txtTitleUpdate').html(
-        "<i class='fas fa-folder-plus'></i> รายการนำ: " + html(receiveNo)
+        "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ: " + html(receiveNo)
     );
 
     modal.modal('show');
@@ -256,7 +256,7 @@ function refreshReceiveRow(receiveNo) {
             if (!row) return;
             const tr = $(`#tbl-main tr[data-receive-no="${row.receiveNo}"]`);
             if (tr.length) {
-                tr.find('.col-mdate').text(formatDate(row.mdate));
+                tr.find('.col-mdate').text(row.mdat);
 
                 if (row.isReceived && !row.hasRevButNotAll) {
                     tr.find('.col-status').html('<span class="badge badge-success">รับเข้าครบแล้ว</span>');
@@ -281,7 +281,7 @@ function refreshReceiveRow(receiveNo) {
     });
 }
 
-function ClearFindBy() {
+function ClearFindByReceive() {
     $("#txtFindReceivedNo").val("");
 
     findReceive()

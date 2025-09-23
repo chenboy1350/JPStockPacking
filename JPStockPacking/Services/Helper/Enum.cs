@@ -15,5 +15,12 @@
             QC = 3,
             Export = 4
         }
+
+        public enum ActionPermission
+        {
+            Read = 1,
+            WriteAndEdit = 2,
+            Approve = 3,
+        }
     }
 }

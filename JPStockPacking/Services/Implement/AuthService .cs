@@ -32,15 +32,12 @@ namespace JPStockPacking.Services.Implement
                 var exp = token.ValidTo;
                 var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
                 var usernameFromToken = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-                var department = token.Claims.FirstOrDefault(c => c.Type == "Departments")?.Value;
-                var roles = token.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
-                if (userId == null || usernameFromToken == null || roles.Count == 0)
+                if (userId == null || usernameFromToken == null)
                     return new LoginResult { Success = false, Message = "Invalid token claims" };
 
-                var role = roles.Contains("1") ? "Admin" : roles.Contains("2") ? "User" : "Guest";
 
-                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, department, rememberMe);
+                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, rememberMe);
 
                 if (!string.IsNullOrEmpty(authResult.RefreshToken))
                 {
@@ -143,13 +140,11 @@ namespace JPStockPacking.Services.Implement
                 var token = handler.ReadJwtToken(refreshResult.AccessToken);
                 var userId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
                 var usernameFromToken = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-                var department = token.Claims.FirstOrDefault(c => c.Type == "Departments")?.Value;
-                var role = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-                if (userId == null || usernameFromToken == null || role == null)
+                if (userId == null || usernameFromToken == null)
                     return new RefreshTokenResult { Success = false, Message = "Invalid token claims" };
 
-                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, role, department!, false);
+                await _cookieAuthService.SignInAsync(context, int.Parse(userId), usernameFromToken, false);
 
                 return new RefreshTokenResult
                 {
@@ -231,6 +226,49 @@ namespace JPStockPacking.Services.Implement
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<UserModel> ValidateApporverAsync(string username, string password)
+        {
+            try
+            {
+                InputValidator validator = new();
+                var apiSettings = _configuration.GetSection("ApiSettings");
+                var apiKey = apiSettings["APIKey"];
+                var urlValidateApporver = apiSettings["ValidateApporver"];
+
+                if (validator.IsValidInput(username) && validator.IsValidInput(password))
+                {
+                    using var httpClient = new HttpClient();
+                    var requestBody = new AuthRequestModel
+                    {
+                        ClientId = username,
+                        ClientSecret = password,
+                    };
+                    var content = new StringContent(JsonSerializer.Serialize(requestBody, CachedJsonSerializerOptions), Encoding.UTF8, "application/json");
+                    httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
+                    var response = await httpClient.PostAsync(urlValidateApporver, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        var user = JsonSerializer.Deserialize<UserModel>(responseString, CachedJsonSerializerOptions);
+                        return user ?? new UserModel();
+                    }
+                    else
+                    {
+                        return new UserModel();
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid input provided.");
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         private async Task<AuthResponseModel> ValidateUserAsync(string username, string password)
         {
             try
@@ -247,7 +285,6 @@ namespace JPStockPacking.Services.Implement
                     {
                         ClientId = username,
                         ClientSecret = password,
-                        Department = 1
                     };
                     var content = new StringContent(JsonSerializer.Serialize(requestBody, CachedJsonSerializerOptions), Encoding.UTF8, "application/json");
                     httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
@@ -279,6 +316,16 @@ namespace JPStockPacking.Services.Implement
         {
             PropertyNameCaseInsensitive = true
         };
+
+        public class UserModel
+        {
+            public int Id { get; set; } = 0;
+            public string Username { get; set; } = string.Empty;
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public string NickName { get; set; } = string.Empty;
+
+        }
 
         public class AuthRequestModel
         {

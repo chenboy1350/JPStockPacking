@@ -27,6 +27,8 @@
         public decimal SendTtQty { get; set; } = 0;
         public decimal TtQtyToPack { get; set; } = 0;
         public bool IsDefined { get; set; } = false;
+        public bool IsUnderQuota { get; set; } = false;
+        public int Approver { get; set; } = 0;
         public List<Size> Size { get; set; } = [];
     }
 
@@ -36,6 +38,9 @@
         public string CS { get; set; } = string.Empty;
         public decimal Q { get; set; } = 0;
         public decimal TtQtyToPack { get; set; } = 0;
+        public bool IsDefined { get; set; } = false;
+        public bool IsUnderQuota { get; set; } = false;
+        public int Approver { get; set; } = 0;
     }
 
     public class DefineToPackRequest

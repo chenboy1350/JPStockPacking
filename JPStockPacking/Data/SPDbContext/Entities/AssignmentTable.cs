@@ -11,7 +11,8 @@ public partial class AssignmentTable
     [Key]
     public int AssignmentTableId { get; set; }
 
-    public int AssignmentId { get; set; }
+    [Column("AssignmentReceivedID")]
+    public int AssignmentReceivedId { get; set; }
 
     public int WorkTableId { get; set; }
 

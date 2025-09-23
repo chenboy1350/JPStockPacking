@@ -32,6 +32,8 @@
                             const hasSize = item.size && item.size.length > 0;
                             const readonlyAttr = hasSize ? 'readonly' : (isDefined ? 'readonly' : '');
 
+                            const buttonForceDefine = !hasSize ? (!isDefined ? '<button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '') : '';
+
                             let row = `
                                 <tr data-lot-no="${item.lotNo}"
                                     data-list-no="${item.listNo || ''}"
@@ -39,6 +41,7 @@
                                     data-tdes-art="${item.tdesArt || ''}"
                                     data-ttqty="${item.tdesArt || ''}"
                                     data-valid-ttqty="${ttQty + qtySi}"
+                                    data-qty-approver="${ttQty}"
                                     ${item.size?.length > 0 ? 'data-widget="expandable-table" aria-expanded="false"' : ""}
                                     onclick="showImg(this, '${item.picture}')" style="cursor: pointer;">
                                         <td class="text-center">${index + 1}</td>
@@ -56,8 +59,8 @@
                                                    name="TtQtyToPack_${item.lotNo}"
                                                    value="${item.ttQtyToPack}"
                                                    onchange="validateQty(this,${ttQty + qtySi})"
-                                                   ${readonlyAttr} >
-                                                   <button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendQtyModal()"><i class="fas fa-sliders-h"></i></button>
+                                                   ${readonlyAttr} />
+                                                   ${buttonForceDefine}
                                         </td>
                                 </tr>`;
 
@@ -75,16 +78,19 @@
                                             <td class="text-right">${s.s || ''}</td>
                                             <td class="text-right">${s.cs || ''}</td>
                                             <td class="text-right">${q}</td>
-                                            <td class="text-right">
+                                            <td class="d-flex align-items-center">
                                                 <input type="number"
-                                                       class="form-control form-control-sm sizeQtyInput"
+                                                       class="form-control form-control-sm me-2 sizeQtyInput"
                                                        name="SizeQty_${item.lotNo}_${i + 1}"
                                                        data-lot-no="${item.lotNo}"
                                                        data-size-index="${i + 1}"
+                                                       data-size-qty-approver="${i + 1}"
                                                        min="0"
                                                        max="99999999"
                                                        value="${ttQtyToPack}"
-                                                       style="width: 100px;" />
+                                                       style="width: 100px;"
+                                                       onchange="validateQty(this,${q})" />
+                                                       <button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendSizeQtyModal(event)"><i class="fas fa-sliders-h"></i></button>
                                             </td>
                                         </tr>
                                     `;}).join('');
@@ -326,8 +332,9 @@
                 console.log(res);
                 txtUsername.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
                 txtPassword.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
-                btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.userid1}`).prop('disabled', true);
-                $('#hddUserID').val(res.num)
+                btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.username}`).prop('disabled', true);
+                $('#hddUserID').val(res.id)
+                $('#txtforce-adjust-qty').focus();
             },
             error: async function (xhr) {
                 txtUsername.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
@@ -341,6 +348,13 @@
         });
     });
 
+    $(document).on('keydown', '#txtUsername', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnCheckAuthForceSendQTY').click();
+        }
+    });
+
     $(document).on('keydown', '#txtPassword', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -350,23 +364,33 @@
 
     $(document).on('click', '#btnSubmitForceSendQTY', async function () {
         const $row = $('#modal-force-send-qty').data('row');
-        if (!$row || $row.length === 0) {
-            await showWarning('ไม่พบแถวที่เลือก');
-            return;
-        }
+        const $sizeInput = $('#modal-force-send-qty').data('sizeInput');
 
-        if ($('#hddUserID').val() == '' || $('#hddUserID') === 0)
-        {
+        if ($('#hddUserID').val() === '' || $('#hddUserID').val() === '0') {
             await showWarning('กรุณายืนยันสิทธิการแจ้งยอดแบบกำหนดเอง');
             return;
         }
 
         const newQty = Number($('#txtforce-adjust-qty').val()) || 0;
-        $row.find('input.qtyInput').val(newQty);
 
-        $('#modal-force-send-qty').removeData('row').modal('hide');
+        if ($sizeInput && $sizeInput.length > 0) {
+            $sizeInput.val(newQty).trigger('input');
+        } else if ($row && $row.length > 0) {
+            $row.find('input.qtyInput').val(newQty);
+        } else {
+            await showWarning('ไม่พบ input ที่ต้องการปรับยอด');
+            return;
+        }
+
+        $('#modal-force-send-qty').removeData('row').removeData('sizeInput').modal('hide');
     });
 
+    $(document).on('keydown', '#txtforce-adjust-qty', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnSubmitForceSendQTY').click();
+        }
+    });
 
 });
 
@@ -432,7 +456,7 @@ function showImg(element, filename) {
     $('#txtTdesArt').val($row.data('tdes-art'));
 }
 
-function ShowForceSendQtyModal() {
+function ShowForceSendQtyModal(event) {
     const $row = $(event.target).closest('tr[data-lot-no]');
     const oldQty = $row.find('input.qtyInput').val();
 
@@ -464,9 +488,43 @@ function ShowForceSendQtyModal() {
 
     // เก็บ $row ไว้ใน modal
     $('#modal-force-send-qty').data('row', $row);
+    $('#modal-force-send-qty').modal('show');
+}
+
+function ShowForceSendSizeQtyModal(event) {
+    const $btn = $(event.target).closest('button');
+    const $input = $btn.siblings('input.sizeQtyInput');
+
+    if ($input.length === 0) {
+        showWarning('ไม่พบ input ขนาดที่เลือก');
+        return;
+    }
+
+    const oldQty = $input.val();
+    const lotNo = $input.data('lot-no');
+    const sizeIndex = $input.data('size-index');
+
+    const txtUsername = $('#txtUsername');
+    const txtPassword = $('#txtPassword');
+    const btn = $('#btnCheckAuthForceSendQTY');
+
+    // reset auth form
+    txtUsername.val('').removeClass('is-invalid is-warning is-valid').prop('disabled', false);
+    txtPassword.val('').removeClass('is-invalid is-warning is-valid').prop('disabled', false);
+    btn.removeClass('btn-success').addClass('btn-primary').text('ตรวจสอบสิทธิ์').prop('disabled', false);
+    $('#hddUserID').val('');
+
+    // preload ค่าเก่า
+    $('#txtforce-adjust-qty').val(oldQty);
+
+    // เก็บ $input ไว้ใน modal
+    $('#modal-force-send-qty')
+        .data('row', null) // ยกเลิกค่าเดิมของ row หลัก
+        .data('sizeInput', $input); // เก็บ input ของ size
 
     $('#modal-force-send-qty').modal('show');
 }
+
 
 function validateQty(input, ttQty) {
     const minAllowed = ttQty - Math.ceil(ttQty * 0.02);

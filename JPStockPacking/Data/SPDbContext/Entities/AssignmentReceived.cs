@@ -6,14 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Assignment
+public partial class AssignmentReceived
 {
     [Key]
+    [Column("AssignmentReceivedID")]
+    public int AssignmentReceivedId { get; set; }
+
     public int AssignmentId { get; set; }
 
-    public int NumberWorkers { get; set; }
-
-    public bool HasPartTime { get; set; }
+    public int ReceivedId { get; set; }
 
     public bool IsActive { get; set; }
 

@@ -122,7 +122,7 @@
                                                 <i class="fas fa-boxes"></i> @item.CompleteLot/@item.TotalLot
                                             </div>
                                             <div class="col-md-1">
-                                                <i class="fas fa-boxes"></i> @item.SumTtQty
+                                                <i class="far fa-gem"></i> @item.SumTtQty
                                             </div>
                                             <div class="col-md-1">
                                                 <i class="fas fa-clipboard-check"></i> @item.PackDaysRemain วัน
@@ -210,7 +210,7 @@
                                                                     {
                                                                         // กำลังบรรจุ
                                                                         var packPercent = lot.TtQty > 0 ? (lot.ReturnedQty * 100 / lot.TtQty) : 0;
-                                                                        progressHtml = $"<div class='progress-bar bg-green' role='progressbar' aria-valuenow='{packPercent}' aria-valuemin='0' aria-valuemax='100' style='width: {packPercent}% '></div>";
+                                                                        progressHtml = $"<div class='progress-bar bg-warning' role='progressbar' aria-valuenow='{packPercent}' aria-valuemin='0' aria-valuemax='100' style='width: {packPercent}% '></div>";
                                                                     }
                                                                     else if (lot.IsAllReturned)
                                                                     {
@@ -257,7 +257,7 @@
                                                                 <span class="badge badge-orange">รับครบแล้ว</span>
                                                             }
 
-                                                            @if (lot.IsAllReceived && !lot.IsPacking)
+                                                            @if (lot.IsAllReceived && !lot.IsPacking && !lot.IsAllAssigned)
                                                             {
                                                                 <span class="badge badge-light-orange">รอจ่ายงาน</span>
                                                             }
@@ -272,12 +272,20 @@
                                                                 <span class="badge badge-info">บรรจุครบแล้ว</span>
                                                             }
 
-                                                            @if (lot.HasLostOrRepair)
+                                                            @if (lot.HasRepair)
                                                             {
-                                                                <span class="badge badge-danger">สูญหาย/ส่งซ่อม</span>
+                                                                <span class="badge badge-danger">ส่งซ่อม</span>
+                                                            }
+
+                                                            @if (lot.HasLost)
+                                                            {
+                                                                <span class="badge badge-danger">สูญหาย</span>
                                                             }
                                                         </td>
                                                         <td class="project-actions text-right">
+                                                            @Html.Raw(lot.HasRepair ? string.Format("<button class='btn btn-warning btn-sm' onclick='ShowApproveToPrintModal({0})'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>", lot.LotNo) : "")
+                                                            @Html.Raw(lot.HasLost ? string.Format("<button class='btn btn-info btn-sm' onclick='printLostToPDF({0})'><i class='fas fa-folder'></i> สูญหาย</button>", lot.LotNo) : "")
+
                                                             @Html.Raw(((item.IsReceivedLate || lot.IsAllReceived) && !lot.IsAllReturned && lot.TtQty != 0) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
                                                             @Html.Raw((lot.IsPacking && !lot.IsAllReturned) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
                                                         </td>
@@ -413,6 +421,29 @@
                                     <option value="@table.Id">@table.Name</option>
                                 }
                             </select>
+                        </div>
+                        <div class="row pt-3 pb-3">
+                            <div class="col d-flex justify-content-start align-content-center">
+                                <div class="icheck-primary d-inline">
+                                    <input type="checkbox" id="chxHasPartTime" disabled>
+                                    <label for="chxHasPartTime">มีพนักงานชั่วคราว</label>
+                                </div>
+                            </div>
+                            <div class="col d-flex justify-content-end align-content-center">
+                                <label for="">จำนวน</label>
+                            </div>
+                            <div class="col d-flex justify-content-center align-content-center">
+                                <input type="number" id="txtWorkerNumber" class="form-control text-center" value="0" min="0" style="width:100px;" disabled/>
+                            </div>
+                            <div class="col d-flex justify-content-start align-content-center">
+                                <label for="">คน</label>
+                            </div>
+                            <div class="col">
+                            </div>
+                            <div class="col">
+                            </div>
+                        </div>
+                        <div class="row">
                             <table class="table table-head-fixed text-nowrap">
                                 <thead>
                                     <tr>
@@ -514,8 +545,6 @@
                                 </div>
                                 <div class="col-3 mt-2">
                                     <div id="breakDes" style="display:none;">
-                                        @*<label><span style="color:red;">*</span> อาการที่ชำรุด</label>
-                                        <input type="text" id="txtBreakDes" class="form-control" placeholder="Enter Break Description">*@
                                         <label for="ddlBreakDes"><span style="color:red;">*</span> อาการที่ชำรุด</label>
                                         <select id="ddlBreakDes" name="ddlBreakDes" class="form-control" style="width: 100%">
                                             <option value="" selected>-- เลือกอาการ --</option>
@@ -631,6 +660,51 @@
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
                 <button type="button" class="btn btn-info">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-approve-to-print">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleApproveToPrint"><i class="fas fa-edit"></i> ยืนยันการพิมพ์ใบส่งซ่อม</h4>
+                <input type="hidden" id="hddUserID" value="" />
+                <input type="hidden" id="hddLotNo" value="" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card-body" style="display: block;">
+                    <div class="row">
+                        <label class="form-label">ตรวจสอบสิทธิ</label>
+                        <div class="input-group mb-3">
+                            <input id="txtUsername" type="text" class="form-control" placeholder="Username" required>
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-user"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input id="txtPassword" type="password" class="form-control" placeholder="Password" required>
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-lock"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="btnValidateApprover" class="btn btn-primary btn-block">ตรวจสอบสิทธิ</button>
+                    </div>
+                    <div class="row pt-3">
+                        <button id="btnPrintReport" class="btn btn-info btn-block" disabled>พิมพ์รายงานส่งซ่อม</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
     </div>

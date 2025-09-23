@@ -50,6 +50,7 @@
                 });
 
                 $("#tblMembers").html(html);
+                $("#chxHasPartTime").prop('disabled', false)
             },
             error: async function (xhr) {
                 await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
@@ -60,6 +61,9 @@
     $(document).on("click", "#btnConfirmAssign", async function () {
         const lotNo = $('#hddAssignLotNo').val();
         const tableId = $("#cbxTables").val();
+
+        const txtWorkerNumber = $("#txtWorkerNumber").val();
+        const chxHasPartTime = $("#chxHasPartTime").is(":checked");
 
         const trevbody = $('#tbl-receivedToAssign-body');
         const receivedIDs = [];
@@ -96,6 +100,8 @@
         const formData = new FormData();
         formData.append("lotNo", lotNo);
         formData.append("tableId", tableId);
+        formData.append("workerNumber", txtWorkerNumber);
+        formData.append("hasPartTime", chxHasPartTime);
         receivedIDs.forEach(no => formData.append("receivedIDs", no));
         memberIds.forEach(no => formData.append("memberIds", no));
 
@@ -109,7 +115,8 @@
             success: async () => {
                 $('#loadingIndicator').hide();
                 await showSuccess("มอบหมายงานสำเร็จ");
-                location.reload();
+                await updateLotRow(lotNo);
+                CloseModal();
             },
             error: async (err) => {
                 $('#loadingIndicator').hide();
@@ -246,7 +253,8 @@
             success: async () => {
                 $('#loadingIndicator').hide();
                 await showSuccess("คืนงานสำเร็จ");
-                location.reload();
+                await updateLotRow(lotNo);
+                CloseModal();
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
@@ -294,6 +302,7 @@
         formData.append("lostQty", txtLostQty);
         formData.append("breakQty", txtBreakQty);
         formData.append("returnQty", txtTotalReurnQty);
+        formData.append("breakDescriptionID", ddlBreakDes);
         assignmentIDs.forEach(no => formData.append("assignmentIDs", no));
 
         $.ajax({
@@ -306,7 +315,8 @@
             success: async () => {
                 $('#loadingIndicator').hide();
                 await showSuccess("คืนงานสำเร็จ");
-                location.reload();
+                await updateLotRow(lotNo);
+                CloseModal();
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
@@ -402,27 +412,126 @@
         if (val > 0) {
             $("#breakDes").show();
             $("#breakDes2").show();
-            $("#ddlBreakDes").prop("required", true); // บังคับกรอกถ้าแสดง
         } else {
             $("#breakDes").hide();
             $("#breakDes2").hide();
-            $("#ddlBreakDes").prop("required", false).val(""); // ซ่อนและล้างค่า
         }
     });
 
     $(document).on("click", "#btnAddBreakDes", async function () {
         let txtAddBreakDes = $('#txtAddBreakDes').val();
         if (txtAddBreakDes == '') {
-            $('#txtAddBreakDes').show();
+            $('#txtAddBreakDes').show(); 
         } else {
             await showSaveConfirm(
                 `ต้องการเพิ่มอาการ "${txtAddBreakDes}" ใช่หรือไม่`, "ยืนยันการเพิ่มอาการใหม่", async () => {
+                    const formData = new FormData();
+                    formData.append("breakDescription", txtAddBreakDes);
 
+                    $.ajax({
+                        url: urlAddNewBreakDescription,
+                        type: 'POST',
+                        processData: false,
+                        contentType: false,
+                        data: formData,
+                        success: async (res) => {
+                            $('#loadingIndicator').hide();
+                            $('#txtAddBreakDes').val('').hide();
+
+                            $('#ddlBreakDes').empty();
+                            $('#ddlBreakDes').append(new Option('-- เลือกอาการ --', ''));
+                            res.forEach(item => {
+                                $('#ddlBreakDes').append(new Option(item.name, item.breakDescriptionId));
+                            });
+                            $('#ddlBreakDes').val(res[res.length - 1].breakDescriptionId);
+
+                            await showSuccess("เพิ่มอาการเรียบร้อย");
+                        },
+                        error: async (xhr) => {
+                            $('#loadingIndicator').hide();
+                            await showWarning("เกิดข้อผิดพลาด (" + xhr.status + ")");
+                        }
+                    });
                 }
             );
         }
     });
 
+    $(document).on("change", "#chxHasPartTime", async function () {
+        if ($(this).is(":checked")) {
+            $('#txtWorkerNumber').prop('disabled', false)
+        } else {
+            $('#txtWorkerNumber').prop('disabled', true)
+            $('#txtWorkerNumber').val(0)
+        }
+    });
+
+    $(document).on('click', '#btnValidateApprover', function () {
+        const txtUsername = $('#txtUsername');
+        const txtPassword = $('#txtPassword');
+        const btn = $(this);
+
+        if ((txtUsername.val() == '' || txtUsername.val() == null) || (txtPassword.val() == '' || txtPassword.val() == null)) {
+            txtUsername.removeClass('is-invalid is-valid').addClass('is-warning').prop('disabled', false);
+            txtPassword.removeClass('is-invalid is-valid').addClass('is-warning').prop('disabled', false);
+            btn.removeClass('btn-primary btn-danger btn-success').addClass('btn-warning').text(`กรุณากรอกชื่อผู้ใช้และรหัสให้ครบถ้วน`).prop('disabled', false);
+            setTimeout(() => {
+                btn.text('ตรวจสอบสิทธิ').removeClass('btn-danger btn-success btn-warning').addClass('btn-primary').prop('disabled', false);
+            }, 2000);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('username', txtUsername.val());
+        formData.append('password', txtPassword.val());
+
+        $.ajax({
+            url: urlCheckUser,
+            method: 'POST',
+            contentType: false,
+            processData: false,
+            data: formData,
+            success: async function (res) {
+
+                console.log(res);
+                txtUsername.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
+                txtPassword.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
+                btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.username}`).prop('disabled', true);
+                $('#btnPrintReport').prop('disabled', false)
+                
+                $('#hddUserID').val(res)
+                $('#btnPrintReport').focus();
+            },
+            error: async function (xhr) {
+                txtUsername.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
+                txtPassword.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
+                btn.removeClass('btn-primary btn-success btn-warning').addClass('btn-danger').text(`ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง`).prop('disabled', false);
+                $('#btnPrintReport').prop('disabled', true)
+
+                setTimeout(() => {
+                    btn.text('ตรวจสอบสิทธิ').removeClass('btn-danger btn-success btn-warning').addClass('btn-primary').prop('disabled', false);
+                }, 2000);
+            }
+        });
+    });
+
+    $(document).on('keydown', '#txtUsername', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnValidateApprover').click();
+        }
+    });
+
+    $(document).on('keydown', '#txtPassword', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnValidateApprover').click();
+        }
+    });
+
+    $(document).on('click', '#btnPrintReport', async function () {
+        printBreakToPDF($('#hddLotNo').val());
+    });
 });
 
 function fetchOrdersByDateRange() {
@@ -457,200 +566,184 @@ function renderOrderList(data) {
 
     if (!data || !data.days) return;
 
-    const today = new Date();
-
     data.days.forEach(day => {
         day.orders.forEach(order => {
-            const lotsHtml = order.customLot.map(lot => {
-                const percent = lot.ttQty > 0 ? (lot.receivedQty * 100 / lot.ttQty) : 0;
-                const packPercent = lot.ttQty > 0 ? (lot.packedQty * 100 / lot.ttQty) : 0;
-
-                let progressHtml = '';
-                if (!lot.isAllReceived) {
-                    progressHtml = `<div class='progress-bar bg-orange' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}'></div>`;
-                } else if (lot.isAllReceived && !lot.isPacking) {
-                    progressHtml = `<div class='progress-bar bg-light-orange' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}'></div>`;
-                } else if (lot.isPacking && !lot.isAllPacking) {
-                    progressHtml = `<div class='progress-bar bg-green' role='progressbar' style='width: ${packPercent}%' aria-valuenow='${packPercent}'></div>`;
-                } else if (lot.isAllPacking) {
-                    progressHtml = `<div class='progress-bar bg-info' role='progressbar' style='width: 100%' aria-valuenow='100'></div>`;
-                }
-
-                let progressText = '';
-                if (!lot.isAllReceived) {
-                    progressText = `${lot.receivedQty} / ${lot.ttQty}`;
-                } else if (lot.isAllReceived && !lot.isPacking) {
-                    progressText = `${lot.receivedQty} / ${lot.ttQty}`;
-                } else if (lot.isPacking && !lot.isAllPacking) {
-                    progressText = `${lot.packedQty} / ${lot.ttQty}`;
-                } else if (lot.isAllPacking) {
-                    progressText = `${lot.ttQty} / ${lot.ttQty}`;
-                }
-
-                let statusHtml = '';
-                if (lot.receivedQty < lot.ttQty) {
-                    statusHtml += `<span class="badge badge-orange">รอนำส่ง</span>`;
-                }
-                if (lot.ttQty > 0 && lot.receivedQty >= lot.ttQty) {
-                    statusHtml += `<span class="badge badge-orange">รับครบแล้ว</span>`;
-                }
-                if (lot.isAllReceived && !lot.isPacking) {
-                    statusHtml += `<span class="badge badge-light-orange">รอจ่ายงาน</span>`;
-                }
-                if (lot.isPacking && !lot.isAllPacking) {
-                    statusHtml += `<span class="badge badge-warning">กำลังบรรจุ</span>`;
-                }
-                if (lot.isAllPacking) {
-                    statusHtml += `<span class="badge badge-info">บรรจุครบแล้ว</span>`;
-                }
-
-                let actionsHtml = '';
-                if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllPacking && lot.ttQty != 0) {
-                    actionsHtml += `<button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button>`;
-                }
-                if (lot.isPacking && !lot.isAllPacking) {
-                    actionsHtml += `<button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button>`;
-                }
-
-                return `
-                    <tr data-lot-no="${lot.lotNo}">
-                        <td>#</td>
-                        <td>
-                            <a><strong>${lot.lotNo}</strong>
-                            ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
-                            ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
-                            </a><br/>
-                            <small>ปรับปรุงล่าสุด : ${lot.updateDate}</small>
-                        </td>
-                        <td>${lot.listNo}</td>
-                        <td>${lot.assignTo || '-'}</td>
-                        <td class="project_progress">
-                            <div class="progress progress-sm">${progressHtml}</div>
-                            <small>${progressText}</small>
-                        </td>
-                        <td class="project-state">${statusHtml}</td>
-                        <td class="project-actions text-right">${actionsHtml}</td>
-                    </tr>`;
-            }).join('');
+            const lotsHtml = order.customLot.map((lot, index) => renderLotRow(order, lot, index + 1)).join('');
 
             const itemHtml = `
-            <div class="accordion-item mt-2" data-order-no="${order.orderNo}">
-                <h2 class="accordion-header" id="heading${order.orderNo}">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${order.orderNo}" aria-expanded="false" aria-controls="collapse${order.orderNo}">
-                        <div class="d-flex justify-content-between w-100">
-                            <div class="col-md-3">
-                                <strong>
-                                    ${order.custCode}/${order.orderNo}
-                                    ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
-                                    ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
-                                    ${order.isNew ? "<span class='badge bg-danger new'>ใหม่</span>" : ""}
-                                </strong>
+                <div class="accordion-item mt-2" data-order-no="${order.orderNo}">
+                    <h2 class="accordion-header" id="heading${order.orderNo}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse${order.orderNo}" aria-expanded="false"
+                            aria-controls="collapse${order.orderNo}">
+                            <div class="d-flex justify-content-between w-100">
+                                <div class="col-md-3">
+                                    <strong>
+                                        ${order.custCode}/${order.orderNo}
+                                        ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
+                                        ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
+                                        ${order.isNew ? "<span class='badge bg-danger new'>ใหม่</span>" : ""}
+                                    </strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-clipboard-check"></i> ${order.orderDate}
+                                    <i class="fas fa-box-open"></i> ${order.seldDate1}
+                                </div>
+                                <div class="col-md-2">
+                                    <i class="fas fa-business-time"></i> ${order.startDateTH}
+                                </div>
+                                <div class="col-md-1">
+                                    <i class="fas fa-boxes"></i> ${order.completeLot}/${order.totalLot}
+                                </div>
+                                <div class="col-md-1">
+                                    <i class="far fa-gem"></i> ${order.sumTtQty}
+                                </div>
+                                <div class="col-md-1">
+                                    <i class="fas fa-clipboard-check"></i> ${order.packDaysRemain} วัน
+                                </div>
+                                <div class="col-md-1">
+                                    <i class="fas fa-box-open"></i> ${order.exportDaysRemain} วัน
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <i class="fas fa-clipboard-check"></i> ${order.orderDate}
-                                <i class="fas fa-box-open"></i> ${order.seldDate1}
-                            </div>
-                            <div class="col-md-2">
-                                <i class="fas fa-business-time"></i> ${order.startDateTH}
-                            </div>
-                            <div class="col-md-1">
-                                <i class="fas fa-boxes"></i> ${order.completeLot}/${order.totalLot}
-                            </div>
-                            <div class="col-md-1">
-                                <i class="fas fa-boxes"></i> ${order.sumTtQty}
-                            </div>
-                            <div class="col-md-1">
-                                <i class="fas fa-clipboard-check"></i> ${order.packDaysRemain} วัน
-                            </div>
-                            <div class="col-md-1">
-                                <i class="fas fa-box-open"></i> ${order.exportDaysRemain} วัน
-                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse${order.orderNo}" class="accordion-collapse collapse"
+                        aria-labelledby="heading${order.orderNo}" data-bs-parent="#accordionOrder">
+                        <div class="accordion-body table-responsive" style="overflow: auto;">
+                            <table class="table table-striped projects">
+                                <thead>
+                                    <tr>
+                                       <th style="width: 1%">#</th>
+                                       <th style="width: 20%">หมายเลขล็อต</th>
+                                       <th style="width: 10%">ลำดับที่</th>
+                                       <th style="width: 25%">การมอบหมาย</th>
+                                       <th>ความคืบหน้า</th>
+                                       <th style="width: 8%" class="text-center">สถานะ</th>
+                                       <th style="width: 20%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>${lotsHtml}</tbody>
+                            </table>
                         </div>
-                    </button>
-                </h2>
-                <div id="collapse${order.orderNo}" class="accordion-collapse collapse" aria-labelledby="heading${order.orderNo}" data-bs-parent="#accordionOrder">
-                    <div class="accordion-body" style="overflow: auto;">
-                        <table class="table table-striped projects">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>หมายเลขล็อต</th>
-                                    <th>ลำดับที่</th>
-                                    <th>การมอบหมาย</th>
-                                    <th>ความคืบหน้า</th>
-                                    <th class="text-center">สถานะ</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>${lotsHtml}</tbody>
-                        </table>
                     </div>
                 </div>
-            </div>`;
+            `;
 
             container.append(itemHtml);
         });
     });
 }
 
-function renderLotRow(order, lot) {
+function renderLotRow(order, lot, index = "#") {
     const percent = lot.ttQty > 0 ? (lot.receivedQty * 100 / lot.ttQty) : 0;
-    const packPercent = lot.ttQty > 0 ? (lot.packedQty * 100 / lot.ttQty) : 0;
+    const returnPercent = lot.ttQty > 0 ? (lot.returnedQty * 100 / lot.ttQty) : 0;
 
+    // Progress Bar
     let progressHtml = '';
     if (!lot.isAllReceived) {
-        progressHtml = `<div class='progress-bar bg-orange' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}'></div>`;
+        progressHtml = `<div class='progress-bar bg-orange' role='progressbar' style='width: ${percent}%'></div>`;
     } else if (lot.isAllReceived && !lot.isPacking) {
-        progressHtml = `<div class='progress-bar bg-light-orange' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}'></div>`;
-    } else if (lot.isPacking && !lot.isAllPacking) {
-        progressHtml = `<div class='progress-bar bg-green' role='progressbar' style='width: ${packPercent}%' aria-valuenow='${packPercent}'></div>`;
-    } else if (lot.isAllPacking) {
-        progressHtml = `<div class='progress-bar bg-info' role='progressbar' style='width: 100%' aria-valuenow='100'></div>`;
+        progressHtml = `<div class='progress-bar bg-light-orange' role='progressbar' style='width: ${percent}%'></div>`;
+    } else if (lot.isPacking && !lot.isAllReturned) {
+        progressHtml = `<div class='progress-bar bg-warning' role='progressbar' style='width: ${returnPercent}%'></div>`;
+    } else if (lot.isAllReturned) {
+        progressHtml = `<div class='progress-bar bg-info' role='progressbar' style='width: 100%'></div>`;
     }
 
+    // Progress Text
     let progressText = '';
     if (!lot.isAllReceived) {
-        progressText = `${lot.receivedQty} / ${lot.ttQty}`;
+        progressText = `${lot.receivedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
     } else if (lot.isAllReceived && !lot.isPacking) {
-        progressText = `${lot.receivedQty} / ${lot.ttQty}`;
-    } else if (lot.isPacking && !lot.isAllPacking) {
-        progressText = `${lot.packedQty} / ${lot.ttQty}`;
-    } else if (lot.isAllPacking) {
-        progressText = `${lot.ttQty} / ${lot.ttQty}`;
+        progressText = `${lot.receivedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
+    } else if (lot.isPacking && !lot.isAllReturned) {
+        progressText = `${lot.returnedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
+    } else if (lot.isAllReturned) {
+        progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
     }
 
+    // Status Badges
     let statusHtml = '';
-    if (lot.receivedQty < lot.ttQty) statusHtml += `<span class="badge badge-orange">รอนำส่ง</span>`;
-    if (lot.ttQty > 0 && lot.receivedQty >= lot.ttQty) statusHtml += `<span class="badge badge-orange">รับครบแล้ว</span>`;
-    if (lot.isAllReceived && !lot.isPacking) statusHtml += `<span class="badge badge-light-orange">รอจ่ายงาน</span>`;
-    if (lot.isPacking && !lot.isAllPacking) statusHtml += `<span class="badge badge-warning">กำลังบรรจุ</span>`;
-    if (lot.isAllPacking) statusHtml += `<span class="badge badge-info">บรรจุครบแล้ว</span>`;
+    if (lot.receivedQty < lot.ttQty)
+        statusHtml += `<span class="badge badge-orange">รอนำส่ง</span>`;
+    if (lot.ttQty > 0 && lot.receivedQty >= lot.ttQty)
+        statusHtml += `<span class="badge badge-orange">รับครบแล้ว</span>`;
+    if (lot.isAllReceived && !lot.isPacking && !lot.isAllAssigned)
+        statusHtml += `<span class="badge badge-light-orange">รอจ่ายงาน</span>`;
+    if (lot.isPacking && !lot.isAllReturned)
+        statusHtml += `<span class="badge badge-warning">กำลังบรรจุ</span>`;
+    if (lot.isAllReturned)
+        statusHtml += `<span class="badge badge-info">บรรจุครบแล้ว</span>`;
+    if (lot.hasRepair)
+        statusHtml += `<span class="badge badge-danger">ส่งซ่อม</span>`;
+    if (lot.hasLost)
+        statusHtml += `<span class="badge badge-danger">สูญหาย</span>`;
 
+    // Actions
     let actionsHtml = '';
-    if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllPacking && lot.ttQty != 0) actionsHtml += `<button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button>`;
-    if (lot.isPacking && !lot.isAllPacking) actionsHtml += `<button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button>`;
+    if (lot.hasRepair)
+        actionsHtml += `<button class='btn btn-warning btn-sm' onclick='ShowApproveToPrintModal("${lot.lotNo}")'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>`;
+    if (lot.hasLost)
+        actionsHtml += `<button class='btn btn-info btn-sm' onclick='printLostToPDF("${lot.lotNo}")'><i class='fas fa-folder'></i> สูญหาย</button>`;
+    if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllReturned && lot.ttQty !== 0)
+        actionsHtml += `<button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button>`;
+    if (lot.isPacking && !lot.isAllReturned)
+        actionsHtml += `<button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button>`;
+
+    // Assigned tables
+    const assignHtml = lot.assignTo?.map(a =>
+        `<a><span class="badge badge-secondary" onclick="showModalTableMember(${a.assignmentId})">${a.tableName}</span></a>`
+    ).join(' ') || '-';
 
     return `
         <tr data-lot-no="${lot.lotNo}">
-            <td>#</td>
+            <td>${index}</td>
             <td>
                 <a><strong>${lot.lotNo}</strong>
-                ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
-                ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
-                ${lot.isUpdate ? "<span class='badge bg-warning update'>มีการนำส่ง</span>" : ""}
+                    ${order.isReceivedLate && !lot.isPacked ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
+                    ${order.isPackingLate && !lot.isPacked ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
                 </a><br/>
                 <small>ปรับปรุงล่าสุด : ${lot.updateDate ?? "N/A"}</small>
             </td>
             <td>${lot.listNo}</td>
-            <td>${lot.assignTo || '-'}</td>
+            <td>${assignHtml}</td>
             <td class="project_progress">
                 <div class="progress progress-sm">${progressHtml}</div>
                 <small>${progressText}</small>
             </td>
             <td class="project-state">${statusHtml}</td>
             <td class="project-actions text-right">${actionsHtml}</td>
-        </tr>`;
+        </tr>
+    `;
 }
+
+async function updateLotRow(lotNo) {
+    try {
+        const res = await $.ajax({
+            url: urlGetCustomLot, // สร้างตัวแปร url นี้ mapping ไปที่ Home/GetCustomLot
+            type: 'GET',
+            data: { lotNo: lotNo }
+        });
+
+        if (!res) return;
+
+        // res คือข้อมูล lot เดี่ยว → ต้องหา order ที่ lot นี้อยู่
+        const $row = $(`tr[data-lot-no="${lotNo}"]`);
+        if ($row.length > 0) {
+            const $accordionItem = $row.closest(".accordion-item");
+            const orderNo = $accordionItem.data("order-no");
+
+            // หา order object จาก DOM (เก็บ orderNo ไว้ใน data-order-no)
+            const orderData = { orderNo: orderNo }; // dummy object
+            const newRowHtml = renderLotRow(orderData, res);
+
+            $row.replaceWith(newRowHtml);
+        }
+    } catch (err) {
+        console.error("Update row failed:", err);
+    }
+}
+
 
 async function showModalTableMember(assignedID) {
     console.log(assignedID)
@@ -685,6 +778,11 @@ function showModalAssign(lotNo) {
     modal.find('#txtTitleAssign').html(
         "<i class='fas fa-folder-plus'></i> รายการมอบหมายงาน : " + html(lotNo)
     );
+
+    $("#txtWorkerNumber").val(0);
+    $("#chxHasPartTime").prop("checked", false);
+    $("#txtWorkerNumber").prop('disabled', true)
+    $("#chxHasPartTime").prop('disabled', true)
 
     modal.modal('show');
 
@@ -780,7 +878,6 @@ async function showModalReturn(lotNo) {
 
     $("#breakDes").hide();
     $("#breakDes2").hide();
-    $("#txtBreakDes").prop("required", false).val("");
     $("#txtAddBreakDes").val('').hide();
     $('#txtLostQty').prop('readonly', true);
     $('#txtBreakQty').prop('readonly', true);
@@ -822,6 +919,61 @@ async function showModalReturn(lotNo) {
     });
 }
 
+function ShowApproveToPrintModal(lotNo) {
+
+    const txtUsername = $('#txtUsername');
+    const txtPassword = $('#txtPassword');
+    const btn = $('#btnValidateApprover');
+
+    txtUsername.val('').removeClass('is-invalid is-warning is-valid').prop('disabled', false);
+    txtPassword.val('').removeClass('is-invalid is-warning is-valid').prop('disabled', false);
+    btn.removeClass('btn-success').addClass('btn-primary').text('ตรวจสอบสิทธิ์').prop('disabled', false);
+    $('#btnPrintReport').prop('disabled', true)
+
+    $('#hddUserID').val('');
+
+    $('#hddLotNo').val(lotNo);
+
+    $('#modal-approve-to-print').modal('show');
+}
+
+async function printBreakToPDF(lotNo) {
+    const username = $('#txtUsername').val();
+    const password = $('#txtPassword').val();
+
+    if (!lotNo || lotNo == '') {
+        await showWarning('กรุณาเลือก lotNo');
+        return;
+    }
+
+    const printUrl = urlBreakReport + '?lotNo=' + encodeURIComponent(lotNo) + '&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password);
+    const printWindow = window.open(printUrl, '_blank');
+
+    printWindow.onload = function () {
+        // setTimeout(function() {
+        //     printWindow.print();
+        //     //printWindow.close();
+        // }, 1000);
+    };
+}
+
+async function printLostToPDF(lotNo) {
+    if (!lotNo || lotNo == '') {
+        await showWarning('กรุณาเลือก lotNo');
+        return;
+    }
+
+    const printUrl = urlLostReport + '?lotNo=' + encodeURIComponent(lotNo);
+    const printWindow = window.open(printUrl, '_blank');
+
+    printWindow.onload = function () {
+        // setTimeout(function() {
+        //     printWindow.print();
+        //     //printWindow.close();
+        // }, 1000);
+    };
+}
+
 function calcTotalReturnQty() {
     const lostQty = parseFloat($("#txtLostQty").val()) || 0;
     const breakQty = parseFloat($("#txtBreakQty").val()) || 0;
@@ -861,5 +1013,5 @@ function ClearFindBy() {
     $("#toDate").val("");
     $("#txtOrderNo").val("");
     $("#txtCustCode").val("");
-    //fetchOrdersByDateRange()
+    fetchOrdersByDateRange()
 }

@@ -84,7 +84,7 @@ namespace JPStockPacking.Services.Implement
             }
             else
             {
-                throw new InvalidOperationException("ไม่พบ Order ที่ต้องการนำเข้า");
+                return;
             }
 
             using var transaction = _sPDbContext.Database.BeginTransaction();
@@ -134,8 +134,7 @@ namespace JPStockPacking.Services.Implement
                 ).FirstOrDefaultAsync() ?? throw new InvalidOperationException("ไม่พบใบรับ");
 
                 var validOrder = await _sPDbContext.Order.AnyAsync(o => o.OrderNo == receive.OrderNo);
-                if (!validOrder)
-                    throw new InvalidOperationException($"Order {receive.OrderNo} ยังไม่ได้ถูกนำเข้ามาในระบบ");
+                if (!validOrder) return;
 
                 var existingIds = await _sPDbContext.Received
                     .Where(x => x.ReceiveId == receive.Id)

@@ -16,6 +16,8 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<AssignmentMember> AssignmentMember { get; set; }
 
+    public virtual DbSet<AssignmentReceived> AssignmentReceived { get; set; }
+
     public virtual DbSet<AssignmentTable> AssignmentTable { get; set; }
 
     public virtual DbSet<BreakDescription> BreakDescription { get; set; }
@@ -24,9 +26,13 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<LotNotify> LotNotify { get; set; }
 
+    public virtual DbSet<MappingPermission> MappingPermission { get; set; }
+
     public virtual DbSet<Order> Order { get; set; }
 
     public virtual DbSet<OrderNotify> OrderNotify { get; set; }
+
+    public virtual DbSet<Permission> Permission { get; set; }
 
     public virtual DbSet<Received> Received { get; set; }
 
@@ -47,6 +53,26 @@ public partial class SPDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("Thai_100_CI_AI");
+
+        modelBuilder.Entity<Assignment>(entity =>
+        {
+            entity.HasKey(e => e.AssignmentId).HasName("PK_Assignment_1");
+        });
+
+        modelBuilder.Entity<AssignmentReceived>(entity =>
+        {
+            entity.HasKey(e => e.AssignmentReceivedId).HasName("PK_Assignment");
+        });
+
+        modelBuilder.Entity<MappingPermission>(entity =>
+        {
+            entity.HasKey(e => e.MappingPermissionId).HasName("PK_MenuPermission");
+        });
+
+        modelBuilder.Entity<Permission>(entity =>
+        {
+            entity.HasKey(e => e.PermissionId).HasName("PK_Menu");
+        });
 
         modelBuilder.Entity<Received>(entity =>
         {

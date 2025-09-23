@@ -6,25 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class SendQtyToPackDetail
+public partial class Permission
 {
     [Key]
-    [Column("SendQtyToPackDetailID")]
-    public int SendQtyToPackDetailId { get; set; }
-
-    [Column("SendQtyToPackID")]
-    public int SendQtyToPackId { get; set; }
+    [Column("PermissionID")]
+    public int PermissionId { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
-    public string LotNo { get; set; } = null!;
+    public string? Name { get; set; }
 
-    [Column(TypeName = "decimal(18, 1)")]
-    public decimal TtQty { get; set; }
-
-    public bool IsUnderQuota { get; set; }
-
-    public int? Approver { get; set; }
+    public bool IsMenu { get; set; }
 
     public bool IsActive { get; set; }
 

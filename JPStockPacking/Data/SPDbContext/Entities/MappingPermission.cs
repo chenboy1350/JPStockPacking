@@ -6,14 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Assignment
+public partial class MappingPermission
 {
     [Key]
-    public int AssignmentId { get; set; }
+    [Column("MappingPermissionID")]
+    public int MappingPermissionId { get; set; }
 
-    public int NumberWorkers { get; set; }
+    [Column("UserID")]
+    public int UserId { get; set; }
 
-    public bool HasPartTime { get; set; }
+    [Column("PermissionID")]
+    public int PermissionId { get; set; }
 
     public bool IsActive { get; set; }
 

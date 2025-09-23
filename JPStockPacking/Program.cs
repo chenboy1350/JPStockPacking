@@ -16,6 +16,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("JPDBEntries")));
 builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SPDBEntries")));
 
+builder.Services.Configure<AppSettingModel>(builder.Configuration.GetSection("AppSettings"));
+
 builder.Services.AddScoped<ICookieAuthService, CookieAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IApiClientService, ApiClientService>();

@@ -20,6 +20,10 @@ public partial class SendQtyToPackDetailSize
 
     public int SizeIndex { get; set; }
 
+    public bool IsUnderQuota { get; set; }
+
+    public int? Approver { get; set; }
+
     public bool IsActive { get; set; }
 
     [Column(TypeName = "datetime")]

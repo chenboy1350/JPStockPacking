@@ -6,6 +6,8 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Globalization;
 using static JPStockPacking.Services.Helper.Enum;
+using static JPStockPacking.Services.Implement.AuthService;
+using static JPStockPacking.Services.Implement.OrderManagementService;
 
 namespace JPStockPacking.Services.Implement
 {
@@ -116,6 +118,96 @@ namespace JPStockPacking.Services.Implement
 
             return document.GeneratePdf();
 
+        }
+
+        public byte[] GenerateBreakReport(List<LostAndRepairModel> model, UserModel userModel)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4.Portrait());
+                    page.Margin(0.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Tahoma"));
+
+                    page.Content().Column(col =>
+                    {
+                        // คำนวณความสูงที่เหลือหลังจากหัก margin และ footer
+                        var availableHeight = PageSizes.A4.Height - (0.5f * 2 * 72 / 2.54f) - 60; // หัก margin และพื้นที่สำหรับ footer
+                        var halfHeight = availableHeight / 2;
+
+                        // ครึ่งบน - กำหนดความสูงแน่นอน
+                        col.Item().Height(halfHeight).Element(content =>
+                        {
+                            content.BreakReportContent(model, userModel);
+                        });
+
+                        // เส้นคั่นกลาง
+                        col.Item().Height(2).Background(Colors.Grey.Lighten2);
+
+                        // ครึ่งล่าง - กำหนดความสูงแน่นอนและไม่ให้เกิน
+                        col.Item().Height(halfHeight).Element(content =>
+                        {
+                            content.Column(innerCol =>
+                            {
+                                // ใช้ MaxHeight เพื่อไม่ให้เกินขอบเขต
+                                innerCol.Item().MaxHeight(halfHeight).Element(c =>
+                                    c.BreakReportContent(model, userModel));
+                            });
+                        });
+                    });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        public byte[] GenerateLostReport(LostAndRepairModel model)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4.Portrait());
+                    page.Margin(0.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Tahoma"));
+
+                    page.Content().Column(col =>
+                    {
+                        // คำนวณความสูงที่เหลือหลังจากหัก margin และ footer
+                        var availableHeight = PageSizes.A4.Height - (0.5f * 2 * 72 / 2.54f) - 60; // หัก margin และพื้นที่สำหรับ footer
+                        var halfHeight = availableHeight / 2;
+
+                        // ครึ่งบน - กำหนดความสูงแน่นอน
+                        col.Item().Height(halfHeight).Element(content =>
+                        {
+                            content.LostReportContent(model);
+                        });
+
+                        // เส้นคั่นกลาง
+                        col.Item().Height(2).Background(Colors.Grey.Lighten2);
+
+                        // ครึ่งล่าง - กำหนดความสูงแน่นอนและไม่ให้เกิน
+                        col.Item().Height(halfHeight).Element(content =>
+                        {
+                            content.Column(innerCol =>
+                            {
+                                // ใช้ MaxHeight เพื่อไม่ให้เกินขอบเขต
+                                innerCol.Item().MaxHeight(halfHeight).Element(c =>
+                                    c.LostReportContent(model));
+                            });
+                        });
+                    });
+                });
+            });
+
+            return document.GeneratePdf();
         }
     }
 }

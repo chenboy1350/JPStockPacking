@@ -67,8 +67,10 @@ namespace JPStockPacking.Models
         public bool IsAllReceived { get; set; } = false;
         public bool IsPacking { get; set; } = false;
         public bool IsPacked { get; set; } = false;
-        public bool HasLostOrRepair { get; set; } = false;
+        public bool HasRepair { get; set; } = false;
+        public bool HasLost { get; set; } = false;
         public bool IsAllReturned { get; set; } = false;
+        public bool IsAllAssigned { get; set; } = false;
         public List<TableMemberModel> TableMembers { get; set; } = [];
     }
 }

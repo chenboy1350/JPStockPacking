@@ -1,12 +1,11 @@
-using Azure.Core;
 using JPStockPacking.Models;
-using JPStockPacking.Services.Implement;
 using JPStockPacking.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Threading.Tasks;
 using static JPStockPacking.Services.Helper.Enum;
+using static JPStockPacking.Services.Implement.AuthService;
+using static JPStockPacking.Services.Implement.OrderManagementService;
 
 namespace JPStockPacking.Controllers
 {
@@ -14,18 +13,21 @@ namespace JPStockPacking.Controllers
         INotificationService notificationService,
         IReportService reportService,
         IReceiveManagementService receiveManagementService,
-        IWebHostEnvironment webHostEnvironment) : Controller
+        IWebHostEnvironment webHostEnvironment,
+        IOptions<AppSettingModel> appSettings) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
         private readonly IReportService _reportService = reportService;
         private readonly IReceiveManagementService _receiveManagementService = receiveManagementService;
         private readonly IWebHostEnvironment _env = webHostEnvironment;
+        private readonly AppSettingModel _appSettings = appSettings.Value;
 
         [Authorize]
         public IActionResult Index()
         {
-            ViewBag.Username = User.Identity?.Name!.ToLower();
+            ViewBag.AppVersion = _appSettings.AppVersion;
+            ViewBag.DatabaseVersion = _appSettings.DatabaseVersion;
             return View();
         }
 
@@ -47,14 +49,14 @@ namespace JPStockPacking.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> Receive()
+        public async Task<IActionResult> ReceiveManagement()
         {
             var result = await _receiveManagementService.GetTopJPReceivedAsync(null);
             return PartialView("~/Views/Partial/_ReceiveManagment.cshtml", result);
         }
 
         [Authorize]
-        public IActionResult Export()
+        public IActionResult ExportReceiveManagement()
         {
             return PartialView("~/Views/Partial/_ExportManagement.cshtml");
         }
@@ -80,9 +82,9 @@ namespace JPStockPacking.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch 
+            catch (Exception ex)
             {
-                return StatusCode(500, "เกิดข้อผิดพลาดภายในระบบ");
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -102,6 +104,18 @@ namespace JPStockPacking.Controllers
             var result = await _orderManagementService.GetOrderAndLotByRangeAsync(groupMode, orderNo, custCode, fdate, edate);
             return Ok(result);
         }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCustomLot(string lotNo)
+        {
+            var result = await _orderManagementService.GetCustomLotAsync(lotNo);
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
 
         [HttpGet]
         [Authorize]
@@ -133,9 +147,9 @@ namespace JPStockPacking.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, "เกิดข้อผิดพลาดภายในระบบ");
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -154,20 +168,20 @@ namespace JPStockPacking.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, "เกิดข้อผิดพลาดภายในระบบ");
+                return StatusCode(500, ex.Message);
             }
         }
 
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds)
+        public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds, [FromForm] bool hasPartTime, [FromForm] int workerNumber)
         {
             if (string.IsNullOrWhiteSpace(lotNo) || receivedIDs == null || receivedIDs.Length == 0 || string.IsNullOrWhiteSpace(tableId) || memberIds == null || memberIds.Length == 0)
                 return BadRequest("ข้อมูลไม่ครบถ้วน");
-            await _orderManagementService.AssignReceivedAsync(lotNo, receivedIDs, tableId, memberIds);
+            await _orderManagementService.AssignReceivedAsync(lotNo, receivedIDs, tableId, memberIds, hasPartTime, workerNumber);
             return Ok();
         }
 
@@ -213,9 +227,9 @@ namespace JPStockPacking.Controllers
 
         [HttpPatch]
         [Authorize]
-        public async Task<IActionResult> LostAndRepair([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal lostQty, [FromForm] decimal breakQty, [FromForm] decimal returnQty)
+        public async Task<IActionResult> LostAndRepair([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal lostQty, [FromForm] decimal breakQty, [FromForm] decimal returnQty, [FromForm] int breakDescriptionID)
         {
-            await _orderManagementService.LostAndRepairAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty);
+            await _orderManagementService.LostAndRepairAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty, breakDescriptionID);
             return Ok();
         }
 
@@ -243,9 +257,9 @@ namespace JPStockPacking.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch (Exception)
-            { 
-                return StatusCode(500, "เกิดข้อผิดพลาดภายในระบบ");
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -319,17 +333,62 @@ namespace JPStockPacking.Controllers
 
             try
             {
-                var res = await _orderManagementService.GetJPUser(username, password);
+                UserModel res = await _orderManagementService.ValidateApporverAsync(username, password);
                 return Ok(res);
             }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(ex.Message);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, "เกิดข้อผิดพลาดภายในระบบ");
+                return StatusCode(500, ex.Message);
             }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddNewBreakDescription([FromForm] string breakDescription)
+        {
+            if (string.IsNullOrWhiteSpace(breakDescription)) return BadRequest();
+
+            try
+            {
+                var res = await _orderManagementService.AddNewBreakDescription(breakDescription);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> BreakReport(string lotNo, string username, string password)
+        {
+            UserModel user = await _orderManagementService.ValidateApporverAsync(username, password);
+            List<LostAndRepairModel> result = await _orderManagementService.GetRepairAsync(lotNo);
+            byte[] pdfBytes = _reportService.GenerateBreakReport(result, user);
+
+            string contentDisposition = $"inline; filename=BreakReport_{DateTime.Now:yyyyMMdd}.pdf";
+            Response.Headers.Append("Content-Disposition", contentDisposition);
+
+            return File(pdfBytes, "application/pdf");
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> LostReport(string lotNo)
+        {
+            LostAndRepairModel result = await _orderManagementService.GetLostAsync(lotNo);
+            byte[] pdfBytes = _reportService.GenerateLostReport(result);
+
+            string contentDisposition = $"inline; filename=LostReport_{DateTime.Now:yyyyMMdd}.pdf";
+            Response.Headers.Append("Content-Disposition", contentDisposition);
+
+            return File(pdfBytes, "application/pdf");
         }
 
         private static string? GetContentType(string path)

@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.Rendering
+﻿@using JPStockPacking.Services.Helper
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["PageTitle"] = "หน้าแรก";
@@ -18,7 +19,7 @@
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
                     <i class="fas fa-user img-size-32 img-circle mr-2"></i>
-                    <span>@ViewBag.Username</span>
+                    <span>@User.GetUsername()?.ToLower()</span>
                 </a>
 @*                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     <div class="dropdown-divider"></div>
@@ -41,47 +42,27 @@
         <div class="sidebar d-flex flex-column">
             <nav class="mt-2 d-flex flex-column flex-grow-1">
                 <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
-                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
-                    {
-@*                         <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("DashBoard", "Home")">
-                                <i class="nav-icon fas fa-receipt"></i>
-                                <p>ภาพรวมของแผนก</p>
-                            </a>
-                        </li> *@
-                    }
-
-                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    @if (User.HasClaim("Menu", "ReceiveManagement"))
                     {
                         <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("Receive", "Home")">
+                            <a href="#" class="nav-link" data-action="@Url.Action("ReceiveManagement", "Home")">
                                 <i class="nav-icon fas fa-receipt"></i>
-                                <p>จัดการใบรับ</p>
+                                <p>ใบรับสินค้า (ลงบิล)</p>
                             </a>
                         </li>
                     }
 
-                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    @if (User.HasClaim("Menu", "OrderManagement"))
                     {
                         <li class="nav-item">
                             <a href="#" class="nav-link" data-action="@Url.Action("OrderManagement", "Home")">
                                 <i class="nav-icon fas fa-receipt"></i>
-                                <p>จัดการคำสั่งซื้อ</p>
+                                <p>สต็อกแพ็คกิ้ง</p>
                             </a>
-                        </li>                        
+                        </li>
                     }
 
-                    @if (ViewBag.Username == "test2" || ViewBag.Username == "admin")
-                    {
-@*                         <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("Export", "Home")">
-                                <i class="nav-icon fas fa-receipt"></i>
-                                <p>จัดการการส่งออก</p>
-                            </a>
-                        </li> *@
-                    }
-
-                    @if (ViewBag.Username == "test1" || ViewBag.Username == "test2" || ViewBag.Username == "admin")
+                    @if (User.HasClaim("Menu", "CheckQtyToPack"))
                     {
                         <li class="nav-item">
                             <a href="#" class="nav-link" data-action="@Url.Action("CheckQtyToPack", "Home")">
@@ -110,6 +91,16 @@
         </section>
     </div>
 
+    <footer class="main-footer">
+        <div class="float-right d-none d-block">
+            <b>Database Version</b> @ViewBag.DatabaseVersion
+        </div>
+        <div class="float-right d-none d-block pr-3">
+            <b>App Version</b> @ViewBag.AppVersion
+        </div>
+        <p></p>
+    </footer>
+
     <aside class="control-sidebar control-sidebar-dark"></aside>
 </div>
 
@@ -137,6 +128,10 @@
         window.urlGetReceiveRow = '@Url.Action("GetReceiveRow", "Home")';
         window.urlCheckUser = '@Url.Action("CheckUser", "Home")';
         window.urlGetReceiveList = '@Url.Action("GetReceiveList", "Home")';
+        window.urlAddNewBreakDescription = '@Url.Action("AddNewBreakDescription", "Home")';
+        window.urlLostReport = '@Url.Action("LostReport", "Home")';
+        window.urlBreakReport = '@Url.Action("BreakReport", "Home")';
+        window.urlGetCustomLot = '@Url.Action("GetCustomLot", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
