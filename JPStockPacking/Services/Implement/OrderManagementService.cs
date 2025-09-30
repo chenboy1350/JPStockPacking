@@ -16,14 +16,12 @@ namespace JPStockPacking.Services.Implement
         JPDbContext jPDbContext,
         SPDbContext sPDbContext,
         IProductionPlanningService productionPlanningService,
-        IPISService pISService,
-        IAuthService authService) : IOrderManagementService
+        IPISService pISService) : IOrderManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
         private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
         private readonly IPISService _pISService = pISService;
-        private readonly IAuthService _authService = authService;
 
         public async Task<ScheduleListModel> GetOrderAndLotByRangeAsync(GroupMode groupMode, string orderNo, string custCode, DateTime fromDate, DateTime toDate)
         {
@@ -795,8 +793,8 @@ namespace JPStockPacking.Services.Implement
                     jobBillSendStock.Ttwg = TtWg;
                 }
 
-                await _jPDbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
+                //await _jPDbContext.SaveChangesAsync();
+                //await transaction.CommitAsync();
             }
             catch (Exception)
             {
@@ -1379,9 +1377,9 @@ namespace JPStockPacking.Services.Implement
 
         public async Task<UserModel> ValidateApporverAsync(string username, string password)
         {
-            var user = await _authService.ValidateApporverAsync(username, password);
+            var user = await _pISService.ValidateApproverAsync(username, password);
 
-            var HasRole = await _sPDbContext.MappingPermission.AnyAsync(x => x.UserId == user.Id && x.IsActive && x.PermissionId == 3);
+            var HasRole = await _sPDbContext.MappingPermission.AnyAsync(x => x.UserId == user.UserID && x.IsActive && x.PermissionId == 3);
 
             if (user != null && HasRole)
             {

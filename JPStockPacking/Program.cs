@@ -18,6 +18,8 @@ builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(build
 
 builder.Services.Configure<AppSettingModel>(builder.Configuration.GetSection("AppSettings"));
 
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<ICookieAuthService, CookieAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IApiClientService, ApiClientService>();

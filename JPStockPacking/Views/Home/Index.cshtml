@@ -42,6 +42,7 @@
         <div class="sidebar d-flex flex-column">
             <nav class="mt-2 d-flex flex-column flex-grow-1">
                 <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
+                    <li class="nav-header">MENU</li>
                     @if (User.HasClaim("Menu", "ReceiveManagement"))
                     {
                         <li class="nav-item">
@@ -72,6 +73,22 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "UserManagement"))
+                    {
+                        <li class="nav-header">ADMINISTRATION</li>
+                    }
+
+                    @if (User.HasClaim("Menu", "UserManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("UserManagement", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>จัดการบัญชีผู้ใช้</p>
+                            </a>
+                        </li>
+                    }
+
+                    <li class="nav-header"><hr class="border-top"></li>
                     <li class="nav-item mt-auto">
                         <a href="#" id="btnSignOut" class="nav-link">
                             <i class="nav-icon fas fa-sign-out-alt"></i>
@@ -132,11 +149,17 @@
         window.urlLostReport = '@Url.Action("LostReport", "Home")';
         window.urlBreakReport = '@Url.Action("BreakReport", "Home")';
         window.urlGetCustomLot = '@Url.Action("GetCustomLot", "Home")';
+        window.urlGetUser = '@Url.Action("GetUser", "Home")';
+        window.urlAddNewUser = '@Url.Action("AddNewUser", "Home")';
+        window.urlAvailableEmployee = '@Url.Action("AvailableEmployee", "Home")';
+        window.urlEditUser = '@Url.Action("EditUser", "Home")';
+        window.urlToggleUserStatus = '@Url.Action("ToggleUserStatus", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
     <script src="~/js/CheckQtyToPack.js" asp-append-version="true"></script>
     <script src="~/js/ReceiveManagement.js" asp-append-version="true"></script>
+    <script src="~/js/UserManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

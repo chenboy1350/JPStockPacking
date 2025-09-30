@@ -53,7 +53,7 @@
                 $("#chxHasPartTime").prop('disabled', false)
             },
             error: async function (xhr) {
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
             }
         });
     });
@@ -186,7 +186,7 @@
                 });
             },
             error: function (xhr) {
-                tbody.html(`<tr><td colspan="9" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status})</td></tr>`);
+                tbody.html(`<tr><td colspan="9" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})</td></tr>`);
             }
         });
 
@@ -258,7 +258,7 @@
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
-                await showWarning("เกิดข้อผิดพลาดในการคืนงาน (" + xhr.status + ")");
+                await showWarning(`เกิดข้อผิดพลาดในการคืนงาน (${xhr.status} ${xhr.statusText})`);
             }
         });
     });
@@ -320,7 +320,7 @@
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
-                await showWarning("เกิดข้อผิดพลาดในการคืนงาน (" + xhr.status + ")");
+                await showWarning(`เกิดข้อผิดพลาดในการคืนงาน (${xhr.status} ${xhr.statusText})`);
             }
         });
     });
@@ -449,7 +449,7 @@
                         },
                         error: async (xhr) => {
                             $('#loadingIndicator').hide();
-                            await showWarning("เกิดข้อผิดพลาด (" + xhr.status + ")");
+                            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
                         }
                     });
                 }
@@ -499,7 +499,7 @@
                 btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.username}`).prop('disabled', true);
                 $('#btnPrintReport').prop('disabled', false)
                 
-                $('#hddUserID').val(res)
+                $('#hddUserID').val(res.username)
                 $('#btnPrintReport').focus();
             },
             error: async function (xhr) {
@@ -762,7 +762,7 @@ async function showModalTableMember(assignedID) {
             console.log(res)
         },
         error: async function (xhr) {
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
         },
     });
 }
@@ -941,21 +941,34 @@ async function printBreakToPDF(lotNo) {
     const username = $('#txtUsername').val();
     const password = $('#txtPassword').val();
 
-    if (!lotNo || lotNo == '') {
+    if (!lotNo || lotNo === '') {
         await showWarning('กรุณาเลือก lotNo');
         return;
     }
 
-    const printUrl = urlBreakReport + '?lotNo=' + encodeURIComponent(lotNo) + '&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password);
-    const printWindow = window.open(printUrl, '_blank');
+    const printUrl = urlBreakReport
+        + '?lotNo=' + encodeURIComponent(lotNo)
+        + '&username=' + encodeURIComponent(username)
+        + '&password=' + encodeURIComponent(password);
 
-    printWindow.onload = function () {
-        // setTimeout(function() {
-        //     printWindow.print();
-        //     //printWindow.close();
-        // }, 1000);
-    };
+    $.ajax({
+        url: printUrl,
+        type: 'GET',
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (data) {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+        },
+        error: function (xhr) {
+            console.error(xhr);
+            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+        }
+    });
 }
+
 
 async function printLostToPDF(lotNo) {
     if (!lotNo || lotNo == '') {
@@ -964,14 +977,23 @@ async function printLostToPDF(lotNo) {
     }
 
     const printUrl = urlLostReport + '?lotNo=' + encodeURIComponent(lotNo);
-    const printWindow = window.open(printUrl, '_blank');
 
-    printWindow.onload = function () {
-        // setTimeout(function() {
-        //     printWindow.print();
-        //     //printWindow.close();
-        // }, 1000);
-    };
+    $.ajax({
+        url: printUrl,
+        type: 'GET',
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (data) {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+        },
+        error: function (xhr) {
+            console.error(xhr);
+            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+        }
+    });
 }
 
 function calcTotalReturnQty() {

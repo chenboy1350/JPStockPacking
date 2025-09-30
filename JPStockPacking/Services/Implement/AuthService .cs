@@ -50,7 +50,7 @@ namespace JPStockPacking.Services.Implement
                         SameSite = SameSiteMode.Strict,
                         Expires = rememberMe
                             ? DateTimeOffset.UtcNow.AddDays(7)
-                            : DateTimeOffset.UtcNow.AddHours(1),
+                            : DateTimeOffset.UtcNow.AddHours(10),
                         IsEssential = true
                     });
 
@@ -119,7 +119,7 @@ namespace JPStockPacking.Services.Implement
                         HttpOnly = true,
                         Secure = true,
                         SameSite = SameSiteMode.Strict,
-                        Expires = DateTimeOffset.UtcNow.AddHours(1),
+                        Expires = DateTimeOffset.UtcNow.AddHours(10),
                         IsEssential = true
                     });
                 }
@@ -226,49 +226,6 @@ namespace JPStockPacking.Services.Implement
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<UserModel> ValidateApporverAsync(string username, string password)
-        {
-            try
-            {
-                InputValidator validator = new();
-                var apiSettings = _configuration.GetSection("ApiSettings");
-                var apiKey = apiSettings["APIKey"];
-                var urlValidateApporver = apiSettings["ValidateApporver"];
-
-                if (validator.IsValidInput(username) && validator.IsValidInput(password))
-                {
-                    using var httpClient = new HttpClient();
-                    var requestBody = new AuthRequestModel
-                    {
-                        ClientId = username,
-                        ClientSecret = password,
-                    };
-                    var content = new StringContent(JsonSerializer.Serialize(requestBody, CachedJsonSerializerOptions), Encoding.UTF8, "application/json");
-                    httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-                    var response = await httpClient.PostAsync(urlValidateApporver, content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var responseString = await response.Content.ReadAsStringAsync();
-                        var user = JsonSerializer.Deserialize<UserModel>(responseString, CachedJsonSerializerOptions);
-                        return user ?? new UserModel();
-                    }
-                    else
-                    {
-                        return new UserModel();
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException("Invalid input provided.");
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-
         private async Task<AuthResponseModel> ValidateUserAsync(string username, string password)
         {
             try
@@ -317,21 +274,10 @@ namespace JPStockPacking.Services.Implement
             PropertyNameCaseInsensitive = true
         };
 
-        public class UserModel
-        {
-            public int Id { get; set; } = 0;
-            public string Username { get; set; } = string.Empty;
-            public string FirstName { get; set; } = string.Empty;
-            public string LastName { get; set; } = string.Empty;
-            public string NickName { get; set; } = string.Empty;
-
-        }
-
         public class AuthRequestModel
         {
             public string? ClientId { get; set; }
             public string? ClientSecret { get; set; }
-            public int? Department { get; set; } = 0;
         }
 
         public class AuthResponseModel

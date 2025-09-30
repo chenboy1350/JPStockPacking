@@ -59,6 +59,51 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
+        public async Task<BaseResponseModel> PostAsync(string url, object payload, string? token = null)
+        {
+            using var httpClient = CreateHttpClient(token);
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync(url, content);
+                return await HandleResponse(response);
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponseModel> PatchAsync(string url, object payload, string? token = null)
+        {
+            using var httpClient = CreateHttpClient(token);
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PatchAsync(url, content);
+                return await HandleResponse(response);
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = $"Exception: {ex.Message}"
+                };
+            }
+        }
+
+
         private HttpClient CreateHttpClient(string? token)
         {
             var apiKey = _configuration["ApiSettings:APIKey"];
@@ -103,5 +148,27 @@ namespace JPStockPacking.Services.Implement
             };
         }
 
+        private static async Task<BaseResponseModel> HandleResponse(HttpResponseMessage response)
+        {
+            var statusCode = (int)response.StatusCode;
+            var responseJson = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                return new BaseResponseModel
+                {
+                    Code = statusCode,
+                    IsSuccess = true,
+                    Message = "OK"
+                };
+            }
+
+            return new BaseResponseModel
+            {
+                Code = statusCode,
+                IsSuccess = false,
+                Message = $"API error: {response.ReasonPhrase ?? response.StatusCode.ToString()}"
+            };
+        }
     }
 }

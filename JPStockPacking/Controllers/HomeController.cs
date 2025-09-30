@@ -1,4 +1,5 @@
 using JPStockPacking.Models;
+using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,8 @@ namespace JPStockPacking.Controllers
         IReportService reportService,
         IReceiveManagementService receiveManagementService,
         IWebHostEnvironment webHostEnvironment,
-        IOptions<AppSettingModel> appSettings) : Controller
+        IOptions<AppSettingModel> appSettings,
+        IPISService pISService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -22,6 +24,7 @@ namespace JPStockPacking.Controllers
         private readonly IReceiveManagementService _receiveManagementService = receiveManagementService;
         private readonly IWebHostEnvironment _env = webHostEnvironment;
         private readonly AppSettingModel _appSettings = appSettings.Value;
+        private readonly IPISService _pISService = pISService;
 
         [Authorize]
         public IActionResult Index()
@@ -65,6 +68,14 @@ namespace JPStockPacking.Controllers
         public IActionResult CheckQtyToPack()
         {
             return PartialView("~/Views/Partial/_CheckQtyToPack.cshtml");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> UserManagementAsync()
+        {
+            ViewBag.Employees = await _pISService.GetAvailableEmployeeAsync();
+            List<UserModel> res = await _pISService.GetUser(new ReqUserModel());
+            return PartialView("~/Views/Partial/_UserManagement.cshtml", res);
         }
 
         [HttpPost]
@@ -291,7 +302,7 @@ namespace JPStockPacking.Controllers
             if (!System.IO.File.Exists(fullPath))
                 fullPath = imgPath;
 
-            var contentType = GetContentType(fullPath);
+            var contentType = fullPath.GetContentType();
             if (string.IsNullOrEmpty(contentType))
                 contentType = "application/octet-stream";
 
@@ -333,7 +344,7 @@ namespace JPStockPacking.Controllers
 
             try
             {
-                UserModel res = await _orderManagementService.ValidateApporverAsync(username, password);
+                UserModel res = await _pISService.ValidateApproverAsync(username, password);
                 return Ok(res);
             }
             catch (InvalidOperationException ex)
@@ -391,19 +402,79 @@ namespace JPStockPacking.Controllers
             return File(pdfBytes, "application/pdf");
         }
 
-        private static string? GetContentType(string path)
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetUser([FromBody] ReqUserModel? reqUserModel = null)
         {
-            var extension = Path.GetExtension(path).ToLowerInvariant();
-
-            return extension switch
+            try
             {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".gif" => "image/gif",
-                ".bmp" => "image/bmp",
-                ".webp" => "image/webp",
-                _ => null
-            };
+                List<UserModel> res = await _pISService.GetUser(reqUserModel);
+                return Ok(res);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> AvailableEmployee(string receiveNo)
+        {
+            var result = await _pISService.GetAvailableEmployeeAsync();
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddNewUser([FromBody] UserModel userModel)
+        {
+            try
+            {
+                var res = await _pISService.AddNewUser(userModel);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> EditUser([FromBody] UserModel userModel)
+        {
+            try
+            {
+                var res = await _pISService.EditUser(userModel);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> ToggleUserStatus([FromBody] UserModel userModel)
+        {
+            try
+            {
+                var res = await _pISService.ToggleUserStatus(userModel);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
         }
     }
 }

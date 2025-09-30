@@ -41,7 +41,7 @@ namespace JPStockPacking.Services.Implement
                 IsPersistent = rememberMe,
                 ExpiresUtc = rememberMe
                     ? DateTimeOffset.UtcNow.AddDays(7)
-                    : DateTimeOffset.UtcNow.AddHours(1)
+                    : DateTimeOffset.UtcNow.AddHours(10)
             };
 
             await context.SignInAsync("AppCookieAuth", principal, authProps);

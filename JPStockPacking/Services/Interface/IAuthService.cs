@@ -8,6 +8,5 @@ namespace JPStockPacking.Services.Interface
         Task<LoginResult> LoginUserAsync(string username, string password, bool rememberMe);
         Task<RefreshTokenResult> RefreshTokenAsync();
         Task<bool> LogoutAsync();
-        Task<UserModel> ValidateApporverAsync(string username, string password);
     }
 }
