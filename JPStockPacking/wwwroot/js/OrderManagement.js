@@ -700,8 +700,8 @@ function renderLotRow(order, lot, index = "#") {
             <td>${index}</td>
             <td>
                 <a><strong>${lot.lotNo}</strong>
-                    ${order.isReceivedLate && !lot.isPacked ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
-                    ${order.isPackingLate && !lot.isPacked ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
+                    ${order.isReceivedLate && !lot.isAllReturned ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
+                    ${order.isPackingLate && !lot.isAllReturned ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
                 </a><br/>
                 <small>ปรับปรุงล่าสุด : ${lot.updateDate ?? "N/A"}</small>
             </td>

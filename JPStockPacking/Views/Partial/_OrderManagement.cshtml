@@ -171,8 +171,8 @@
                                                         <td>
                                                             <a>
                                                                 <strong>@lot.LotNo</strong>
-                                                                @Html.Raw((item.IsReceivedLate == true && lot.IsPacked != true) ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
-                                                                @Html.Raw((item.IsPackingLate == true && lot.IsPacked != true) ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
+                                                                @Html.Raw((item.IsReceivedLate == true && lot.IsAllReturned != true) ? "<i class='fas fa-fire-alt' style='color: #e85700; '></i>" : "")
+                                                                @Html.Raw((item.IsPackingLate == true && lot.IsAllReturned != true) ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
                                                             </a>
                                                             <br />
                                                             <small>

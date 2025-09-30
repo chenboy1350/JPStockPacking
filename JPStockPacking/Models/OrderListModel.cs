@@ -39,7 +39,7 @@ namespace JPStockPacking.Models
         public DateTime StartDate { get; set; }
         public int PackDaysRemain { get; set; } = 0;
         public int ExportDaysRemain { get; set; } = 0;
-        public int OperateDays { get; set; } = 0;
+        public double OperateDays { get; set; } = 0;
         public bool IsReceivedLate { get; set; } = false;
         public bool IsPackingLate { get; set; } = false;
         public List<CustomLot> CustomLot { get; set; } = [];
@@ -66,7 +66,6 @@ namespace JPStockPacking.Models
         public string UpdateDate { get; set; } = string.Empty;
         public bool IsAllReceived { get; set; } = false;
         public bool IsPacking { get; set; } = false;
-        public bool IsPacked { get; set; } = false;
         public bool HasRepair { get; set; } = false;
         public bool HasLost { get; set; } = false;
         public bool IsAllReturned { get; set; } = false;
