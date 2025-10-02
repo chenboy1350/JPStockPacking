@@ -530,7 +530,7 @@
     });
 
     $(document).on('click', '#btnPrintReport', async function () {
-        printBreakToPDF($('#hddLotNo').val());
+        printLostToPDF($('#hddLotNo').val());
     });
 });
 
@@ -682,7 +682,7 @@ function renderLotRow(order, lot, index = "#") {
     // Actions
     let actionsHtml = '';
     if (lot.hasRepair)
-        actionsHtml += `<button class='btn btn-warning btn-sm' onclick='ShowApproveToPrintModal("${lot.lotNo}")'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>`;
+        actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showApproveToPrintModal("${lot.lotNo}")'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>`;
     if (lot.hasLost)
         actionsHtml += `<button class='btn btn-info btn-sm' onclick='printLostToPDF("${lot.lotNo}")'><i class='fas fa-folder'></i> สูญหาย</button>`;
     if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllReturned && lot.ttQty !== 0)
@@ -919,7 +919,7 @@ async function showModalReturn(lotNo) {
     });
 }
 
-function ShowApproveToPrintModal(lotNo) {
+function showApproveToPrintModal(lotNo) {
 
     const txtUsername = $('#txtUsername');
     const txtPassword = $('#txtPassword');

@@ -283,8 +283,8 @@
                                                             }
                                                         </td>
                                                         <td class="project-actions text-right">
-                                                            @Html.Raw(lot.HasRepair ? string.Format("<button class='btn btn-warning btn-sm' onclick='ShowApproveToPrintModal({0})'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>", lot.LotNo) : "")
-                                                            @Html.Raw(lot.HasLost ? string.Format("<button class='btn btn-info btn-sm' onclick='printLostToPDF({0})'><i class='fas fa-folder'></i> สูญหาย</button>", lot.LotNo) : "")
+                                                            @* @Html.Raw(lot.HasRepair ? string.Format("<button class='btn btn-warning btn-sm' onclick='printBreakToPDF({0})'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>", lot.LotNo) : "") *@
+                                                            @Html.Raw(lot.HasLost ? string.Format("<button class='btn btn-info btn-sm' onclick='showApproveToPrintModal({0})'><i class='fas fa-folder'></i> สูญหาย</button>", lot.LotNo) : "")
 
                                                             @Html.Raw(((item.IsReceivedLate || lot.IsAllReceived) && !lot.IsAllReturned && lot.TtQty != 0) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
                                                             @Html.Raw((lot.IsPacking && !lot.IsAllReturned) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
@@ -527,10 +527,10 @@
                                         <input type="number" min="0" max="999999" id="txtLostQty" class="form-control" readonly>
                                     </div>
                                 </div>
-                                <div class="col-3 mt-2">
+                                @*<div class="col-3 mt-2">
                                     <label>จำนวนที่ชำรุด</label>
                                     <input type="number" min="0" max="999999" id="txtBreakQty" class="form-control" readonly>
-                                </div>
+                                </div>*@
                                 <div class="col-3 mt-2">
                                     <div class="form-group">
                                         <label>ส่งคืนรวมทั้งสิ้น</label>
@@ -699,7 +699,7 @@
                         <button id="btnValidateApprover" class="btn btn-primary btn-block">ตรวจสอบสิทธิ</button>
                     </div>
                     <div class="row pt-3">
-                        <button id="btnPrintReport" class="btn btn-info btn-block" disabled>พิมพ์รายงานส่งซ่อม</button>
+                        <button id="btnPrintReport" class="btn btn-info btn-block" disabled>พิมพ์รายงานแจ้งหาย</button>
                     </div>
                 </div>
             </div>

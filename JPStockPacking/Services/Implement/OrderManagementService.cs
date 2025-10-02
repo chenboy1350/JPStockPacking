@@ -194,18 +194,18 @@ namespace JPStockPacking.Services.Implement
             var schedule = new ScheduleListModel();
             if (groupMode == GroupMode.Day)
             {
-                schedule.Days = result
+                schedule.Days = [.. result
                     .GroupBy(o => o.StartDate.Date)
                     .OrderBy(g => g.Key)
                     .Select(g => new Day
                     {
                         Title = g.Key == today ? "Today" : g.Key.ToString("ddd dd MMM yyyy"),
                         Orders = g.ToList()
-                    }).ToList();
+                    })];
             }
             else
             {
-                schedule.Weeks = result
+                schedule.Weeks = [.. result
                     .GroupBy(o => o.StartDate.StartOfWeek())
                     .OrderBy(g => g.Key)
                     .Select(g =>
@@ -230,12 +230,11 @@ namespace JPStockPacking.Services.Implement
                             Title = title,
                             Orders = days
                         };
-                    }).ToList();
+                    })];
             }
 
             return schedule;
         }
-
 
         public async Task<CustomLot?> GetCustomLotAsync(string lotNo)
         {
@@ -879,6 +878,13 @@ namespace JPStockPacking.Services.Implement
                                 CreateDate = now,
                                 UpdateDate = now
                             };
+
+                            if (lot.LotApprover != 0)
+                            {
+                                newDetail.Approver = lot.LotApprover;
+                                newDetail.IsUnderQuota = true;
+                            }
+
                             _sPDbContext.SendQtyToPackDetail.Add(newDetail);
 
                             foreach (var size in lot.Sizes)
@@ -892,6 +898,12 @@ namespace JPStockPacking.Services.Implement
                                     CreateDate = now,
                                     UpdateDate = now
                                 };
+
+                                if (size.SizeApprover != 0)
+                                {
+                                    newSizeDetail.Approver = size.SizeApprover;
+                                    newSizeDetail.IsUnderQuota = true;
+                                }
 
                                 _sPDbContext.SendQtyToPackDetailSize.Add(newSizeDetail);
                             }
@@ -910,6 +922,13 @@ namespace JPStockPacking.Services.Implement
                             CreateDate = now,
                             UpdateDate = now
                         };
+
+                        if (lot.LotApprover != 0)
+                        {
+                            newDetail.Approver = lot.LotApprover;
+                            newDetail.IsUnderQuota = true;
+                        }
+
                         _sPDbContext.SendQtyToPackDetail.Add(newDetail);
                         await _sPDbContext.SaveChangesAsync();
 
@@ -924,6 +943,12 @@ namespace JPStockPacking.Services.Implement
                                 CreateDate = now,
                                 UpdateDate = now
                             };
+
+                            if (size.SizeApprover != 0)
+                            {
+                                newSizeDetail.Approver = size.SizeApprover;
+                                newSizeDetail.IsUnderQuota = true;
+                            }
 
                             _sPDbContext.SendQtyToPackDetailSize.Add(newSizeDetail);
                         }
@@ -1237,24 +1262,26 @@ namespace JPStockPacking.Services.Implement
                     SendPack_Qty = d != null ? (d.TTQty ?? 0) : 0
                 }).ToListAsync();
 
-            if (baseData is not { Count: > 0 })
-                throw new InvalidOperationException($"Order '{orderNo}' not found or has no lots.");
+            if (baseData is not { Count: > 0 }) return new SendToPackModel();
 
             var headerId = await _sPDbContext.SendQtyToPack
                 .Where(x => x.OrderNo == orderNo && x.IsActive)
                 .Select(x => x.SendQtyToPackId)
                 .FirstOrDefaultAsync();
 
-            Dictionary<string, decimal> detailDict = new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, (decimal TtQty, int? Approver)> lotDetailDict = new(StringComparer.OrdinalIgnoreCase);
 
             if (headerId > 0)
             {
-                detailDict = await _sPDbContext.SendQtyToPackDetail
+                lotDetailDict = await _sPDbContext.SendQtyToPackDetail
                     .Where(d => d.SendQtyToPackId == headerId && d.IsActive)
                     .GroupBy(d => d.LotNo)
                     .ToDictionaryAsync(
                         g => g.Key,
-                        g => g.Last().TtQty,
+                        g => (
+                            g.Last().TtQty,
+                            g.Last().Approver
+                        ),
                         StringComparer.OrdinalIgnoreCase
                     );
             }
@@ -1262,31 +1289,68 @@ namespace JPStockPacking.Services.Implement
             var lotNos = baseData.Select(x => x.LotNo).Where(x => x != null).Distinct().ToList();
             var sizeMap = await GetSizeByLotBulkAsync(orderNo, lotNos);
 
-            var lots = baseData.Select(x =>
+            var lots = new List<SendToPackLots>();
+
+            foreach (var x in baseData)
             {
-                detailDict.TryGetValue(x.LotNo ?? "", out var planQty);
+                lotDetailDict.TryGetValue(x.LotNo ?? "", out var lotDetail);
                 sizeMap.TryGetValue(x.LotNo ?? "", out var sizes);
 
-                return new SendToPackLots
+                if (lotDetail.Approver != 0 && lotDetail.Approver != null)
                 {
-                    LotNo = x.LotNo ?? string.Empty,
-                    ListNo = x.ListNo ?? string.Empty,
-                    Barcode = x.Barcode ?? string.Empty,
-                    Article = x.Article,
-                    Tunit = x.Tunit ?? string.Empty,
-                    EdesFn = x.EdesFn ?? string.Empty,
-                    TdesFn = x.TdesFn ?? string.Empty,
-                    TdesArt = x.TdesArt ?? string.Empty,
-                    Picture = (x.Picture ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
-                    ImagePath = x.Picture ?? string.Empty,
-                    TtQty = x.TtQty ?? 0,
-                    QtySi = x.QtySi,
-                    SendTtQty = x.SendPack_Qty,
-                    TtQtyToPack = planQty,
-                    IsDefined = planQty > 0,
-                    Size = sizes ?? []
-                };
-            }).ToList();
+                    List<UserModel>  user = await _pISService.GetUser(new ReqUserModel{ UserID = lotDetail.Approver});
+
+                    var lot = new SendToPackLots
+                    {
+                        LotNo = x.LotNo ?? string.Empty,
+                        ListNo = x.ListNo ?? string.Empty,
+                        Barcode = x.Barcode ?? string.Empty,
+                        Article = x.Article,
+                        Tunit = x.Tunit ?? string.Empty,
+                        EdesFn = x.EdesFn ?? string.Empty,
+                        TdesFn = x.TdesFn ?? string.Empty,
+                        TdesArt = x.TdesArt ?? string.Empty,
+                        Picture = (x.Picture ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
+                        ImagePath = x.Picture ?? string.Empty,
+                        TtQty = x.TtQty ?? 0,
+                        QtySi = x.QtySi,
+                        SendTtQty = x.SendPack_Qty,
+                        TtQtyToPack = lotDetail.TtQty,
+                        IsDefined = lotDetail.TtQty > 0,
+                        Approver = user.FirstOrDefault()!.Username,
+                        Size = sizes ?? []
+                    };
+
+                    lots.Add(lot);
+                }
+                else
+                {
+                    var lot = new SendToPackLots
+                    {
+                        LotNo = x.LotNo ?? string.Empty,
+                        ListNo = x.ListNo ?? string.Empty,
+                        Barcode = x.Barcode ?? string.Empty,
+                        Article = x.Article,
+                        Tunit = x.Tunit ?? string.Empty,
+                        EdesFn = x.EdesFn ?? string.Empty,
+                        TdesFn = x.TdesFn ?? string.Empty,
+                        TdesArt = x.TdesArt ?? string.Empty,
+                        Picture = (x.Picture ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
+                        ImagePath = x.Picture ?? string.Empty,
+                        TtQty = x.TtQty ?? 0,
+                        QtySi = x.QtySi,
+                        SendTtQty = x.SendPack_Qty,
+                        TtQtyToPack = lotDetail.TtQty,
+                        IsDefined = lotDetail.TtQty > 0,
+                        Approver = string.Empty,
+                        Size = sizes ?? []
+                    };
+
+                    lots.Add(lot);
+                }
+
+
+            }
 
             return new SendToPackModel
             {
@@ -1295,6 +1359,7 @@ namespace JPStockPacking.Services.Implement
                 Grade = baseData[0].Grade ?? string.Empty,
                 SCountry = baseData[0].Scountry ?? string.Empty,
                 Special = baseData[0].Special ?? string.Empty,
+                IsOrderDefined = lots.Any(l => l.IsDefined),
                 Lots = lots
             };
         }
@@ -1369,16 +1434,34 @@ namespace JPStockPacking.Services.Implement
 
                     if (!string.IsNullOrWhiteSpace(s) || !string.IsNullOrWhiteSpace(cs) || q > 0)
                     {
-                        sizes.Add(new Size
+                        if (approver != 0)
                         {
-                            S = s ?? "",
-                            CS = cs ?? "",
-                            Q = q,
-                            TtQtyToPack = qtyToPack,
-                            IsDefined = qtyToPack > 0,
-                            IsUnderQuota = isUnderQuota,
-                            Approver = approver
-                        });
+                            List<UserModel> user = await _pISService.GetUser(new ReqUserModel { UserID = approver });
+
+                            sizes.Add(new Size
+                            {
+                                S = s ?? "",
+                                CS = cs ?? "",
+                                Q = q,
+                                TtQtyToPack = qtyToPack,
+                                IsDefined = qtyToPack > 0,
+                                IsUnderQuota = isUnderQuota,
+                                Approver = user.FirstOrDefault()!.Username,
+                            });
+                        }
+                        else
+                        {
+                            sizes.Add(new Size
+                            {
+                                S = s ?? "",
+                                CS = cs ?? "",
+                                Q = q,
+                                TtQtyToPack = qtyToPack,
+                                IsDefined = qtyToPack > 0,
+                                IsUnderQuota = isUnderQuota,
+                                Approver = string.Empty
+                            });
+                        }
                     }
                 }
 

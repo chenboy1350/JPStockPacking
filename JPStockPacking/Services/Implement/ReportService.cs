@@ -61,13 +61,16 @@ namespace JPStockPacking.Services.Implement
                             table.ColumnsDefinition(columns =>
                             {
                                 columns.RelativeColumn(1);
+                                columns.RelativeColumn(1);
                             });
 
                             List<SendToPackLots> Items = [.. model.Lots];
+                            var leftItems = Items.Where((item, index) => index % 2 == 0).ToList();
+                            var rightItems = Items.Where((item, index) => index % 2 == 1).ToList();
 
                             table.Cell().Padding(2).Column(row =>
                             {
-                                foreach (var item in Items)
+                                foreach (var item in leftItems)
                                 {
                                     if (item.Size == null || item.Size!.Count <= 0)
                                     {
@@ -79,31 +82,51 @@ namespace JPStockPacking.Services.Implement
                                     }
                                 }
 
-                                row.Item()
-                                    .PaddingTop(30)
-                                    .Element(container =>
-                                    {
-                                        container.Row(row =>
-                                        {
-                                            row.RelativeItem().AlignCenter().Column(col =>
-                                            {
-                                                col.Item().Text("(...............................)").AlignCenter();
-                                                col.Item().Text("ผู้แจ้ง").FontSize(8).AlignCenter();
-                                            });
-                                            row.RelativeItem().AlignCenter().Column(col =>
-                                            {
-                                                col.Item().Text("(...............................)").AlignCenter();
-                                                col.Item().Text("ผู้อนุมัติ").FontSize(8).AlignCenter();
-                                            });
-                                            row.RelativeItem().AlignCenter().Column(col =>
-                                            {
-                                                col.Item().Text("(...............................)").AlignCenter();
-                                                col.Item().Text("ผู้รับ").FontSize(8).AlignCenter();
-                                            });
-                                        });
-                                    });
                             });
 
+                            table.Cell().Padding(2).Column(row =>
+                            {
+                                foreach (var item in rightItems)
+                                {
+                                    if (item.Size == null || item.Size!.Count <= 0)
+                                    {
+                                        row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemCard(item));
+                                    }
+                                    else
+                                    {
+                                        row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotSizeItemCard(item));
+                                    }
+                                }
+
+
+                            });
+
+                            table.Cell().ColumnSpan(2).Padding(2).Column(row =>
+                            {
+                                row.Item()
+                                .PaddingTop(40)
+                                .Element(container =>
+                                {
+                                    container.Row(row =>
+                                    {
+                                        row.RelativeItem().AlignCenter().Column(col =>
+                                        {
+                                            col.Item().Text("(...............................)").AlignCenter();
+                                            col.Item().Text("ผู้แจ้ง").FontSize(8).AlignCenter();
+                                        });
+                                        row.RelativeItem().AlignCenter().Column(col =>
+                                        {
+                                            col.Item().Text("(...............................)").AlignCenter();
+                                            col.Item().Text("ผู้อนุมัติ").FontSize(8).AlignCenter();
+                                        });
+                                        row.RelativeItem().AlignCenter().Column(col =>
+                                        {
+                                            col.Item().Text("(...............................)").AlignCenter();
+                                            col.Item().Text("ผู้รับ").FontSize(8).AlignCenter();
+                                        });
+                                    });
+                                });
+                            });
                         });
 
                     page.Footer()

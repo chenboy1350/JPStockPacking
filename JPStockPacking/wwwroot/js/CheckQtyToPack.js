@@ -17,6 +17,7 @@
                     $('#txtGrade').val(res.grade);
                     $('#txtSCountry').val(res.sCountry);
 
+                    const IsOrderDefined = res.isOrderDefined || false;
                     const lots = res?.lots || [];
 
                     if (lots.length > 0) {
@@ -26,7 +27,7 @@
                             const ttQty = item.ttQty || 0;
                             const qtySi = item.qtySi || 0;
                             const sendTtQty = item.sendTtQty || 0;
-                            const isDefined = !!item.isDefined;
+                            const isDefined = !!item.isDefined || !!IsOrderDefined;
                             if (isDefined) hasDefined = true;
 
                             const hasSize = item.size && item.size.length > 0;
@@ -39,9 +40,8 @@
                                     data-list-no="${item.listNo || ''}"
                                     data-edes-fn="${item.edesFn || ''}"
                                     data-tdes-art="${item.tdesArt || ''}"
-                                    data-ttqty="${item.tdesArt || ''}"
+                                    data-ttqty="${item.ttQty}"
                                     data-valid-ttqty="${ttQty + qtySi}"
-                                    data-qty-approver="${ttQty}"
                                     ${item.size?.length > 0 ? 'data-widget="expandable-table" aria-expanded="false"' : ""}
                                     onclick="showImg(this, '${item.picture}')" style="cursor: pointer;">
                                         <td class="text-center">${index + 1}</td>
@@ -61,9 +61,10 @@
                                                    onchange="validateQty(this,${ttQty + qtySi})"
                                                    ${readonlyAttr} />
                                                    ${buttonForceDefine}
+                                                   <span class="badge badge-orange">${item.approver != '' ? '<i class="fas fa-user-check"></i> ' + item.approver : ''}</span>
                                         </td>
                                 </tr>`;
-
+                            //<span class="badge badge-orange">${item.approver}</span>
                             if (item.size && item.size.length > 0) {
                                 let totalQtyToPack = 0;
 
@@ -71,6 +72,9 @@
                                     const q = s.q || 0;
                                     const ttQtyToPack = s.ttQtyToPack || 0;
                                     totalQtyToPack += ttQtyToPack;
+
+                                    const buttonSizeForceDefine = !isDefined ? '<button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendSizeQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '';
+
 
                                     return `
                                         <tr>
@@ -84,13 +88,14 @@
                                                        name="SizeQty_${item.lotNo}_${i + 1}"
                                                        data-lot-no="${item.lotNo}"
                                                        data-size-index="${i + 1}"
-                                                       data-size-qty-approver="${i + 1}"
                                                        min="0"
                                                        max="99999999"
                                                        value="${ttQtyToPack}"
                                                        style="width: 100px;"
-                                                       onchange="validateQty(this,${q})" />
-                                                       <button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendSizeQtyModal(event)"><i class="fas fa-sliders-h"></i></button>
+                                                       onchange="validateQty(this,${q})" 
+                                                       ${isDefined ? 'readonly' : ''} />
+                                                       ${buttonSizeForceDefine}
+                                                       <span class="badge badge-orange">${ s.approver != '' ? '<i class="fas fa-user-check"></i> ' + s.approver : '' }</span >
                                             </td>
                                         </tr>
                                     `;}).join('');
@@ -194,26 +199,32 @@
 
                 $('#tblOrderToSend tbody tr[data-lot-no]').each(function () {
                     const lotNo = $(this).data('lot-no');
-                    const qty = Number($(this).find('input.qtyInput').val() || 0);
+                    const $qtyInput = $(this).find('input.qtyInput');
+                    const qty = Number($qtyInput.val() || 0);
 
                     if (qty === 0) return;
 
                     hasAnyQty = true;
 
+                    const qtyApprover = $qtyInput.attr('data-qty-approver') || null;
+
                     const sizes = [];
                     $(`input.sizeQtyInput[data-lot-no="${lotNo}"]`).each(function () {
                         const sizeIndex = $(this).data('size-index');
                         const sizeQty = Number($(this).val() || 0);
+                        const sizeApprover = $(this).attr('data-size-qty-approver') || null;
 
                         sizes.push({
                             SizeIndex: sizeIndex,
-                            TtQty: sizeQty
+                            TtQty: sizeQty,
+                            ApproverId: parseInt(sizeApprover) || 0
                         });
                     });
 
                     lots.push({
                         LotNo: lotNo,
                         Qty: qty,
+                        Approver: parseInt(qtyApprover) || 0,
                         Sizes: sizes
                     });
                 });
@@ -230,16 +241,24 @@
 
                 const formData = new FormData();
                 formData.append('OrderNo', orderNo);
+
                 lots.forEach((lot, i) => {
                     formData.append(`Lots[${i}].LotNo`, lot.LotNo);
                     formData.append(`Lots[${i}].Qty`, lot.Qty);
 
+                    if (lot.Approver) {
+                        formData.append(`Lots[${i}].LotApprover`, lot.Approver);
+                    }
+
                     lot.Sizes.forEach((s, j) => {
                         formData.append(`Lots[${i}].Sizes[${j}].SizeIndex`, s.SizeIndex);
                         formData.append(`Lots[${i}].Sizes[${j}].TtQty`, s.TtQty);
+
+                        if (s.ApproverId) {
+                            formData.append(`Lots[${i}].Sizes[${j}].SizeApprover`, s.ApproverId);
+                        }
                     });
                 });
-
 
                 $.ajax({
                     url: urlDefineToPack,
@@ -262,6 +281,7 @@
             }
         );
     });
+
 
     $(document).on('click', '#btnEditQty', function () {
         $('#tblOrderToSend tbody tr[data-lot-no]').each(function () {
@@ -300,8 +320,6 @@
         console.log('Cleared all editable qty inputs.');
     });
 
-
-
     $(document).on('click', '#btnCheckAuthForceSendQTY', function () {
         const txtUsername = $('#txtUsername');
         const txtPassword = $('#txtPassword');
@@ -328,13 +346,23 @@
             processData: false,
             data: formData,
             success: async function (res) {
+                if (res) {
+                    txtUsername.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
+                    txtPassword.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
+                    btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.username}`).prop('disabled', true);
+                    $('#hddUserID').val(res.userID)
+                    $('#txtforce-adjust-qty').focus();
+                }
+                else
+                {
+                    txtUsername.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
+                    txtPassword.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
+                    btn.removeClass('btn-primary btn-success btn-warning').addClass('btn-danger').text(`ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง`).prop('disabled', false);
 
-                console.log(res);
-                txtUsername.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
-                txtPassword.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
-                btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.username}`).prop('disabled', true);
-                $('#hddUserID').val(res.id)
-                $('#txtforce-adjust-qty').focus();
+                    setTimeout(() => {
+                        btn.text('ตรวจสอบสิทธิ').removeClass('btn-danger btn-success btn-warning').addClass('btn-primary').prop('disabled', false);
+                    }, 2000);
+                }
             },
             error: async function (xhr) {
                 txtUsername.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
@@ -365,6 +393,7 @@
     $(document).on('click', '#btnSubmitForceSendQTY', async function () {
         const $row = $('#modal-force-send-qty').data('row');
         const $sizeInput = $('#modal-force-send-qty').data('sizeInput');
+        const userId = $('#hddUserID').val();
 
         if ($('#hddUserID').val() === '' || $('#hddUserID').val() === '0') {
             await showWarning('กรุณายืนยันสิทธิการแจ้งยอดแบบกำหนดเอง');
@@ -375,8 +404,10 @@
 
         if ($sizeInput && $sizeInput.length > 0) {
             $sizeInput.val(newQty).trigger('input');
+            $sizeInput.attr('data-size-qty-approver', userId);
         } else if ($row && $row.length > 0) {
             $row.find('input.qtyInput').val(newQty);
+            $row.find('input.qtyInput').attr('data-qty-approver', userId);
         } else {
             await showWarning('ไม่พบ input ที่ต้องการปรับยอด');
             return;
@@ -390,6 +421,16 @@
             e.preventDefault();
             $('#btnSubmitForceSendQTY').click();
         }
+    });
+
+    // เคลียร์ approver เมื่อแก้ไขยอดหลัก
+    $(document).on('input', 'input.qtyInput', function () {
+        $(this).removeAttr('data-qty-approver');
+    });
+
+    // เคลียร์ approver เมื่อแก้ไขยอด size
+    $(document).on('input', 'input.sizeQtyInput', function () {
+        $(this).removeAttr('data-size-qty-approver');
     });
 
 });
