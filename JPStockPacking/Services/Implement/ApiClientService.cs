@@ -1,15 +1,17 @@
 ﻿using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class ApiClientService(IConfiguration configuration, IHttpContextAccessor contextAccessor) : IApiClientService
+    public class ApiClientService(IConfiguration configuration, IHttpContextAccessor contextAccessor, IHttpClientFactory httpClientFactory) : IApiClientService
     {
         private readonly IConfiguration _configuration = configuration;
         private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -68,7 +70,7 @@ namespace JPStockPacking.Services.Implement
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await httpClient.PostAsync(url, content);
-                return await HandleResponse(response);
+                return HandleResponse(response);
             }
             catch (Exception ex)
             {
@@ -90,7 +92,7 @@ namespace JPStockPacking.Services.Implement
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await httpClient.PatchAsync(url, content);
-                return await HandleResponse(response);
+                return HandleResponse(response);
             }
             catch (Exception ex)
             {
@@ -103,23 +105,12 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-
         private HttpClient CreateHttpClient(string? token)
         {
+            var client = _httpClientFactory.CreateClient("ApiClient");
             var apiKey = _configuration["ApiSettings:APIKey"];
-            var httpClient = new HttpClient();
-
-            httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-
-            token ??= _contextAccessor.HttpContext?.Request.Cookies["AccessToken"];
-
-            if (!string.IsNullOrWhiteSpace(token))
-            {
-                httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
-            }
-
-            return httpClient;
+            client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+            return client;
         }
 
         private static async Task<BaseResponseModel<T>> HandleResponse<T>(HttpResponseMessage response)
@@ -148,10 +139,9 @@ namespace JPStockPacking.Services.Implement
             };
         }
 
-        private static async Task<BaseResponseModel> HandleResponse(HttpResponseMessage response)
+        private static BaseResponseModel HandleResponse(HttpResponseMessage response)
         {
             var statusCode = (int)response.StatusCode;
-            var responseJson = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {

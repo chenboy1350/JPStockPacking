@@ -41,19 +41,16 @@ namespace JPStockPacking.Services.Implement
 
                 if (!string.IsNullOrEmpty(authResult.RefreshToken))
                 {
-                    var refreshTokenExpiry = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(24);
+                    var refreshTokenExpiry = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddMinutes(60);
 
                     context.Response.Cookies.Append("AccessToken", authResult.AccessToken, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
                         SameSite = SameSiteMode.Strict,
-                        Expires = rememberMe
-                            ? DateTimeOffset.UtcNow.AddDays(7)
-                            : DateTimeOffset.UtcNow.AddHours(10),
+                        Expires = DateTimeOffset.UtcNow.AddMinutes(120),
                         IsEssential = true
                     });
-
 
                     context.Response.Cookies.Append("RefreshToken", authResult.RefreshToken, new CookieOptions
                     {
@@ -119,7 +116,7 @@ namespace JPStockPacking.Services.Implement
                         HttpOnly = true,
                         Secure = true,
                         SameSite = SameSiteMode.Strict,
-                        Expires = DateTimeOffset.UtcNow.AddHours(10),
+                        Expires = DateTimeOffset.UtcNow.AddMinutes(120),
                         IsEssential = true
                     });
                 }
@@ -197,6 +194,7 @@ namespace JPStockPacking.Services.Implement
 
             var request = new RefreshTokenRequestModel { RefreshToken = refreshToken };
             var json = JsonSerializer.Serialize(request, CachedJsonSerializerOptions);
+            httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync(urlRefreshToken, content);

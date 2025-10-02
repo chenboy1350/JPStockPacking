@@ -1,6 +1,7 @@
 using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Models;
+using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Implement;
 using JPStockPacking.Services.Interface;
 using JPStockPacking.Services.Middleware;
@@ -17,6 +18,9 @@ builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(build
 builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SPDBEntries")));
 
 builder.Services.Configure<AppSettingModel>(builder.Configuration.GetSection("AppSettings"));
+
+builder.Services.AddTransient<TokenHandler>();
+builder.Services.AddHttpClient("ApiClient").AddHttpMessageHandler<TokenHandler>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ICacheService, CacheService>();

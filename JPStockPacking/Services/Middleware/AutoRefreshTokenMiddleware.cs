@@ -24,7 +24,7 @@ namespace JPStockPacking.Services.Middleware
                         if (!refreshResult.Success)
                         {
                             await authService.LogoutAsync();
-                            context.Response.Redirect("/login");
+                            context.Response.Redirect("\\Login");
                             return;
                         }
                     }
@@ -45,8 +45,19 @@ namespace JPStockPacking.Services.Middleware
                 var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
 
                 await authService.LogoutAsync();
-                context.Response.Redirect("/login");
+                context.Response.Redirect("\\login");
                 return;
+            }
+
+            // ถ้า API ตอบกลับ 302 → ให้ redirect ไปตาม Location ที่ header กำหนดไว้
+            if (context.Response.StatusCode == StatusCodes.Status302Found)
+            {
+                var location = context.Response.Headers.Location.ToString();
+                if (!string.IsNullOrEmpty(location))
+                {
+                    context.Response.Redirect(location);
+                    return;
+                }
             }
 
             // Copy response body กลับไป
