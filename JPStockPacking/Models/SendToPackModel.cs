@@ -7,7 +7,12 @@
         public string Grade { get; set; } = string.Empty;
         public string SCountry { get; set; } = string.Empty;
         public string Special { get; set; } = string.Empty;
+        public double SumTtQty { get; set; } = 0;
+        public string SumTtPrice { get; set; } = string.Empty;
+        public double SumSendTtQty { get; set; } = 0;
+        public string SumSendTtPrice { get; set; } = string.Empty;
         public bool IsOrderDefined { get; set; } = false;
+        public int Persentage { get; set; } = 0;
         public List<SendToPackLots> Lots { get; set; } = [];
     }
 
@@ -29,7 +34,17 @@
         public decimal TtQtyToPack { get; set; } = 0;
         public bool IsDefined { get; set; } = false;
         public bool IsUnderQuota { get; set; } = false;
+        public string ApproverID { get; set; } = string.Empty;
         public string Approver { get; set; } = string.Empty;
+        public int Persentage { get; set; } = 0;
+        public string EnPrice { get; set; } = string.Empty;
+        public string EnTtPrice { get; set; } = string.Empty;
+        public double DePrice { get; set; } = 0;
+        public double DeTtPrice { get; set; } = 0;
+        public string EnSendQtyPrice { get; set; } = string.Empty;
+        public string EnSendQtyTtPrice { get; set; } = string.Empty;
+        public double DeSendQtyPrice { get; set; } = 0;
+        public double DeSendQtyTtPrice { get; set; } = 0;
         public List<Size> Size { get; set; } = [];
     }
 
@@ -41,7 +56,10 @@
         public decimal TtQtyToPack { get; set; } = 0;
         public bool IsDefined { get; set; } = false;
         public bool IsUnderQuota { get; set; } = false;
+        public string ApproverID { get; set; } = string.Empty;
         public string Approver { get; set; } = string.Empty;
+        public int Persentage { get; set; } = 0;
+
     }
 
     public class DefineToPackRequest

@@ -18,6 +18,7 @@ builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(build
 builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SPDBEntries")));
 
 builder.Services.Configure<AppSettingModel>(builder.Configuration.GetSection("AppSettings"));
+builder.Services.Configure<SendQtyModel>(builder.Configuration.GetSection("SendQtySettings"));
 
 builder.Services.AddTransient<TokenHandler>();
 builder.Services.AddHttpClient("ApiClient").AddHttpMessageHandler<TokenHandler>();

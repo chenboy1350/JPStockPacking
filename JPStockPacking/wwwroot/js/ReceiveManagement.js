@@ -22,8 +22,8 @@
         });
 
         if (receiveIds.length === 0 || orderNos.length === 0) {
-            await showWarning('กรุณาเลือกข้อมูลที่จะนำเข้า');
             $('#loadingIndicator').hide();
+            await showWarning('กรุณาเลือกข้อมูลที่จะนำเข้า');
             return;
         }
 
@@ -40,7 +40,7 @@
             data: formData,
             success: async function (lot) {
                 $('#loadingIndicator').hide();
-                await showSuccess("อัปเดตสำเร็จ");
+                await showSuccess(`นำเข้าแล้ว ${receiveIds.length} รายการ`);
                 $('#modal-update').modal('hide');
                 refreshReceiveRow(hddReceiveNo); 
             },
@@ -80,8 +80,6 @@ function showModalUpdateLot(receiveNo) {
     );
 
     modal.modal('show');
-    console.log('typeof html =', typeof html);
-
 
     $.ajax({
         url: urlImportReceiveNo,
@@ -201,7 +199,7 @@ async function findReceive() {
     console.log('typeof html =', typeof html);
 
 
-    tbody.html('<tr><td colspan="3" class="text-center text-muted">กำลังค้นหา...</td></tr>');
+    tbody.html('<tr><td colspan="5" class="text-center text-muted">กำลังค้นหา...</td></tr>');
 
     $.ajax({
         url: urlGetReceiveList,
@@ -209,7 +207,7 @@ async function findReceive() {
         data: { receiveNo: keyword },
         success: function (rows) {
             if (!rows || rows.length === 0) {
-                tbody.html('<tr><td colspan="3" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
                 return;
             }
 

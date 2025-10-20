@@ -13,6 +13,9 @@
                     const $tbody = $('#tblOrderToSend tbody');
                     $tbody.empty();
 
+                    const percentage = $('#tblOrderToSend .custom-percentage');
+                    percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่เกิน ${res.persentage}% ของจำนวนเสีย`);
+
                     $('#txtCustCode').val(res.custCode);
                     $('#txtGrade').val(res.grade);
                     $('#txtSCountry').val(res.sCountry);
@@ -32,7 +35,7 @@
 
                             const hasSize = item.size && item.size.length > 0;
                             const readonlyAttr = hasSize ? 'readonly' : (isDefined ? 'readonly' : '');
-
+                            console.log(readonlyAttr);
                             const buttonForceDefine = !hasSize ? (!isDefined ? '<button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '') : '';
 
                             let row = `
@@ -53,8 +56,10 @@
                                         <td class="d-flex align-items-center">
                                             <input type="number"
                                                    class="form-control form-control-sm me-2 qtyInput"
+                                                   data-qty-approver="${item.approverID}"
                                                    min="0"
                                                    max="99999999"
+                                                   step="any"
                                                    style="width:100px;"
                                                    name="TtQtyToPack_${item.lotNo}"
                                                    value="${item.ttQtyToPack}"
@@ -64,7 +69,7 @@
                                                    <span class="badge badge-orange">${item.approver != '' ? '<i class="fas fa-user-check"></i> ' + item.approver : ''}</span>
                                         </td>
                                 </tr>`;
-                            //<span class="badge badge-orange">${item.approver}</span>
+
                             if (item.size && item.size.length > 0) {
                                 let totalQtyToPack = 0;
 
@@ -88,8 +93,10 @@
                                                        name="SizeQty_${item.lotNo}_${i + 1}"
                                                        data-lot-no="${item.lotNo}"
                                                        data-size-index="${i + 1}"
+                                                       data-size-qty-approver="${s.approverID}"
                                                        min="0"
                                                        max="99999999"
+                                                       step="any"
                                                        value="${ttQtyToPack}"
                                                        style="width: 100px;"
                                                        onchange="validateQty(this,${q})" 
@@ -136,9 +143,9 @@
                         });
 
                         if (hasDefined) {
-                            $('#actionButtons').addClass('d-none').removeClass('d-flex');
+                            $('#actionButtons').removeClass('d-none').addClass('d-flex');
                             $('#reportButtons').removeClass('d-none').addClass('d-flex');
-                            $('#tblOrderToSend tbody input.qtyInput').prop('disabled', true);
+                            $('#tblOrderToSend tbody input.qtyInput').prop('readonly', true);
                         } else {
                             $('#actionButtons').removeClass('d-none').addClass('d-flex');
                             $('#reportButtons').addClass('d-none').removeClass('d-flex');
@@ -160,7 +167,7 @@
         }
     });
 
-    $(document).on('input', '.sizeQtyInput', function () {
+    $(document).on('change', '.sizeQtyInput', function () {
         const $input = $(this);
         const lotNo = $input.data('lot-no');
 
@@ -172,12 +179,13 @@
             sum += val;
         });
 
+
+
         const $qtyInput = $(`tr[data-lot-no="${lotNo}"] input.qtyInput`);
         if ($qtyInput.length) {
             $qtyInput.val(sum);
         }
     });
-
 
     $(document).on('keydown', '#txtFindOrderNo', function (e) {
         if (e.key === 'Enter') {
@@ -284,14 +292,22 @@
 
 
     $(document).on('click', '#btnEditQty', function () {
+        // เปิดให้แก้ไข input หลัก
         $('#tblOrderToSend tbody tr[data-lot-no]').each(function () {
             const $input = $(this).find('input.qtyInput');
             if ($input.length) {
-                $input.prop('disabled', false);
+                $input.prop('readonly', false);
             }
         });
-        console.log('All qty inputs are now editable.');
+
+        // เปิดให้แก้ไข input ย่อย (size)
+        $('input.sizeQtyInput').each(function () {
+            $(this).prop('readonly', false);
+        });
+
+        console.log('เปิดให้แก้ไขทุกช่อง (Lot + Size).');
     });
+
 
     $(document).on('click', '#tblOrderToSend tbody tr[data-lot-no]', function () {
         $('#tblOrderToSend tbody tr[data-lot-no]').removeClass('tr-highlight');
@@ -304,10 +320,7 @@
         $('#tblOrderToSend tbody tr[data-lot-no]').each(function () {
             const $input = $(this).find('input.qtyInput');
             const lotNo = $(this).data('lot-no');
-
-            if (!$input.prop('readonly')) {
-                $input.val(0);
-            }
+            $input.val(0);
 
             const $sizeinputs = $(`input.sizeQtyInput[data-lot-no="${lotNo}"]`);
             $sizeinputs.each(function () {

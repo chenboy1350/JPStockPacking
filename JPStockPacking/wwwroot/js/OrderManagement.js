@@ -178,9 +178,6 @@
 
                 calcReturnTotal();
 
-                $('#txtLostQty').prop('readonly', false);
-                $('#txtBreakQty').prop('readonly', false);
-
                 tbody.on('change', '.chk-row', function () {
                     calcReturnTotal();
                 });
@@ -206,19 +203,14 @@
             $('#sumRTQty').text(num(sumQty));
             $('#sumRTWg').text(num(sumWg));
 
-            $("#txtBreakQty").attr("max", sumQty);
             $('#txtReurnQty').val(sumQty);
-
-            calcTotalReturnQty();
         }
     });
 
     $(document).on('click', '#btnConfirmReturn', async function () {
         const lotNo = $('#hddReturnLotNo').val();
 
-        const txtLostQty = $('#txtLostQty').val();
-        const txtBreakQty = $('#txtBreakQty').val();
-        const txtTotalReurnQty = $('#txtTotalReurnQty').val();
+        const txtReurnQty = $('#txtReurnQty').val();
 
         const trebody = $('#tbl-receivedReturn-body');
         const assignmentIDs = [];
@@ -238,9 +230,7 @@
 
         const formData = new FormData();
         formData.append("lotNo", lotNo);
-        formData.append("lostQty", txtLostQty);
-        formData.append("breakQty", txtBreakQty);
-        formData.append("returnQty", txtTotalReurnQty);
+        formData.append("returnQty", txtReurnQty);
         assignmentIDs.forEach(no => formData.append("assignmentIDs", no));
 
         $.ajax({
@@ -261,87 +251,6 @@
                 await showWarning(`เกิดข้อผิดพลาดในการคืนงาน (${xhr.status} ${xhr.statusText})`);
             }
         });
-    });
-
-    $(document).on('click', '#btnLostAndRepair', async function () {
-        const lotNo = $('#hddReturnLotNo').val();
-        const txtReurnQty = $('#txtReurnQty').val();
-        const txtLostQty = $('#txtLostQty').val();
-        const txtBreakQty = $('#txtBreakQty').val();
-        const ddlBreakDes = $('#ddlBreakDes').val();
-        const txtTotalReurnQty = $('#txtTotalReurnQty').val();
-
-        const trebody = $('#tbl-receivedReturn-body');
-        const assignmentIDs = [];
-
-        trebody.find('tr').each(function () {
-            const chk = $(this).find('.chk-row');
-            if (chk.is(':checked')) {
-                const assignmentID = $(this).data('assignment-id');
-                if (assignmentID) assignmentIDs.push(assignmentID);
-            }
-        });
-
-        if (txtBreakQty > 0 && ddlBreakDes == '') {
-            await showWarning('กรุณาเลือกอาการที่ชำรุด');
-            return;
-        }
-
-        if (assignmentIDs.length === 0) {
-            await showWarning('กรุณาเลือกใบนำเข้าที่จะรับคืน');
-            return;
-        }
-
-        if (Number(txtBreakQty) > Number(txtReurnQty)) {
-            await showWarning('จำนวนสินค้าที่ชำรุดมากกว่าจำนวนสินค้าที่รับคืน');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("lotNo", lotNo);
-        formData.append("lostQty", txtLostQty);
-        formData.append("breakQty", txtBreakQty);
-        formData.append("returnQty", txtTotalReurnQty);
-        formData.append("breakDescriptionID", ddlBreakDes);
-        assignmentIDs.forEach(no => formData.append("assignmentIDs", no));
-
-        $.ajax({
-            url: urlLostAndRepair,
-            type: 'PATCH',
-            processData: false,
-            contentType: false,
-            data: formData,
-            beforeSend: async () => $('#loadingIndicator').show(),
-            success: async () => {
-                $('#loadingIndicator').hide();
-                await showSuccess("คืนงานสำเร็จ");
-                await updateLotRow(lotNo);
-                CloseModal();
-            },
-            error: async (xhr) => {
-                $('#loadingIndicator').hide();
-                await showWarning(`เกิดข้อผิดพลาดในการคืนงาน (${xhr.status} ${xhr.statusText})`);
-            }
-        });
-    });
-
-    $(document).on("change", "#txtBreakQty, #txtLostQty", function () {
-        let total = 0;
-        $("#txtBreakQty, #txtLostQty, #txtOtherQty").each(function () {
-            total += parseInt($(this).val()) || 0;
-        });
-
-        if (total > 0) {
-            $("#btnConfirmReturn").hide();
-            $("#btnLostAndRepair").show();
-        } else {
-            $("#btnConfirmReturn").show();
-            $("#btnLostAndRepair").hide();
-        }
-    });
-
-    $(document).on("input", "#txtLostQty, #txtBreakQty, #txtReurnQty", function () {
-        calcTotalReturnQty();
     });
 
     $(document).on('change', '#chkSelectAllMembers', function () {
@@ -401,20 +310,6 @@
         if (e.key === "Enter") {
             e.preventDefault();
             $("#btnGoTo").click();
-        }
-    });
-
-    $(document).on("change", "#txtBreakQty", function () {
-        console.log('asdasdasd')
-        let val = parseInt($(this).val()) || 0;
-
-        console.log('val', val)
-        if (val > 0) {
-            $("#breakDes").show();
-            $("#breakDes2").show();
-        } else {
-            $("#breakDes").hide();
-            $("#breakDes2").hide();
         }
     });
 
@@ -492,15 +387,24 @@
             processData: false,
             data: formData,
             success: async function (res) {
+                if (res) {
+                    txtUsername.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
+                    txtPassword.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
+                    btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการพิมพ์โดย ${res.username}`).prop('disabled', true);
+                    $('#btnPrintReport').prop('disabled', false)
 
-                console.log(res);
-                txtUsername.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
-                txtPassword.removeClass('is-invalid is-warning').addClass('is-valid').prop('disabled', true);
-                btn.removeClass('btn-primary btn-danger btn-warning').addClass('btn-success').text(`ยืนยันการแก้ไขโดยผู้ใช้ ${res.username}`).prop('disabled', true);
-                $('#btnPrintReport').prop('disabled', false)
-                
-                $('#hddUserID').val(res.username)
-                $('#btnPrintReport').focus();
+                    $('#hddUserID').val(res.username)
+                    $('#btnPrintReport').focus();
+                }
+                else {
+                    txtUsername.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
+                    txtPassword.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
+                    btn.removeClass('btn-primary btn-success btn-warning').addClass('btn-danger').text(`ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง`).prop('disabled', false);
+
+                    setTimeout(() => {
+                        btn.text('ตรวจสอบสิทธิ').removeClass('btn-danger btn-success btn-warning').addClass('btn-primary').prop('disabled', false);
+                    }, 2000);
+                }
             },
             error: async function (xhr) {
                 txtUsername.removeClass('is-valid is-warning').addClass('is-invalid').prop('disabled', false);
@@ -530,7 +434,97 @@
     });
 
     $(document).on('click', '#btnPrintReport', async function () {
-        printLostToPDF($('#hddLotNo').val());
+        printLostToPDF();
+    });
+
+    $(document).on('click', '#btnAddLost', async function () {
+        const lostQty = $('#txtLostQty').val();
+        const lotNo = $('#hddLotNo').val();
+
+        if (lostQty == '' || lostQty == 0)
+        {
+            await showWarning('กรุณากรอกจำนวน Lost');
+            return;
+        }
+        await showSaveConfirm(
+            `ต้องการเพิ่ม Lost จำนวน ${lostQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม Lost", async () => {
+                const formData = new FormData();
+                formData.append("lotNo", lotNo);
+                formData.append("lostQty", lostQty);
+                $.ajax({
+                    url: urlAddLost,
+                    type: 'POST',
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    beforeSend: () => $('#loadingIndicator').show(),
+                    success: async () => {
+                        $('#loadingIndicator').hide();
+                        await showSuccess("เพิ่ม Lost เรียบร้อย");
+                        await updateLotRow(lotNo);
+                        CloseModal();
+                    },
+                    error: async (xhr) => {
+                        $('#loadingIndicator').hide();
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.responseText})`);
+                    }
+                });
+            }
+        );
+        
+    });
+
+    $(document).on('click', '#btnAddBreak', async function () {
+        const breakQty = $('#txtBreakQty').val();
+        const breakDes = $('#ddlBreakDes').val();
+        const lotNo = $('#hddLotNo').val();
+
+        if (breakQty == '' || breakQty == 0) {
+            await showWarning('กรุณากรอกจำนวน break');
+            return;
+        }
+
+        if (breakDes == '' || breakDes == 0) {
+            await showWarning('กรุณาเลือกอาการ');
+            return;
+        }
+
+        await showSaveConfirm(
+            `ต้องการเพิ่ม break จำนวน ${breakQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม break", async () => {
+                const formData = new FormData();
+                formData.append("lotNo", lotNo);
+                formData.append("breakQty", breakQty);
+                formData.append("breakDes", breakDes);
+                $.ajax({
+                    url: urlAddBreak,
+                    type: 'POST',
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    beforeSend: () => $('#loadingIndicator').show(),
+                    success: async () => {
+                        $('#loadingIndicator').hide();
+                        await showSuccess("เพิ่ม break เรียบร้อย");
+                        await updateLotRow(lotNo);
+                        CloseModal();
+                    },
+                    error: async (xhr) => {
+                        $('#loadingIndicator').hide();
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.responseText})`);
+                    }
+                });
+            }
+        );
+    });
+
+    $(document).on('change', '#chkSelectAllLost', function () {
+        const isChecked = $(this).is(':checked');
+        $('#tbl-body-lost .chk-row:enabled').prop('checked', isChecked);
+    });
+
+    $(document).on('change', '#chkSelectAllBreak', function () {
+        const isChecked = $(this).is(':checked');
+        $('#tbl-body-break .chk-row:enabled').prop('checked', isChecked);
     });
 });
 
@@ -551,6 +545,7 @@ function fetchOrdersByDateRange() {
             edate: edate,
             groupMode: groupMode,
         },
+        beforeSend: () => $('#loadingIndicator').show(),
         success: function (data) {
             renderOrderList(data);
         },
@@ -564,7 +559,10 @@ function renderOrderList(data) {
     const container = $('#accordionOrder');
     container.empty();
 
-    if (!data || !data.days) return;
+    if (!data || !data.days) {
+        $('#loadingIndicator').hide();
+        return;
+    };
 
     data.days.forEach(day => {
         day.orders.forEach(order => {
@@ -616,10 +614,10 @@ function renderOrderList(data) {
                                        <th style="width: 1%">#</th>
                                        <th style="width: 20%">หมายเลขล็อต</th>
                                        <th style="width: 10%">ลำดับที่</th>
-                                       <th style="width: 25%">การมอบหมาย</th>
+                                       <th style="width: 15%">การมอบหมาย</th>
                                        <th>ความคืบหน้า</th>
                                        <th style="width: 8%" class="text-center">สถานะ</th>
-                                       <th style="width: 20%"></th>
+                                       <th style="width: 30%"></th>
                                     </tr>
                                 </thead>
                                 <tbody>${lotsHtml}</tbody>
@@ -632,6 +630,8 @@ function renderOrderList(data) {
             container.append(itemHtml);
         });
     });
+
+    $('#loadingIndicator').hide();
 }
 
 function renderLotRow(order, lot, index = "#") {
@@ -681,14 +681,14 @@ function renderLotRow(order, lot, index = "#") {
 
     // Actions
     let actionsHtml = '';
-    if (lot.hasRepair)
-        actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showApproveToPrintModal("${lot.lotNo}")'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>`;
-    if (lot.hasLost)
-        actionsHtml += `<button class='btn btn-info btn-sm' onclick='printLostToPDF("${lot.lotNo}")'><i class='fas fa-folder'></i> สูญหาย</button>`;
-    if ((order.isReceivedLate || lot.isAllReceived) && !lot.isAllReturned && lot.ttQty !== 0)
-        actionsHtml += `<button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button>`;
+    if (lot.isPacking || lot.isAllReturned)
+        actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showModalLost("${lot.lotNo}")'><i class='far fa-eye-slash'></i> หาย</button> `;
+    if (lot.isPacking || lot.isAllReturned)
+        actionsHtml += ` <button class='btn btn-warning btn-sm' onclick='showModalBreak("${lot.lotNo}")'><i class='fas fa-hammer'></i> ซ่อม</button> `;
+    if (!lot.isAllReturned && lot.ttQty !== 0 && !lot.isAllReturned)
+        actionsHtml += ` <button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button> `;
     if (lot.isPacking && !lot.isAllReturned)
-        actionsHtml += `<button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button>`;
+        actionsHtml += ` <button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button> `;
 
     // Assigned tables
     const assignHtml = lot.assignTo?.map(a =>
@@ -876,15 +876,6 @@ async function showModalReturn(lotNo) {
     const modal = $('#modal-return');
     const select = modal.find('#cbxTableToReturn');
 
-    $("#breakDes").hide();
-    $("#breakDes2").hide();
-    $("#txtAddBreakDes").val('').hide();
-    $('#txtLostQty').prop('readonly', true);
-    $('#txtBreakQty').prop('readonly', true);
-    $('#ddlBreakDes').val(null)
-    $("#btnConfirmReturn").show();
-    $("#btnLostAndRepair").hide();
-
     modal.find('#txtTitleReturn').html(
         "<i class='fas fa-undo'></i> รายการรับงานคืน : " + html(lotNo)
     );
@@ -919,7 +910,155 @@ async function showModalReturn(lotNo) {
     });
 }
 
-function showApproveToPrintModal(lotNo) {
+async function showModalAddLost() {
+    $('#txtLostQty').val(0)
+    const modal = $('#modal-add-Lost');
+    modal.modal('show');
+}
+
+async function showModalLost(lotNo) {
+    $('#hddLotNo').val(lotNo);
+
+    const modal = $('#modal-lost');
+    const tbody = modal.find('#tbl-body-lost');
+    tbody.empty().append('<tr><td colspan="11" class="text-center text-muted">กำลังโหลด...</td></tr>');
+
+    if (lotNo) {
+        $('#btnAddLostList').removeClass('d-none');
+        modal.find('#txtTitleLost').html("<i class='fas fa-eye-slash'></i> รายการแจ้งหาย : " + html(lotNo));
+    }
+    else {
+        $('#btnAddLostList').addClass('d-none');
+        modal.find('#txtTitleLost').html("<i class='fas fa-eye-slash'></i> รายการแจ้งหายทั้งหมด");
+    }
+
+    modal.modal('show');
+
+    let model = {
+        LotNo: String(lotNo),
+    };
+
+    $.ajax({
+        url: urlGetLost,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            tbody.empty();
+            if (!data || data.length === 0) {
+                tbody.append('<tr><td colspan="11" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                return;
+            }
+            const rows = data.map(function (x, i) {
+                return `
+            <tr data-lost-id="${html(x.lostID)}">
+                <td>#</td>
+                <td><strong>${html(x.custCode)}</strong></td>
+                <td>${html(x.orderNo)}</td>
+                <td>${html(x.lotNo)}</td>
+                <td>${html(x.listNo)}</td>
+                <td class="text-center">${html(x.article)}</td>
+                <td>${html(x.ttQty)}</td>
+                <td>${html(x.lostQty)}</td>
+                <td>${html(x.createDate)}</td>
+                <td>${x.isReported ? '✔️ รายงานแล้ว' : '❌ ยังไม่รายงาน'}</td>
+                <td class="text-center">
+                    <div class="icheck-primary d-inline">
+                        <input type="checkbox" id="${x.lostID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
+                        <label for="${x.lostID}_as${i}"></label>
+                    </div>
+                </td>
+            </tr>`;
+            }).join('');
+            tbody.append(rows);
+        },
+        error: function (xhr, status, error) {
+            console.error('Error loading order data:', error, xhr, status);
+            tbody.empty().append('<tr><td colspan="11" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+        }
+    });
+}
+
+async function showModalAddBreak() {
+    $('#txtBreakQty').val(0)
+    $('#ddlBreakDes').val(null)
+    $('#txtAddBreakDes').val('')
+    $('#txtAddBreakDes').hide();
+
+    $('#ddlBreakDes').select2({
+        dropdownParent: $('#modal-add-break'),
+    });
+
+    $('#txtBreakQty').val(0)
+    const modal = $('#modal-add-break');
+    modal.modal('show');
+}
+
+async function showModalBreak(lotNo) {
+    $('#hddLotNo').val(lotNo);
+
+    const modal = $('#modal-break');
+    const tbody = modal.find('#tbl-body-break');
+    tbody.empty().append('<tr><td colspan="12" class="text-center text-muted">กำลังโหลด...</td></tr>');
+
+    if (lotNo) {
+        $('#btnAddBreakList').removeClass('d-none');
+        modal.find('#txtTitleBreak').html("<i class='fas fa-hammer'></i> รายการแจ้งซ่อม : " + html(lotNo));
+    }
+    else {
+        $('#btnAddBreakList').addClass('d-none');
+        modal.find('#txtTitleBreak').html("<i class='fas fa-hammer'></i> รายการแจ้งซ่อมทั้งหมด");
+    }
+
+    modal.modal('show');
+
+    let model = {
+        LotNo: String(lotNo),
+    };
+
+    $.ajax({
+        url: urlGetBreak,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            tbody.empty();
+            if (!data || data.length === 0) {
+                tbody.append('<tr><td colspan="12" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                return;
+            }
+            const rows = data.map(function (x, i) {
+                return `
+            <tr data-break-id="${html(x.breakID)}">
+                <td>#</td>
+                <td><strong>${html(x.receiveNo)}</strong></td>
+                <td>${html(x.custCode)}</td>
+                <td>${html(x.orderNo)}</td>
+                <td>${html(x.lotNo)}</td>
+                <td>${html(x.listNo)}</td>
+                <td>${html(x.previousQty)}</td>
+                <td>${html(x.breakQty)}</td>
+                <td>${html(x.breakDescription)}</td>
+                <td>${html(x.createDate)}</td>
+                <td>${x.isReported ? '✔️ รายงานแล้ว' : '❌ ยังไม่รายงาน'}</td>
+                <td class="text-center">
+                    <div class="icheck-primary d-inline">
+                        <input type="checkbox" id="${x.breakID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
+                        <label for="${x.breakID}_as${i}"></label>
+                    </div>
+                </td>
+            </tr>`;
+            }).join('');
+            tbody.append(rows);
+        },
+        error: function (xhr, status, error) {
+            console.error('Error loading order data:', error, xhr, status);
+            tbody.empty().append('<tr><td colspan="12" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+        }
+    });
+}
+
+function showApproveToPrintModal() {
 
     const txtUsername = $('#txtUsername');
     const txtPassword = $('#txtPassword');
@@ -932,28 +1071,87 @@ function showApproveToPrintModal(lotNo) {
 
     $('#hddUserID').val('');
 
-    $('#hddLotNo').val(lotNo);
-
     $('#modal-approve-to-print').modal('show');
 }
 
-async function printBreakToPDF(lotNo) {
+async function printBreakToPDF() {
+    let lotNo = $('#hddLotNo').val();
+
+    const tbekbody = $('#tbl-body-break');
+    const breakIDs = [];
+
+    tbekbody.find('tr').each(function () {
+        const chk = $(this).find('.chk-row');
+        if (chk.is(':checked')) {
+            const breakID = $(this).data('break-id');
+            if (breakID) breakIDs.push(breakID);
+        }
+    });
+
+    if (breakIDs.length === 0) {
+        await showWarning('กรุณาเลือก break ที่ต้องการพิมพ์');
+        return;
+    }
+
+    let model = {
+        LotNo: lotNo,
+        BreakIDs: breakIDs
+    };
+
+    $.ajax({
+        url: urlBreakReport,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (data) {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+        },
+        error: function (xhr) {
+            console.error(xhr);
+            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+        }
+    });
+}
+
+async function printLostToPDF() {
+    let lotNo = $('#hddLotNo').val();
+
     const username = $('#txtUsername').val();
     const password = $('#txtPassword').val();
 
-    if (!lotNo || lotNo === '') {
-        await showWarning('กรุณาเลือก lotNo');
+    const tlosbody = $('#tbl-body-lost');
+    const lostIDs = [];
+
+    tlosbody.find('tr').each(function () {
+        const chk = $(this).find('.chk-row');
+        if (chk.is(':checked')) {
+            const lostID = $(this).data('lost-id');
+            if (lostID) lostIDs.push(lostID);
+        }
+    });
+
+    if (lostIDs.length === 0) {
+        await showWarning('กรุณาเลือก Lost ที่ต้องการพิมพ์');
         return;
     }
 
-    const printUrl = urlBreakReport
-        + '?lotNo=' + encodeURIComponent(lotNo)
-        + '&username=' + encodeURIComponent(username)
-        + '&password=' + encodeURIComponent(password);
+    let model = {
+        LotNo: lotNo,
+        LostIDs: lostIDs,
+        Username: username,
+        Password: password
+    };
 
     $.ajax({
-        url: printUrl,
-        type: 'GET',
+        url: urlLostReport,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
         xhrFields: {
             responseType: 'blob'
         },
@@ -967,43 +1165,6 @@ async function printBreakToPDF(lotNo) {
             showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
         }
     });
-}
-
-
-async function printLostToPDF(lotNo) {
-    if (!lotNo || lotNo == '') {
-        await showWarning('กรุณาเลือก lotNo');
-        return;
-    }
-
-    const printUrl = urlLostReport + '?lotNo=' + encodeURIComponent(lotNo);
-
-    $.ajax({
-        url: printUrl,
-        type: 'GET',
-        xhrFields: {
-            responseType: 'blob'
-        },
-        success: function (data) {
-            const blob = new Blob([data], { type: 'application/pdf' });
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-        },
-        error: function (xhr) {
-            console.error(xhr);
-            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
-        }
-    });
-}
-
-function calcTotalReturnQty() {
-    const lostQty = parseFloat($("#txtLostQty").val()) || 0;
-    const breakQty = parseFloat($("#txtBreakQty").val()) || 0;
-    const reurnQty = parseFloat($("#txtReurnQty").val()) || 0;
-
-    const totalReturn = reurnQty - (breakQty + lostQty);
-
-    $("#txtTotalReurnQty").val(totalReturn);
 }
 
 function clearModalAssignValues() {
@@ -1015,9 +1176,6 @@ function clearModalReturnValues() {
     $("#cbxTableToReturn").val("");
     $("#tbl-receivedReturn-body").empty();
     $("#txtReurnQty").val(0);
-    $("#txtLostQty").val(0);
-    $("#txtBreakQty").val(0);
-    $("#txtTotalReurnQty").val(0);
 }
 
 function showModalSendTo() {

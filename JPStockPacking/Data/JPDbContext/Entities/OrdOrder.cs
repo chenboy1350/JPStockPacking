@@ -95,4 +95,8 @@ public partial class OrdOrder
 
     [Column("num")]
     public int Num { get; set; }
+
+    [ForeignKey("Custcode")]
+    [InverseProperty("OrdOrder")]
+    public virtual CusProfile CustcodeNavigation { get; set; } = null!;
 }

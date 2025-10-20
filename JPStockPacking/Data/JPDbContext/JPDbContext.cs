@@ -18,6 +18,10 @@ public partial class JPDbContext : DbContext
 
     public virtual DbSet<Cprofile> Cprofile { get; set; }
 
+    public virtual DbSet<CusProfile> CusProfile { get; set; }
+
+    public virtual DbSet<CusZoneType> CusZoneType { get; set; }
+
     public virtual DbSet<JobBillSendStock> JobBillSendStock { get; set; }
 
     public virtual DbSet<JobCost> JobCost { get; set; }
@@ -40,6 +44,8 @@ public partial class JPDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("admin");
+
         modelBuilder.Entity<CfnCode>(entity =>
         {
             entity.HasKey(e => e.FnCode).HasFillFactor(90);
@@ -144,6 +150,95 @@ public partial class JPDbContext : DbContext
             entity.Property(e => e.PendantType).HasDefaultValue("");
             entity.Property(e => e.PictureScale).HasDefaultValue("");
             entity.Property(e => e.SupArticle).HasDefaultValue("");
+        });
+
+        modelBuilder.Entity<CusProfile>(entity =>
+        {
+            entity.HasKey(e => e.Code).HasFillFactor(90);
+
+            entity.HasIndex(e => e.CusCode, "IX_CusProfile")
+                .IsUnique()
+                .HasFillFactor(90);
+
+            entity.Property(e => e.Agemail1).HasDefaultValue("");
+            entity.Property(e => e.Agemail2).HasDefaultValue("");
+            entity.Property(e => e.Agemail3).HasDefaultValue("");
+            entity.Property(e => e.Agemail4).HasDefaultValue("");
+            entity.Property(e => e.Agemail5).HasDefaultValue("");
+            entity.Property(e => e.Agmobile1).HasDefaultValue("");
+            entity.Property(e => e.Agmobile2).HasDefaultValue("");
+            entity.Property(e => e.Agmobile3).HasDefaultValue("");
+            entity.Property(e => e.Avail).HasDefaultValue("Y");
+            entity.Property(e => e.Bankfee).HasDefaultValue("");
+            entity.Property(e => e.CargoDescription).HasDefaultValue("");
+            entity.Property(e => e.CargoStatus).HasDefaultValue(false);
+            entity.Property(e => e.Cdate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Cemail1).HasDefaultValue("");
+            entity.Property(e => e.Cemail2).HasDefaultValue("");
+            entity.Property(e => e.Cemail3).HasDefaultValue("");
+            entity.Property(e => e.Cemail4).HasDefaultValue("");
+            entity.Property(e => e.Cemail5).HasDefaultValue("");
+            entity.Property(e => e.CommissionFee).HasDefaultValue(0.00m);
+            entity.Property(e => e.ContactName1).HasDefaultValue("");
+            entity.Property(e => e.ContactName2).HasDefaultValue("");
+            entity.Property(e => e.ContactName3).HasDefaultValue("");
+            entity.Property(e => e.ContactName4).HasDefaultValue("");
+            entity.Property(e => e.ContactName5).HasDefaultValue("");
+            entity.Property(e => e.CourierName).HasDefaultValue("");
+            entity.Property(e => e.CreditTerm).HasDefaultValue(false);
+            entity.Property(e => e.CreditValue).HasDefaultValue("");
+            entity.Property(e => e.CurierStatus).HasDefaultValue(false);
+            entity.Property(e => e.CusAccount).HasDefaultValue("");
+            entity.Property(e => e.CusZoneId).HasDefaultValue(0);
+            entity.Property(e => e.DepositPay).HasDefaultValue(false);
+            entity.Property(e => e.DepositValue).HasDefaultValueSql("(5)");
+            entity.Property(e => e.LastUpdate).HasDefaultValueSql("('')");
+            entity.Property(e => e.MDateF).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.MDateL).HasDefaultValueSql("('')");
+            entity.Property(e => e.PathPicStamping).HasDefaultValue("");
+            entity.Property(e => e.Position1).HasDefaultValue("");
+            entity.Property(e => e.Position2).HasDefaultValue("");
+            entity.Property(e => e.Position3).HasDefaultValue("");
+            entity.Property(e => e.Position4).HasDefaultValue("");
+            entity.Property(e => e.Position5).HasDefaultValue("");
+            entity.Property(e => e.Remark).HasDefaultValue("");
+            entity.Property(e => e.Remark2).HasDefaultValue("");
+            entity.Property(e => e.Remark3).HasDefaultValue("");
+            entity.Property(e => e.Remark4).HasDefaultValue("");
+            entity.Property(e => e.ShipAddress).HasDefaultValue("");
+            entity.Property(e => e.ShipCity).HasDefaultValue("");
+            entity.Property(e => e.ShipCompany).HasDefaultValue("");
+            entity.Property(e => e.ShipContact).HasDefaultValue("");
+            entity.Property(e => e.ShipCountry).HasDefaultValue("");
+            entity.Property(e => e.ShipEmail).HasDefaultValue("");
+            entity.Property(e => e.ShipFax).HasDefaultValue("");
+            entity.Property(e => e.ShipTel).HasDefaultValue("");
+            entity.Property(e => e.ShipZipCode).HasDefaultValue("");
+            entity.Property(e => e.ShipmentType).HasDefaultValue(0);
+            entity.Property(e => e.SourceFrom).HasDefaultValue("");
+            entity.Property(e => e.TradeAddr).HasDefaultValue("");
+            entity.Property(e => e.TradeCity).HasDefaultValue("");
+            entity.Property(e => e.TradeCom).HasDefaultValue("");
+            entity.Property(e => e.TradeCountry).HasDefaultValue("");
+            entity.Property(e => e.TradeEmail).HasDefaultValue("");
+            entity.Property(e => e.TradeFax).HasDefaultValue("");
+            entity.Property(e => e.TradeName).HasDefaultValue("");
+            entity.Property(e => e.TradeTel).HasDefaultValue("");
+            entity.Property(e => e.TradeType).HasDefaultValue(0);
+            entity.Property(e => e.TradeZipCode).HasDefaultValue("");
+            entity.Property(e => e.UserDel).HasDefaultValue("");
+            entity.Property(e => e.UserNameF).HasDefaultValue("");
+            entity.Property(e => e.UserNameL).HasDefaultValue("");
+            entity.Property(e => e.WebIdcust).HasDefaultValue("");
+        });
+
+        modelBuilder.Entity<CusZoneType>(entity =>
+        {
+            entity.HasKey(e => e.CusZoneId).HasFillFactor(90);
+
+            entity.Property(e => e.CusZoneId).ValueGeneratedNever();
+            entity.Property(e => e.CusZoneName).HasDefaultValue("");
+            entity.Property(e => e.RefSale).HasDefaultValue("");
         });
 
         modelBuilder.Entity<JobBillSendStock>(entity =>
@@ -401,6 +496,12 @@ public partial class JPDbContext : DbContext
             entity.Property(e => e.Num).ValueGeneratedOnAdd();
             entity.Property(e => e.ProductDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Qorder).HasComment("รายการตั๋ว Order ที่ลงจำนวนเอง =1 ,0 ดึงรายการจาก Packing");
+
+            entity.HasOne(d => d.CustcodeNavigation).WithMany(p => p.OrdOrder)
+                .HasPrincipalKey(p => p.CusCode)
+                .HasForeignKey(d => d.Custcode)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OrdOrder_CusProfile");
         });
 
         modelBuilder.Entity<Spdreceive>(entity =>

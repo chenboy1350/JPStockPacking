@@ -33,11 +33,7 @@ namespace JPStockPacking.Services.Helper
                                 table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
-
                                 table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt}/{item.TdesFn}").FontSize(6).SemiBold();
-
-                                table.Cell().ColumnSpan(2).Element(CellStyle).AlignRight().Text($"Finishing").FontSize(7);
-                                table.Cell().ColumnSpan(5).Element(CellStyle).AlignLeft().Text($"{item.EdesFn}").FontSize(7);
 
                                 static IContainer CellStyle(IContainer container)
                                 {
@@ -65,22 +61,25 @@ namespace JPStockPacking.Services.Helper
                                     columns.RelativeColumn(1);
                                     columns.RelativeColumn(1);
                                     columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
                                 });
 
-                                table.Cell().RowSpan(7).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                table.Cell().RowSpan(8).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
 
                                 table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
 
-                                table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt}/{item.TdesFn}").FontSize(6).SemiBold();
-
-                                table.Cell().ColumnSpan(2).Element(CellStyle).AlignRight().Text($"Finishing").FontSize(7);
-                                table.Cell().ColumnSpan(5).Element(CellStyle).AlignLeft().Text($"{item.EdesFn}").FontSize(7);
+                                table.Cell().ColumnSpan(13).Element(CellStyle).AlignLeft().Text($"{item.TdesArt}/{item.TdesFn}").FontSize(6).SemiBold();
 
                                 table.Cell().Element(CellStyle).AlignRight().Text($"ขนาด").FontSize(7).SemiBold();
 
-                                for (int i = 0; i < 6; i += 1)
+                                for (int i = 0; i < 12; i += 1)
                                 {
                                     if (item.Size.Count >= i + 1)
                                     {
@@ -93,9 +92,24 @@ namespace JPStockPacking.Services.Helper
                                     }
                                 }
 
-                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวน").FontSize(7).Underline();
+                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนสั่ง").FontSize(7);
 
-                                for (int i = 0; i < 6; i += 1)
+                                for (int i = 0; i < 12; i += 1)
+                                {
+                                    if (item.Size.Count >= i + 1)
+                                    {
+                                        var a = item.Size[i];
+                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.Q}").FontSize(7);
+                                    }
+                                    else
+                                    {
+                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                    }
+                                }
+
+                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนแจ้ง").FontSize(7).Underline();
+
+                                for (int i = 0; i < 12; i += 1)
                                 {
                                     if (item.Size.Count >= i + 1)
                                     {
@@ -108,9 +122,87 @@ namespace JPStockPacking.Services.Helper
                                     }
                                 }
 
+                                static IContainer CellStyle(IContainer container)
+                                {
+                                    return container
+                                        .Border(0.5f)
+                                        .BorderColor(Colors.Black)
+                                        .Padding(3);
+                                }
+                            });
+        }
+
+        public static void CreateLotItemWithPriceCard(this IContainer container, SendToPackLots item)
+        {
+            container.Border(1)
+                            .BorderColor(Colors.Black)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(80);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Cell().RowSpan(3).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+
+                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt.Trim()}/{item.TdesFn.Trim()}").FontSize(7).SemiBold();
+                                table.Cell().RowSpan(3).ColumnSpan(7).Element(CellStyle).AlignCenter().Text($"{item.EnSendQtyPrice.ToUpper()}").FontSize(8).SemiBold();
+
+                                static IContainer CellStyle(IContainer container)
+                                {
+                                    return container
+                                        .Border(0.5f)
+                                        .BorderColor(Colors.Black)
+                                        .Padding(3);
+                                }
+                            });
+        }
+
+        public static void CreateLotSizeItemWithPriceCard(this IContainer container, SendToPackLots item)
+        {
+            container.Border(1)
+                            .BorderColor(Colors.Black)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(80);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Cell().RowSpan(8).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+
+                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
+                                table.Cell().RowSpan(2).ColumnSpan(6).Element(CellStyle).AlignCenter().Text($"{item.EnSendQtyPrice.ToUpper()}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt.Trim()}/{item.TdesFn.Trim()}").FontSize(7).SemiBold();
+
                                 table.Cell().Element(CellStyle).AlignRight().Text($"ขนาด").FontSize(7).SemiBold();
 
-                                for (int i = 6; i < 12; i += 1)
+                                for (int i = 0; i < 12; i += 1)
                                 {
                                     if (item.Size.Count >= i + 1)
                                     {
@@ -123,9 +215,24 @@ namespace JPStockPacking.Services.Helper
                                     }
                                 }
 
-                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวน").FontSize(7).Underline();
+                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนสั่ง").FontSize(7);
 
-                                for (int i = 6; i < 12; i += 1)
+                                for (int i = 0; i < 12; i += 1)
+                                {
+                                    if (item.Size.Count >= i + 1)
+                                    {
+                                        var a = item.Size[i];
+                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.Q}").FontSize(7);
+                                    }
+                                    else
+                                    {
+                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                    }
+                                }
+
+                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนแจ้ง").FontSize(7).Underline();
+
+                                for (int i = 0; i < 12; i += 1)
                                 {
                                     if (item.Size.Count >= i + 1)
                                     {
@@ -242,7 +349,7 @@ namespace JPStockPacking.Services.Helper
             });
         }
 
-        public static void BreakReportContent(this IContainer container, List<LostAndRepairModel> model, UserModel userModel)
+        public static void BreakReportContent(this IContainer container, List<LostAndRepairModel> model)
         {
             container.Column(col =>
             {
@@ -262,9 +369,6 @@ namespace JPStockPacking.Services.Helper
                             columns.RelativeColumn(3);
                             columns.RelativeColumn(2);
                             columns.RelativeColumn(3);
-                            columns.RelativeColumn(3);
-                            columns.RelativeColumn(2);
-                            columns.RelativeColumn(2);
                             columns.RelativeColumn(2);
                             columns.RelativeColumn(2);
                         });
@@ -275,10 +379,7 @@ namespace JPStockPacking.Services.Helper
                         table.Cell().Element(CellStyle).AlignCenter().Text("lotNo").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("รหัสลูกค้า\nOrderNo").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("ลำดับ").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("เลขที่งานช่าง").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("น้ำหนัก\nรวม").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("จำนวนที่\nส่งซ่อม").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("อาการ").FontSize(8);
 
@@ -293,16 +394,13 @@ namespace JPStockPacking.Services.Helper
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.LotNo}").FontSize(8);
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.CustCode}/{item.OrderNo}").FontSize(8);
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
-                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Barcode}").FontSize(8);
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
-                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.TtQty}").FontSize(8);
-                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.TtWg}").FontSize(8);
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.BreakQty}").FontSize(8);
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.BreakDescription}").FontSize(8);
                         }
 
                         // Footer signature
-                        table.Cell().ColumnSpan(11).Padding(2).Column(row =>
+                        table.Cell().ColumnSpan(8).Padding(2).Column(row =>
                         {
                             row.Item()
                                 .PaddingTop(60) // ลด padding เพื่อประหยัดพื้นที่
@@ -317,7 +415,7 @@ namespace JPStockPacking.Services.Helper
                                         });
                                         row.RelativeItem().AlignCenter().Column(col =>
                                         {
-                                            col.Item().Text($"({string.Concat(userModel.FirstName, " ", userModel.LastName)})").AlignCenter();
+                                            col.Item().Text("(...............................)").AlignCenter();
                                             col.Item().Text("ผู้อนุมัติ").FontSize(8).AlignCenter();
                                         });
                                         row.RelativeItem().AlignCenter().Column(col =>
@@ -365,12 +463,12 @@ namespace JPStockPacking.Services.Helper
             });
         }
 
-        public static void LostReportContent(this IContainer container, LostAndRepairModel model)
+        public static void LostReportContent(this IContainer container, List<LostAndRepairModel> model, UserModel userModel)
         {
             container.Column(col =>
             {
                 // ส่วนหัว
-                col.Item().PaddingTop(5).Element(c => c.LostReportHeader(model));
+                col.Item().PaddingTop(5).Element(c => c.LostReportHeader(model.FirstOrDefault()!));
 
                 // ตาราง - ใช้ ShowOnce() เพื่อไม่ให้แบ่งข้าม page
                 col.Item().PaddingVertical(2).ShowOnce().Element(c =>
@@ -385,29 +483,29 @@ namespace JPStockPacking.Services.Helper
                             columns.RelativeColumn(3);
                             columns.RelativeColumn(2);
                             columns.RelativeColumn(2);
-                            columns.RelativeColumn(2);
                         });
 
                         // Header row
                         table.Cell().Element(CellStyle).AlignCenter().Text("#").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("รหัสลูกค้า\nOrderNo").FontSize(8);
+                        table.Cell().Element(CellStyle).AlignCenter().Text("รหัสลูกค้าOrderNo").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("ลำดับ").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("น้ำหนัก\nรวม").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text("จำนวนที่\nสูญหาย").FontSize(8);
+                        table.Cell().Element(CellStyle).AlignCenter().Text("จำนวนรวม").FontSize(8);
+                        table.Cell().Element(CellStyle).AlignCenter().Text("จำนวนที่สูญหาย").FontSize(8);
 
-                        table.Cell().Element(CellStyle).AlignCenter().Text("#").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text($"{model.CustCode}/{model.OrderNo}").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text($"{model.ListNo}").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text($"{model.Article}").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text($"{model.TtQty}").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text($"{model.TtWg}").FontSize(8);
-                        table.Cell().Element(CellStyle).AlignCenter().Text($"{model.LostQty}").FontSize(8);
+                        foreach (var item in model)
+                        {
+                            table.Cell().Element(CellStyle).AlignCenter().Text("#").FontSize(8);
+                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.CustCode}/{item.OrderNo}").FontSize(8);
+                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
+                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
+                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.TtQty}").FontSize(8);
+                            table.Cell().Element(CellStyle).AlignCenter().Text($"{item.LostQty}").FontSize(8);
+                        }
 
 
                         // Footer signature
-                        table.Cell().ColumnSpan(7).Padding(2).Column(row =>
+                        table.Cell().ColumnSpan(6).Padding(2).Column(row =>
                         {
                             row.Item()
                                 .PaddingTop(60) // ลด padding เพื่อประหยัดพื้นที่
@@ -422,7 +520,7 @@ namespace JPStockPacking.Services.Helper
                                         });
                                         row.RelativeItem().AlignCenter().Column(col =>
                                         {
-                                            col.Item().Text("(...............................)").AlignCenter();
+                                            col.Item().Text($"({userModel.FirstName} {userModel.LastName} ({userModel.NickName}))").AlignCenter();
                                             col.Item().Text("ผู้อนุมัติ").FontSize(8).AlignCenter();
                                         });
                                         row.RelativeItem().AlignCenter().Column(col =>

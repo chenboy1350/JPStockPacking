@@ -6,16 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Returned
+public partial class Break
 {
     [Key]
-    [Column("ReturnID")]
-    public int ReturnId { get; set; }
+    [Column("BreakID")]
+    public int BreakId { get; set; }
 
-    [Column(TypeName = "numeric(18, 1)")]
-    public decimal? ReturnTtQty { get; set; }
+    [Column("ReceivedID")]
+    public int ReceivedId { get; set; }
 
-    public bool IsSuccess { get; set; }
+    [Column("BreakDescriptionID")]
+    public int BreakDescriptionId { get; set; }
+
+    [Column(TypeName = "decimal(18, 1)")]
+    public decimal? PreviousQty { get; set; }
+
+    [Column(TypeName = "decimal(18, 1)")]
+    public decimal? BreakQty { get; set; }
+
+    public bool IsReported { get; set; }
 
     public bool IsActive { get; set; }
 

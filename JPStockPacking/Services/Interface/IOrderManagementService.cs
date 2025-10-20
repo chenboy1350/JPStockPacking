@@ -20,15 +20,19 @@ namespace JPStockPacking.Services.Interface
         Task AssignReceivedAsync(string lotNo, int[] receivedIDs, string tableId, string[] memberIds, bool hasPartTime, int WorkerNumber);
         Task<List<TableModel>> GetTableToReturnAsync(string LotNo);
         Task<List<ReceivedListModel>> GetRecievedToReturnAsync(string LotNo, int TableID);
-        Task ReturnReceivedAsync(string LotNo, int[] assignmentIDs, decimal lostQty, decimal breakQty, decimal returnQty);
-        Task LostAndRepairAsync(string lotNo, int[] assignmentIDs, decimal lostQty, decimal breakQty, decimal returnQty, int breakDescriptionID);
+        Task ReturnReceivedAsync(string LotNo, int[] assignmentIDs, decimal returnQty);
         Task UpdateAllReceivedItemsAsync(string receiveNo);
         Task<SendToPackModel> GetOrderToSendQtyAsync(string orderNo);
+        Task<SendToPackModel> GetOrderToSendQtyWithPriceAsync(string orderNo);
         Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots);
         Task<UserModel> ValidateApporverAsync(string username, string password);
         Task<List<BreakDescription>> GetBreakDescriptionsAsync();
         Task<List<BreakDescription>> AddNewBreakDescription(string breakDescription);
-        Task<List<LostAndRepairModel>> GetRepairAsync(string LotNo);
-        Task<LostAndRepairModel> GetLostAsync(string LotNo);
+        Task<List<LostAndRepairModel>> GetBreakAsync(BreakAndLostFilterModel breakAndLostFilterModel);
+        Task<List<LostAndRepairModel>> GetLostAsync(BreakAndLostFilterModel breakAndLostFilterModel);
+        Task AddLostAsync(string lotNo, double lostQty);
+        Task AddBreakAsync(string lotNo, double breakQty, int breakDes);
+        Task PintedBreakReport(int[]? BreakIDs);
+        Task PintedLostReport(int[]? LostIDs);
     }
 }

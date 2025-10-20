@@ -141,6 +141,10 @@ function showAddUserModal() {
 
     $("#txtAddConfirmPassword").removeClass("is-valid is-invalid");
 
+    $('#ddlEmp').select2({
+        dropdownParent: $('#modal-add-user'),
+    });
+
     $.ajax({
         url: urlAvailableEmployee,
         type: 'GET',
@@ -163,6 +167,10 @@ function showAddUserModal() {
 
 function showEditUserModal(userId) {
     $('#modal-edit-user').modal('show');
+
+    $('#ddlEditEmp').select2({
+        dropdownParent: $('#modal-edit-user'),
+    });
 
     $.ajax({
         url: urlGetUser,
@@ -206,17 +214,9 @@ async function reloadUserList() {
                     <td class="col-status">${u.isActive ? '<span class="badge badge-success">เปิดใช้งาน</span>' : '<span class="badge badge-danger">ปิดใช้งาน</span>'}
                     </td>
                     <td class="col-action">
-                        <button class="btn btn-info btn-sm" onclick="showEditUserModal(${u.userID})">
-                            <i class="fas fa-pen-square"></i> แก้ไข
-                        </button>
-                        ${u.isActive
-                    ? `<button class="btn btn-danger btn-sm" onclick="toggleUserStatus(${u.userID}, false)">
-                                    <i class="fas fa-window-close"></i> ปิดใช้งาน
-                               </button>`
-                    : `<button class="btn btn-danger btn-sm" onclick="toggleUserStatus(${u.userID}, true)">
-                                    <i class="fas fa-check-square"></i> เปิดใช้งาน
-                               </button>`
-                }
+                        <button class="btn btn-info btn-sm" onclick="showEditUserModal(${u.userID})"><i class="fas fa-pen-square"></i> แก้ไข</button>
+                        ${u.isActive ? `<button class="btn btn-danger btn-sm" onclick="toggleUserStatus(${u.userID}, false)"><i class="fas fa-window-close"></i> ปิดใช้งาน</button>`
+                    : `<button class="btn btn-success btn-sm" onclick="toggleUserStatus(${u.userID}, true)"><i class="fas fa-check-square"></i> เปิดใช้งาน</button>`}
                     </td>
                 </tr>
             `;

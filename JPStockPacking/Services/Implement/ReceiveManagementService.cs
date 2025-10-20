@@ -337,8 +337,29 @@ namespace JPStockPacking.Services.Implement
                     b.ReceiveNo,
                     b.Mdate,
                     b.Mupdate,
-                    TotalDetail = b.Spdreceive.Count()
+                    TotalDetail = b.Spdreceive.Count(),
+                    //LotNo = b.Spdreceive.Select(x => x.Lotno).FirstOrDefault(),
+                    //OrderNo = b.Spdreceive
+                    //    .Select(x => x.Lotno)
+                    //    .Select(lotno => _jPDbContext.OrdLotno
+                    //        .Where(l => l.LotNo == lotno)
+                    //        .Select(l => l.OrderNo)
+                    //        .FirstOrDefault())
+                    //    .FirstOrDefault()
                 });
+
+            //var query =
+            //    from a in _jPDbContext.Sphreceive
+            //    join b in _jPDbContext.Spdreceive on a.ReceiveNo equals b.ReceiveNo
+            //    join c in _jPDbContext.OrdLotno on b.Lotno equals c.LotNo
+            //    join d in _jPDbContext.OrdHorder on c.OrderNo equals d.OrderNo
+            //    select new
+            //    {
+            //        a.ReceiveNo,
+            //        a.Mdate,
+            //        a.Mupdate,
+            //        TotalDetail = _jPDbContext.Spdreceive.Count(x => x.Id == b.Id)
+            //    };
 
             if (!string.IsNullOrWhiteSpace(receiveNo))
             {
@@ -347,7 +368,7 @@ namespace JPStockPacking.Services.Implement
 
             var receives = await query
                 .OrderByDescending(o => o.Mdate)
-                .Take(100)
+                .Take(500)
                 .ToListAsync();
 
             var receiveNos = receives.Select(r => r.ReceiveNo).ToList();
@@ -368,8 +389,6 @@ namespace JPStockPacking.Services.Implement
 
             return result;
         }
-
-
 
         public async Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo)
         {

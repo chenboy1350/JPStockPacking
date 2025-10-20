@@ -63,6 +63,16 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "PackedManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("PackedManagement", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>จัดการสินค้าบรรจุแล้ว</p>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.HasClaim("Menu", "CheckQtyToPack"))
                     {
                         <li class="nav-item">
@@ -134,7 +144,6 @@
         window.urlGetRecievedToReturn = '@Url.Action("GetRecievedToReturn", "Home")';
         window.urlReturnAssignment = '@Url.Action("ReturnAssignment", "Home")';
         window.urlImportOrder = '@Url.Action("ImportOrder", "Home")';
-        window.urlLostAndRepair = '@Url.Action("LostAndRepair", "Home")';
         window.urlImportReceiveNo = '@Url.Action("ImportReceiveNo", "Home")';
         window.urlUpdateLotByRevNoItems = '@Url.Action("UpdateLotByRevNoItems", "Home")';
         window.urlGetOrderToSendQty = '@Url.Action("GetOrderToSendQty", "Home")';
@@ -154,6 +163,10 @@
         window.urlAvailableEmployee = '@Url.Action("AvailableEmployee", "Home")';
         window.urlEditUser = '@Url.Action("EditUser", "Home")';
         window.urlToggleUserStatus = '@Url.Action("ToggleUserStatus", "Home")';
+        window.urlGetLost = '@Url.Action("GetLost", "Home")';
+        window.urlAddLost = '@Url.Action("AddLost", "Home")';
+        window.urlGetBreak = '@Url.Action("GetBreak", "Home")';
+        window.urlAddBreak = '@Url.Action("AddBreak", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>

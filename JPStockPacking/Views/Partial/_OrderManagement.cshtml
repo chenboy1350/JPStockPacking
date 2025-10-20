@@ -17,22 +17,6 @@
                         </h2>
                         <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
                             <div class="accordion-body">
-@*                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>เลขคำสั่งซื้อ</label>
-                                            <input type="text" id="txtImportOrderNo" class="form-control" placeholder="กรอก OrderNo ที่จะนำเข้า">
-                                            <button class="btn btn-primary mt-2" id="btnImportOrder">นำเข้าออเดอร์</button>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>เลขใบส่ง</label>
-                                            <input type="text" id="txtImportReceivedNo" class="form-control" placeholder="กรอก เลขใบส่ง ที่ต้องการรับเข้า">
-                                            <button class="btn btn-primary mt-2" id="btnImportReceivedNo">นำเข้าใบส่ง</button>
-                                        </div>
-                                    </div>
-                                </div> *@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -47,7 +31,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
+@*                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>From Date</label>
@@ -60,7 +44,7 @@
                                             <input type="date" id="toDate" class="form-control">
                                         </div>
                                     </div>
-                                </div>
+                                </div> *@
 @*                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -72,7 +56,7 @@
                                     </div>
                                 </div> *@
                                 <button class="btn btn-secondary" onclick="ClearFindBy()">Clear</button>
-                                <button class="btn btn-primary" onclick="fetchOrdersByDateRange()">Find</button>
+                                <button class="btn btn-primary" onclick="fetchOrdersByDateRange()">ค้นหา</button>
                             </div>
                         </div>
                     </div>
@@ -89,7 +73,9 @@
                     <h3 class="card-title">รายการคำสั่งซื้อ</h3>
                     <div class="d-flex justify-content-end">
                         <input type="text" class="form-control me-2" id="txtGoTo" placeholder="ไปที่ OrderNo/LotNo" style="width:180px">
-                        <button class="btn btn-primary" id="btnGoTo">ไปที่</button>
+                        <button class="btn btn-primary me-2" id="btnGoTo"><i class="fas fa-search"></i></button>
+                        <button class="btn btn-warning btn-sm me-2" onclick="showModalLost('')"><i class="far fa-eye-slash"></i> หาย</button>
+                        <button class="btn btn-warning btn-sm" onclick="showModalBreak('')"><i class="fas fa-hammer"></i> ซ่อม</button>
                     </div>
                 </div>
             </div>
@@ -148,7 +134,7 @@
                                                     <th style="width: 10%">
                                                         ลำดับที่
                                                     </th>
-                                                    <th style="width: 25%">
+                                                    <th style="width: 15%">
                                                         การมอบหมาย
                                                     </th>
                                                     <th>
@@ -157,7 +143,7 @@
                                                     <th style="width: 8%" class="text-center">
                                                         สถานะ
                                                     </th>
-                                                    <th style="width: 20%">
+                                                    <th style="width: 30%">
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -186,7 +172,7 @@
                                                             @foreach (var asnt in lot.AssignTo)
                                                             {
                                                                 <a>
-                                                                    <span class="badge badge-secondary" onclick="showModalTableMember(@asnt.AssignmentId)">@asnt.TableName</span>
+                                                                    <span class="badge badge-secondary" style="cursor: pointer;" onclick="showModalTableMember(@asnt.AssignmentId)">@asnt.TableName</span>
                                                                 </a>
                                                             }
                                                         </td>
@@ -283,10 +269,10 @@
                                                             }
                                                         </td>
                                                         <td class="project-actions text-right">
-                                                            @* @Html.Raw(lot.HasRepair ? string.Format("<button class='btn btn-warning btn-sm' onclick='printBreakToPDF({0})'><i class='fas fa-user-lock'></i> ส่งซ่อม</button>", lot.LotNo) : "") *@
-                                                            @Html.Raw(lot.HasLost ? string.Format("<button class='btn btn-info btn-sm' onclick='showApproveToPrintModal({0})'><i class='fas fa-folder'></i> สูญหาย</button>", lot.LotNo) : "")
+                                                            @Html.Raw((lot.IsPacking || lot.IsAllReturned) ? string.Format("<button class='btn btn-warning btn-sm' onclick='showModalLost({0})'><i class='far fa-eye-slash'></i> หาย</button>", lot.LotNo) : "")
+                                                            @Html.Raw((lot.IsPacking || lot.IsAllReturned) ? string.Format("<button class='btn btn-warning btn-sm' onclick='showModalBreak({0})'><i class='fas fa-hammer'></i> ซ่อม</button>", lot.LotNo) : "")
 
-                                                            @Html.Raw(((item.IsReceivedLate || lot.IsAllReceived) && !lot.IsAllReturned && lot.TtQty != 0) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
+                                                            @Html.Raw((lot.ReceivedQty > 0 && !lot.IsAllReturned) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
                                                             @Html.Raw((lot.IsPacking && !lot.IsAllReturned) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
                                                         </td>
                                                     </tr>
@@ -516,29 +502,19 @@
                             </table>
                             <div class="row">
                                 <div class="col-3 mt-2">
-                                    <div class="form-group">
-                                        <label>จำนวนจากใบรับที่เลือก</label>
-                                        <input type="number" min="0" max="999999" id="txtReurnQty" class="form-control" readonly>
-                                    </div>
                                 </div>
                                 <div class="col-3 mt-2">
-                                    <div class="form-group">
-                                        <label>จำนวนที่สูญหาย</label>
-                                        <input type="number" min="0" max="999999" id="txtLostQty" class="form-control" readonly>
-                                    </div>
                                 </div>
-                                @*<div class="col-3 mt-2">
-                                    <label>จำนวนที่ชำรุด</label>
-                                    <input type="number" min="0" max="999999" id="txtBreakQty" class="form-control" readonly>
-                                </div>*@
+                                <div class="col-3 mt-2">
+                                </div>
                                 <div class="col-3 mt-2">
                                     <div class="form-group">
                                         <label>ส่งคืนรวมทั้งสิ้น</label>
-                                        <input type="number" min="0" max="999999" id="txtTotalReurnQty" class="form-control" readonly>
+                                        <input type="number" min="0" max="999999" id="txtReurnQty" class="form-control" readonly>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            @*<div class="row">
                                 <div class="col-3 mt-2">
                                 </div>
                                 <div class="col-3 mt-2">
@@ -566,14 +542,13 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div>*@
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
                 <button type="button" id="btnConfirmReturn" class="btn btn-danger">ยืนยัน</button>
-                <button type="button" id="btnLostAndRepair" class="btn btn-danger" style="display:none;">ส่งซ่อมหรือสูญหาย</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
@@ -609,6 +584,119 @@
             </div>
             <div class="modal-footer justify-content-end">
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-lost">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleLost"><i class='far fa-eye-slash'></i></h4>
+                <input type="hidden" id="hddLotNo" value="" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"></h3>
+
+                        <div class="card-tools">
+                            <button class="btn btn-default" id="btnAddLostList" onclick="showModalAddLost()"><i class="fas fa-plus"></i> เพิ่มรายการ</button>
+                            <button class="btn btn-default" id="btnPrintLostReport" onclick="showApproveToPrintModal()"><i class="fas fa-print"></i></button>
+                        </div>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body table-responsive p-0" style="height: 300px;">
+                        <table class="table table-head-fixed table-striped  text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>รหัสลูกค้า</th>
+                                    <th>OrderNo</th>
+                                    <th>LotNo</th>
+                                    <th>ลำดับ</th>
+                                    <th>รหัสสินค้า</th>
+                                    <th>จำนวนสั่ง</th>
+                                    <th>จำนวนสูญหาย</th>
+                                    <th>วันที่ทำรายการ</th>
+                                    <th>สถานะ</th>
+                                    <th>
+                                        <div class="icheck-primary d-inline">
+                                            <input type="checkbox" id="chkSelectAllLost">
+                                            <label for="chkSelectAllLost">เลือก</label>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-body-lost">
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-break">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleBreak"><i class='fas fa-hammer'></i></h4>
+                <input type="hidden" id="hddLotNo" value="" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"></h3>
+
+                        <div class="card-tools">
+                            <button class="btn btn-default" id="btnAddBreakList" onclick="showModalAddBreak()"><i class="fas fa-plus"></i> เพิ่มรายการ</button>
+                            <button class="btn btn-default" id="btnPrintBreakReport" onclick="printBreakToPDF()"><i class="fas fa-print"></i></button>
+                        </div>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body table-responsive p-0" style="height: 300px;">
+                        <table class="table table-head-fixed table-striped table-hover text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>เลขที่ใบรับ</th>
+                                    <th>รหัสลูกค้า</th>
+                                    <th>OrderNo</th>
+                                    <th>LotNo</th>
+                                    <th>ลำดับ</th>
+                                    <th>จำนวนรับ</th>
+                                    <th>ชำรุด</th>
+                                    <th>สาเหตุ</th>
+                                    <th>วันที่ทำรายการ</th>
+                                    <th>สถานะ</th>
+                                    <th>
+                                        <div class="icheck-primary d-inline">
+                                            <input type="checkbox" id="chkSelectAllBreak">
+                                            <label for="chkSelectAllBreak">เลือก</label>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-body-break">
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
             </div>
         </div>
     </div>
@@ -669,7 +757,7 @@
     <div class="modal-dialog modal-md">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleApproveToPrint"><i class="fas fa-edit"></i> ยืนยันการพิมพ์ใบส่งซ่อม</h4>
+                <h4 class="modal-title" id="txtTitleApproveToPrint"><i class="fas fa-edit"></i> ยืนยันการพิมพ์ใบแจ้งหาย</h4>
                 <input type="hidden" id="hddUserID" value="" />
                 <input type="hidden" id="hddLotNo" value="" />
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
@@ -704,10 +792,68 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="page-title" data-title="จัดการคำสั่งซื้อ"></div>
+<div class="modal fade" id="modal-add-Lost">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><i class="fas fa-plus-circle"></i> เพิ่มรายการหาย</h4>
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-default">
+                    <label for="txtLostQty">กรอกจำนวนที่สูญหาย</label>
+                    <input type="number" min="0" step="any" id="txtLostQty" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-info" id="btnAddLost">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-add-break">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><i class="fas fa-plus-circle"></i> เพิ่มรายการเสียหาย</h4>
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="">
+                    <label for="txtBreakQty">กรอกจำนวนที่เสียหาย</label>
+                    <input type="number" min="0" id="txtBreakQty" step="any" class="form-control">
+                    <label for="ddlBreakDes"><span style="color:red;">*</span> อาการที่ชำรุด</label>
+                    <select id="ddlBreakDes" name="ddlBreakDes" class="form-control" style="width: 100%">
+                        <option value="" selected>-- เลือกอาการ --</option>
+                        @foreach (var des in ViewBag.BreakDescriptions)
+                        {
+                            <option value="@des.BreakDescriptionId">@des.Name</option>
+                        }
+                    </select>
+                    <label for="txtAddBreakDes">เพิ่มใหม่</label>
+                    <div class="input-group">
+                        <input type="text" id="txtAddBreakDes" class="form-control" placeholder="อาการที่ชำรุด" style="display:none;">
+                        <span class="input-group-append">
+                            <button type="button" id="btnAddBreakDes" class="btn btn-info btn-flat"><i class="fas fa-plus"></i></button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-info" id="btnAddBreak">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="สต็อกแพ็คกิ้ง"></div>

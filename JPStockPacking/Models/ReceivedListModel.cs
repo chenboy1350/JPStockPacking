@@ -16,6 +16,7 @@
         public bool IsReceived { get; set; } = false;
         public bool HasRevButNotAll { get; set; } = false;
         public string Mdate { get; set; } = string.Empty;
+        public string CreateDate { get; set; } = string.Empty;
 
     }
 }

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using static JPStockPacking.Services.Helper.Enum;
-using static JPStockPacking.Services.Implement.AuthService;
 using static JPStockPacking.Services.Implement.OrderManagementService;
 
 namespace JPStockPacking.Controllers
@@ -16,7 +15,8 @@ namespace JPStockPacking.Controllers
         IReceiveManagementService receiveManagementService,
         IWebHostEnvironment webHostEnvironment,
         IOptions<AppSettingModel> appSettings,
-        IPISService pISService) : Controller
+        IPISService pISService,
+        IConfiguration configuration) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -25,6 +25,7 @@ namespace JPStockPacking.Controllers
         private readonly IWebHostEnvironment _env = webHostEnvironment;
         private readonly AppSettingModel _appSettings = appSettings.Value;
         private readonly IPISService _pISService = pISService;
+        private readonly IConfiguration _configuration = configuration;
 
         [Authorize]
         public IActionResult Index()
@@ -37,8 +38,6 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> OrderManagement()
         {
-            //await _orderManagementService.ImportOrderAsync();
-            //await _orderManagementService.GetUpdateLotAsync();
             ViewBag.Tables = await _orderManagementService.GetTableAsync();
             ViewBag.BreakDescriptions = await _orderManagementService.GetBreakDescriptionsAsync();
             var result = await _orderManagementService.GetOrderAndLotByRangeAsync(GroupMode.Day, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue);
@@ -59,14 +58,17 @@ namespace JPStockPacking.Controllers
         }
 
         [Authorize]
-        public IActionResult ExportReceiveManagement()
+        public IActionResult PackedManagement()
         {
-            return PartialView("~/Views/Partial/_ExportManagement.cshtml");
+            return PartialView("~/Views/Partial/_PackedManagement.cshtml");
         }
 
         [Authorize]
         public IActionResult CheckQtyToPack()
         {
+            var apiSettings = _configuration.GetSection("SendQtySettings");
+            var Persentage = apiSettings["Persentage"];
+            ViewBag.Persentage = Persentage;
             return PartialView("~/Views/Partial/_CheckQtyToPack.cshtml");
         }
 
@@ -127,7 +129,6 @@ namespace JPStockPacking.Controllers
             return Ok(result);
         }
 
-
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetReceived(string lotNo)
@@ -185,7 +186,6 @@ namespace JPStockPacking.Controllers
             }
         }
 
-
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds, [FromForm] bool hasPartTime, [FromForm] int workerNumber)
@@ -229,18 +229,10 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> ReturnAssignment([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal lostQty, [FromForm] decimal breakQty, [FromForm] decimal returnQty)
+        public async Task<IActionResult> ReturnAssignment([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal returnQty)
         {
 
-            await _orderManagementService.ReturnReceivedAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty);
-            return Ok();
-        }
-
-        [HttpPatch]
-        [Authorize]
-        public async Task<IActionResult> LostAndRepair([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal lostQty, [FromForm] decimal breakQty, [FromForm] decimal returnQty, [FromForm] int breakDescriptionID)
-        {
-            await _orderManagementService.LostAndRepairAsync(lotNo, assignmentIDs, lostQty, breakQty, returnQty, breakDescriptionID);
+            await _orderManagementService.ReturnReceivedAsync(lotNo, assignmentIDs, returnQty);
             return Ok();
         }
 
@@ -278,10 +270,20 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> SendQtyToPackReport(string orderNo, PrintTo printTo)
         {
-            var result = await _orderManagementService.GetOrderToSendQtyAsync(orderNo);
+            _ = new SendToPackModel();
+            SendToPackModel result;
+            if (printTo == PrintTo.Export)
+            {
+                result = await _orderManagementService.GetOrderToSendQtyWithPriceAsync(orderNo);
+            }
+            else
+            {
+                result = await _orderManagementService.GetOrderToSendQtyAsync(orderNo);
+            }
+
             var pdfBytes = _reportService.GenerateSendQtyToPackReport(result, printTo);
 
-            var contentDisposition = $"inline; filename=TestReport_{DateTime.Now:yyyyMMdd}.pdf";
+            var contentDisposition = $"inline; filename=DefineToPackReport_{DateTime.Now:yyyyMMdd}.pdf";
             Response.Headers.Append("Content-Disposition", contentDisposition);
 
             return File(pdfBytes, "application/pdf");
@@ -375,13 +377,22 @@ namespace JPStockPacking.Controllers
 
         }
 
-        [HttpGet]
+        [HttpPost]
         [Authorize]
-        public async Task<IActionResult> BreakReport(string lotNo, string username, string password)
+        public async Task<IActionResult> GetBreak([FromBody] BreakAndLostFilterModel breakAndLostFilterModel)
         {
-            UserModel user = await _orderManagementService.ValidateApporverAsync(username, password);
-            List<LostAndRepairModel> result = await _orderManagementService.GetRepairAsync(lotNo);
-            byte[] pdfBytes = _reportService.GenerateBreakReport(result, user);
+            List<LostAndRepairModel> result = await _orderManagementService.GetBreakAsync(breakAndLostFilterModel);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> BreakReport([FromBody] BreakAndLostFilterModel breakAndLostFilterModel)
+        {
+
+            List<LostAndRepairModel> result = await _orderManagementService.GetBreakAsync(breakAndLostFilterModel);
+            byte[] pdfBytes = _reportService.GenerateBreakReport(result);
+            await _orderManagementService.PintedBreakReport(breakAndLostFilterModel.BreakIDs);
 
             string contentDisposition = $"inline; filename=BreakReport_{DateTime.Now:yyyyMMdd}.pdf";
             Response.Headers.Append("Content-Disposition", contentDisposition);
@@ -389,12 +400,22 @@ namespace JPStockPacking.Controllers
             return File(pdfBytes, "application/pdf");
         }
 
-        [HttpGet]
+        [HttpPost]
         [Authorize]
-        public async Task<IActionResult> LostReport(string lotNo)
+        public async Task<IActionResult> GetLost([FromBody] BreakAndLostFilterModel breakAndLostFilterModel)
         {
-            LostAndRepairModel result = await _orderManagementService.GetLostAsync(lotNo);
-            byte[] pdfBytes = _reportService.GenerateLostReport(result);
+            List<LostAndRepairModel> result = await _orderManagementService.GetLostAsync(breakAndLostFilterModel);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> LostReport([FromBody] BreakAndLostFilterModel breakAndLostFilterModel)
+        {
+            UserModel user = await _orderManagementService.ValidateApporverAsync(breakAndLostFilterModel.Username , breakAndLostFilterModel.Password);
+            List<LostAndRepairModel> result = await _orderManagementService.GetLostAsync(breakAndLostFilterModel);
+            byte[] pdfBytes = _reportService.GenerateLostReport(result, user);
+            await _orderManagementService.PintedLostReport(breakAndLostFilterModel.LostIDs);
 
             string contentDisposition = $"inline; filename=LostReport_{DateTime.Now:yyyyMMdd}.pdf";
             Response.Headers.Append("Content-Disposition", contentDisposition);
@@ -469,6 +490,38 @@ namespace JPStockPacking.Controllers
             {
                 var res = await _pISService.ToggleUserStatus(userModel);
                 return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddLost([FromForm] string lotNo, [FromForm] double lostQty)
+        {
+            try
+            {
+                await _orderManagementService.AddLostAsync(lotNo, lostQty);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddBreak([FromForm] string lotNo, [FromForm] double breakQty, [FromForm] int breakDes)
+        {
+            try
+            {
+                await _orderManagementService.AddBreakAsync(lotNo, breakQty, breakDes);
+                return Ok();
             }
             catch (Exception ex)
             {

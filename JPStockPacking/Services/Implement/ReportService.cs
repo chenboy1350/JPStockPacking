@@ -6,7 +6,6 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Globalization;
 using static JPStockPacking.Services.Helper.Enum;
-using static JPStockPacking.Services.Implement.AuthService;
 using static JPStockPacking.Services.Implement.OrderManagementService;
 
 namespace JPStockPacking.Services.Implement
@@ -54,6 +53,9 @@ namespace JPStockPacking.Services.Implement
                             }
                         });
 
+                    List<SendToPackLots> Items = [.. model.Lots.Where(x => x.Size.Count == 0)];
+                    List<SendToPackLots> ItemSizes = [.. model.Lots.Where(x => x.Size.Count > 0)];
+
                     page.Content()
                         .PaddingVertical(2)
                         .Table(table =>
@@ -64,42 +66,52 @@ namespace JPStockPacking.Services.Implement
                                 columns.RelativeColumn(1);
                             });
 
-                            List<SendToPackLots> Items = [.. model.Lots];
                             var leftItems = Items.Where((item, index) => index % 2 == 0).ToList();
                             var rightItems = Items.Where((item, index) => index % 2 == 1).ToList();
 
                             table.Cell().Padding(2).Column(row =>
                             {
-                                foreach (var item in leftItems)
+                                if (printTo == PrintTo.Export)
                                 {
-                                    if (item.Size == null || item.Size!.Count <= 0)
-                                    {
-                                        row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemCard(item));
-                                    }
-                                    else
-                                    {
-                                        row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotSizeItemCard(item));
-                                    }
+                                    foreach (var item in leftItems) row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemWithPriceCard(item));
                                 }
-
+                                else
+                                {
+                                    foreach (var item in leftItems) row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemCard(item));
+                                }
                             });
 
                             table.Cell().Padding(2).Column(row =>
                             {
-                                foreach (var item in rightItems)
+                                if (printTo == PrintTo.Export)
                                 {
-                                    if (item.Size == null || item.Size!.Count <= 0)
-                                    {
-                                        row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemCard(item));
-                                    }
-                                    else
-                                    {
-                                        row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotSizeItemCard(item));
-                                    }
+                                    foreach (var item in rightItems) row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemWithPriceCard(item));
                                 }
-
-
+                                else
+                                {
+                                    foreach (var item in rightItems) row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotItemCard(item));
+                                }
                             });
+
+                            table.Cell().ColumnSpan(2).Padding(2).Column(row =>
+                            {
+                                if (printTo == PrintTo.Export)
+                                {
+                                    foreach (var item in ItemSizes) row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotSizeItemWithPriceCard(item));
+                                }
+                                else
+                                {
+                                    foreach (var item in ItemSizes) row.Item().PaddingBottom(2).ShowEntire().Element(e => e.CreateLotSizeItemCard(item));
+                                }
+                            });
+
+                            if (printTo == PrintTo.Export)
+                            {
+                                table.Cell().ColumnSpan(2).Padding(2).Element(e =>
+                                {
+                                    e.AlignRight().Text($"รวมยอดแจ้งทั้งหมด : {model.SumSendTtQty} / {model.SumSendTtPrice}").FontSize(10).Bold();
+                                });
+                            }
 
                             table.Cell().ColumnSpan(2).Padding(2).Column(row =>
                             {
@@ -143,7 +155,7 @@ namespace JPStockPacking.Services.Implement
 
         }
 
-        public byte[] GenerateBreakReport(List<LostAndRepairModel> model, UserModel userModel)
+        public byte[] GenerateBreakReport(List<LostAndRepairModel> model)
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
@@ -158,37 +170,45 @@ namespace JPStockPacking.Services.Implement
 
                     page.Content().Column(col =>
                     {
-                        // คำนวณความสูงที่เหลือหลังจากหัก margin และ footer
-                        var availableHeight = PageSizes.A4.Height - (0.5f * 2 * 72 / 2.54f) - 60; // หัก margin และพื้นที่สำหรับ footer
-                        var halfHeight = availableHeight / 2;
-
-                        // ครึ่งบน - กำหนดความสูงแน่นอน
-                        col.Item().Height(halfHeight).Element(content =>
+                        col.Item().Element(content =>
                         {
-                            content.BreakReportContent(model, userModel);
-                        });
-
-                        // เส้นคั่นกลาง
-                        col.Item().Height(2).Background(Colors.Grey.Lighten2);
-
-                        // ครึ่งล่าง - กำหนดความสูงแน่นอนและไม่ให้เกิน
-                        col.Item().Height(halfHeight).Element(content =>
-                        {
-                            content.Column(innerCol =>
-                            {
-                                // ใช้ MaxHeight เพื่อไม่ให้เกินขอบเขต
-                                innerCol.Item().MaxHeight(halfHeight).Element(c =>
-                                    c.BreakReportContent(model, userModel));
-                            });
+                            content.BreakReportContent(model);
                         });
                     });
+
+                    //page.Content().Column(col =>
+                    //{
+                    //    // คำนวณความสูงที่เหลือหลังจากหัก margin และ footer
+                    //    var availableHeight = PageSizes.A4.Height - (0.5f * 2 * 72 / 2.54f) - 60; // หัก margin และพื้นที่สำหรับ footer
+                    //    var halfHeight = availableHeight / 2;
+
+                    //    // ครึ่งบน - กำหนดความสูงแน่นอน
+                    //    col.Item().Height(halfHeight).Element(content =>
+                    //    {
+                    //        content.BreakReportContent(model);
+                    //    });
+
+                    //    // เส้นคั่นกลาง
+                    //    col.Item().Height(2).Background(Colors.Grey.Lighten2);
+
+                    //    // ครึ่งล่าง - กำหนดความสูงแน่นอนและไม่ให้เกิน
+                    //    col.Item().Height(halfHeight).Element(content =>
+                    //    {
+                    //        content.Column(innerCol =>
+                    //        {
+                    //            // ใช้ MaxHeight เพื่อไม่ให้เกินขอบเขต
+                    //            innerCol.Item().MaxHeight(halfHeight).Element(c =>
+                    //                c.BreakReportContent(model));
+                    //        });
+                    //    });
+                    //});
                 });
             });
 
             return document.GeneratePdf();
         }
 
-        public byte[] GenerateLostReport(LostAndRepairModel model)
+        public byte[] GenerateLostReport(List<LostAndRepairModel> model, UserModel userModel)
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
@@ -210,7 +230,7 @@ namespace JPStockPacking.Services.Implement
                         // ครึ่งบน - กำหนดความสูงแน่นอน
                         col.Item().Height(halfHeight).Element(content =>
                         {
-                            content.LostReportContent(model);
+                            content.LostReportContent(model, userModel);
                         });
 
                         // เส้นคั่นกลาง
@@ -223,7 +243,7 @@ namespace JPStockPacking.Services.Implement
                             {
                                 // ใช้ MaxHeight เพื่อไม่ให้เกินขอบเขต
                                 innerCol.Item().MaxHeight(halfHeight).Element(c =>
-                                    c.LostReportContent(model));
+                                    c.LostReportContent(model, userModel));
                             });
                         });
                     });

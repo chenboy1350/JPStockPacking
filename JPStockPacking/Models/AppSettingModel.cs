@@ -4,6 +4,10 @@
     {
         public string AppVersion { get; set; } = string.Empty;
         public string DatabaseVersion { get; set; } = string.Empty;
-        public bool UseMockUp { get; set; } = false;
+    }
+
+    public class SendQtyModel
+    {
+        public int Persentage { get; set; }
     }
 }

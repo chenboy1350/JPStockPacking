@@ -20,7 +20,11 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<AssignmentTable> AssignmentTable { get; set; }
 
+    public virtual DbSet<Break> Break { get; set; }
+
     public virtual DbSet<BreakDescription> BreakDescription { get; set; }
+
+    public virtual DbSet<Lost> Lost { get; set; }
 
     public virtual DbSet<Lot> Lot { get; set; }
 

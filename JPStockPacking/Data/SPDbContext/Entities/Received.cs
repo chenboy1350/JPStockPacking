@@ -41,11 +41,6 @@ public partial class Received
 
     public bool IsReturned { get; set; }
 
-    public bool IsSendRepair { get; set; }
-
-    [Column(TypeName = "numeric(18, 1)")]
-    public decimal? RepairTtQty { get; set; }
-
     public bool IsActive { get; set; }
 
     [Column(TypeName = "datetime")]
