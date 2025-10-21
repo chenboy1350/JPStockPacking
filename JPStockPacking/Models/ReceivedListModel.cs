@@ -19,4 +19,24 @@
         public string CreateDate { get; set; } = string.Empty;
 
     }
+
+    public class TableModel
+    {
+        public int Id { get; set; } = 0;
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class LostAndRepairModel : ReceivedListModel
+    {
+        public int LostID { get; set; } = 0;
+        public int BreakID { get; set; } = 0;
+        public decimal? BreakQty { get; set; }
+        public decimal? LostQty { get; set; }
+        public string BreakDescription { get; set; } = string.Empty;
+        public string CustCode { get; set; } = string.Empty;
+        public string SeldDate1 { get; set; } = string.Empty;
+        public decimal? PreviousQty { get; set; }
+        public decimal? OrderQty { get; set; }
+        public bool IsReported { get; set; } = false;
+    }
 }

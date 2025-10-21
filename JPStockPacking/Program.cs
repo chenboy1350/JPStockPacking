@@ -34,6 +34,10 @@ builder.Services.AddScoped<IProductionPlanningService, ProductionPlanningService
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IReceiveManagementService, ReceiveManagementService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
+builder.Services.AddScoped<ICheckQtyToSendService, CheckQtyToSendService>();
+builder.Services.AddScoped<IBreakService, BreakService>();
+builder.Services.AddScoped<ILostService, LostService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>
