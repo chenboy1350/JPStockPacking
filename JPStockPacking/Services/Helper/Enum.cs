@@ -16,11 +16,17 @@
             Export = 4
         }
 
-        public enum ActionPermission
+        public enum SendType
         {
-            Read = 1,
-            WriteAndEdit = 2,
-            Approve = 3,
+            KS = 1,
+            KM = 2
         }
+
+        public enum ReceiveType
+        {
+            SJ1 = 2,
+            SJ2 = 3
+        }
+
     }
 }

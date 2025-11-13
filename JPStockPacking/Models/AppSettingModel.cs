@@ -10,4 +10,10 @@
     {
         public int Persentage { get; set; }
     }
+
+    public class UpdateAppSettingsModel
+    {
+        public int ChxQtyPersentage { get; set; } = 0;
+        public int MinWgPersentage { get; set; } = 0;
+    }
 }

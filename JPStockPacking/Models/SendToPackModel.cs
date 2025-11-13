@@ -11,8 +11,12 @@
         public string SumTtPrice { get; set; } = string.Empty;
         public double SumSendTtQty { get; set; } = 0;
         public string SumSendTtPrice { get; set; } = string.Empty;
+        public double SumPCSendTtQty { get; set; } = 0;
+        public double SumPRSendTtQty { get; set; } = 0;
         public bool IsOrderDefined { get; set; } = false;
-        public int Persentage { get; set; } = 0;
+        public int Percentage { get; set; } = 0;
+        public string Approver { get; set; } = string.Empty;
+        public string Sender { get; set; } = string.Empty;
         public List<SendToPackLots> Lots { get; set; } = [];
     }
 
@@ -22,6 +26,7 @@
         public string ListNo { get; set; } = string.Empty;
         public string Article { get; set; } = string.Empty;
         public string Barcode { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
         public string Tunit { get; set; } = string.Empty;
         public string EdesFn { get; set; } = string.Empty;
         public string TdesFn { get; set; } = string.Empty;
@@ -32,6 +37,7 @@
         public decimal QtySi { get; set; } = 0;
         public decimal SendTtQty { get; set; } = 0;
         public decimal TtQtyToPack { get; set; } = 0;
+        public decimal PackedQty { get; set; } = 0;
         public bool IsDefined { get; set; } = false;
         public bool IsUnderQuota { get; set; } = false;
         public string ApproverID { get; set; } = string.Empty;

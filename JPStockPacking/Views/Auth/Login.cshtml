@@ -51,7 +51,7 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            $('#frmSignIn').on('submit', function (e) {
+            $('#frmSignIn').on('submit', async function (e) {
                 e.preventDefault();
                 $('#loadingIndicator').show();
                 $.ajax({
@@ -62,19 +62,19 @@
                         password: $('#password').val(),
                         remember: $('#remember').is(':checked')
                     },
-                    success: function (response) {
+                    success: async function (response) {
                         console.log(response);
                         if (response.success) {
                             window.location.href = response.redirectUrl;
                         } else {
                             $('#loadingIndicator').hide();
-                            alert(response.message || 'Login failed.');
+                            await showWarning(`ชื่อผู้ใช้ หรือ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง`);
                         }
                     },
-                    error: function (err) {
+                    error: async function (err) {
                         $('#loadingIndicator').hide();
                         console.log(err);
-                        alert('Login error : ', err.message);
+                        await showWarning(`เกิดข้อผิดพลาดในการลงชื่อเข้าใช้`);
                     }
                 });
             });

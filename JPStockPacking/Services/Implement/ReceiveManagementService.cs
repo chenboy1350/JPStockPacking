@@ -245,9 +245,9 @@ namespace JPStockPacking.Services.Implement
                                 where a.OrderNo == orderNo
                                       && a.FactoryDate!.Value.Year == DateTime.Now.Year
                                       && a.Factory == true
-                                      && !a.OrderNo.StartsWith("S")
-                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+                                      //&& !a.OrderNo.StartsWith("S")
+                                      //&& (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
+                                      //&& _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
 
                                 orderby a.FactoryDate descending
 
@@ -288,13 +288,17 @@ namespace JPStockPacking.Services.Implement
                               from f in efGroup.DefaultIfEmpty()
                               join g in _jPDbContext.OrdDorder on new { b.OrderNo, b.Barcode, b.CustPcode } equals new { g.OrderNo, g.Barcode, g.CustPcode } into bgGroup
                               from g in bgGroup.DefaultIfEmpty()
+                              join h in _jPDbContext.JobCost on new { b.LotNo, b.OrderNo } equals new { LotNo = h.Lotno, OrderNo = h.Orderno } into bhGroup
+                              from h in bhGroup.DefaultIfEmpty()
+                              join i in _jPDbContext.CfnCode on e.FnCode equals i.FnCode into eiGroup
+                              from i in eiGroup.DefaultIfEmpty()
 
                               where a.FactoryDate!.Value.Year == DateTime.Now.Year
                                       && a.Factory == true
                                       && !string.IsNullOrEmpty(b.LotNo)
-                                      && !a.OrderNo.StartsWith("S")
-                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+                                      //&& !a.OrderNo.StartsWith("S")
+                                      //&& (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
+                                      //&& _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
 
                               orderby a.FactoryDate descending
 
@@ -306,9 +310,13 @@ namespace JPStockPacking.Services.Implement
                                   CustPcode = b.CustPcode,
                                   TtQty = b.TtQty,
                                   TtWg = (double?)b.TtWg,
+                                  Unit = b.Unit.Trim(),
+                                  Si = h != null ? h.QtySi : 0,
                                   Article = e.Article,
                                   Barcode = b.Barcode,
                                   TdesArt = f.TdesArt,
+                                  TdesFn = i.TdesFn,
+                                  EdesFn = i.EdesFn,
                                   MarkCenter = f.MarkCenter,
                                   SaleRem = g.SaleRem,
                                   ReceivedQty = 0,
@@ -329,47 +337,35 @@ namespace JPStockPacking.Services.Implement
             return [.. existingLots];
         }
 
-        public async Task<List<ReceivedListModel>> GetTopJPReceivedAsync(string? receiveNo)
+        public async Task<List<ReceivedListModel>> GetTopJPReceivedAsync(string? receiveNo, string? orderNo, string? lotNo)
         {
-            var query = _jPDbContext.Sphreceive
-                .Select(b => new
+            var query = from a in _jPDbContext.Sphreceive
+                select new
                 {
-                    b.ReceiveNo,
-                    b.Mdate,
-                    b.Mupdate,
-                    TotalDetail = b.Spdreceive.Count(),
-                    //LotNo = b.Spdreceive.Select(x => x.Lotno).FirstOrDefault(),
-                    //OrderNo = b.Spdreceive
-                    //    .Select(x => x.Lotno)
-                    //    .Select(lotno => _jPDbContext.OrdLotno
-                    //        .Where(l => l.LotNo == lotno)
-                    //        .Select(l => l.OrderNo)
-                    //        .FirstOrDefault())
-                    //    .FirstOrDefault()
-                });
-
-            //var query =
-            //    from a in _jPDbContext.Sphreceive
-            //    join b in _jPDbContext.Spdreceive on a.ReceiveNo equals b.ReceiveNo
-            //    join c in _jPDbContext.OrdLotno on b.Lotno equals c.LotNo
-            //    join d in _jPDbContext.OrdHorder on c.OrderNo equals d.OrderNo
-            //    select new
-            //    {
-            //        a.ReceiveNo,
-            //        a.Mdate,
-            //        a.Mupdate,
-            //        TotalDetail = _jPDbContext.Spdreceive.Count(x => x.Id == b.Id)
-            //    };
+                    a.ReceiveNo,
+                    a.Mdate,
+                    a.Mupdate,
+                    TotalDetail = _jPDbContext.Spdreceive.Count()
+                };
 
             if (!string.IsNullOrWhiteSpace(receiveNo))
             {
                 query = query.Where(b => b.ReceiveNo.Contains(receiveNo));
             }
 
-            var receives = await query
-                .OrderByDescending(o => o.Mdate)
-                .Take(500)
-                .ToListAsync();
+            if (!string.IsNullOrWhiteSpace(orderNo))
+            {
+                query = query.Where(b => _jPDbContext.Spdreceive
+                    .Join(_jPDbContext.OrdLotno, sr => sr.Lotno, ol => ol.LotNo, (sr, ol) => new { sr, ol })
+                    .Any(joined => joined.ol.OrderNo.Contains(orderNo) && joined.sr.ReceiveNo == b.ReceiveNo));
+            }
+
+            if (!string.IsNullOrWhiteSpace(lotNo))
+            {
+                query = query.Where(b => _jPDbContext.Spdreceive.Any(sr => sr.Lotno.Contains(lotNo) && sr.ReceiveNo == b.ReceiveNo));
+            }
+
+            var receives = await query.OrderByDescending(o => o.Mdate).Take(100).ToListAsync();
 
             var receiveNos = receives.Select(r => r.ReceiveNo).ToList();
 
@@ -390,7 +386,7 @@ namespace JPStockPacking.Services.Implement
             return result;
         }
 
-        public async Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo)
+        public async Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo, string? orderNo, string? lotNo)
         {
             var allReceived = await (
                 from a in _jPDbContext.Spdreceive
@@ -410,6 +406,16 @@ namespace JPStockPacking.Services.Implement
                     c.ListNo
                 }
             ).ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(orderNo))
+            {
+                allReceived = [.. allReceived.Where(x => x.OrderNo.Contains(orderNo))];
+            }
+
+            if (!string.IsNullOrWhiteSpace(lotNo))
+            {
+                allReceived = [.. allReceived.Where(x => x.Lotno.Contains(lotNo))];
+            }
 
             var existingIds = await _sPDbContext.Received
                 .Where(x => x.ReceiveNo == receiveNo && x.IsReceived)
@@ -434,7 +440,7 @@ namespace JPStockPacking.Services.Implement
         }
 
 
-        public async Task RecalculateScheduleAsync()
+        private async Task RecalculateScheduleAsync()
         {
             const int tables = 6;
             const double hoursPerTablePerDay = 8.5;

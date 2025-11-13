@@ -1,175 +1,16 @@
-﻿$(document).ready(function () {
+﻿let isForceSendAction = false;
+
+$(document).ready(function () {
+
     $(document).on('click', '#btnFindOrderToSend', async function () {
-        $('#loadingIndicator').show();
-        const orderNo = $('#txtFindOrderNo').val();
-
-        if (orderNo != '') {
-            $.ajax({
-                url: urlGetOrderToSendQty,
-                method: 'GET',
-                data: { orderNo: orderNo },
-                success: function (res) {
-                    $('#loadingIndicator').hide();
-                    const $tbody = $('#tblOrderToSend tbody');
-                    $tbody.empty();
-
-                    const percentage = $('#tblOrderToSend .custom-percentage');
-                    percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่เกิน ${res.persentage}% ของจำนวนเสีย`);
-
-                    $('#txtCustCode').val(res.custCode);
-                    $('#txtGrade').val(res.grade);
-                    $('#txtSCountry').val(res.sCountry);
-
-                    const IsOrderDefined = res.isOrderDefined || false;
-                    const lots = res?.lots || [];
-
-                    if (lots.length > 0) {
-                        let hasDefined = false;
-
-                        lots.forEach((item, index) => {
-                            const ttQty = item.ttQty || 0;
-                            const qtySi = item.qtySi || 0;
-                            const sendTtQty = item.sendTtQty || 0;
-                            const isDefined = !!item.isDefined || !!IsOrderDefined;
-                            if (isDefined) hasDefined = true;
-
-                            const hasSize = item.size && item.size.length > 0;
-                            const readonlyAttr = hasSize ? 'readonly' : (isDefined ? 'readonly' : '');
-                            console.log(readonlyAttr);
-                            const buttonForceDefine = !hasSize ? (!isDefined ? '<button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '') : '';
-
-                            let row = `
-                                <tr data-lot-no="${item.lotNo}"
-                                    data-list-no="${item.listNo || ''}"
-                                    data-edes-fn="${item.edesFn || ''}"
-                                    data-tdes-art="${item.tdesArt || ''}"
-                                    data-ttqty="${item.ttQty}"
-                                    data-valid-ttqty="${ttQty + qtySi}"
-                                    ${item.size?.length > 0 ? 'data-widget="expandable-table" aria-expanded="false"' : ""}
-                                    onclick="showImg(this, '${item.picture}')" style="cursor: pointer;">
-                                        <td class="text-center">${index + 1}</td>
-                                        <td class="text-left">${item.lotNo}</td>
-                                        <td class="text-left">${item.article}</td>
-                                        <td class="text-right">${ttQty}</td>
-                                        <td class="text-right">${qtySi}</td>
-                                        <td class="text-right">${sendTtQty}</td>
-                                        <td class="d-flex align-items-center">
-                                            <input type="number"
-                                                   class="form-control form-control-sm me-2 qtyInput"
-                                                   data-qty-approver="${item.approverID}"
-                                                   min="0"
-                                                   max="99999999"
-                                                   step="any"
-                                                   style="width:100px;"
-                                                   name="TtQtyToPack_${item.lotNo}"
-                                                   value="${item.ttQtyToPack}"
-                                                   onchange="validateQty(this,${ttQty + qtySi})"
-                                                   ${readonlyAttr} />
-                                                   ${buttonForceDefine}
-                                                   <span class="badge badge-orange">${item.approver != '' ? '<i class="fas fa-user-check"></i> ' + item.approver : ''}</span>
-                                        </td>
-                                </tr>`;
-
-                            if (item.size && item.size.length > 0) {
-                                let totalQtyToPack = 0;
-
-                                const sizeRows = item.size.map((s, i) => {
-                                    const q = s.q || 0;
-                                    const ttQtyToPack = s.ttQtyToPack || 0;
-                                    totalQtyToPack += ttQtyToPack;
-
-                                    const buttonSizeForceDefine = !isDefined ? '<button type="button" class="btn btn-warning btn-sm" onclick="ShowForceSendSizeQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '';
-
-
-                                    return `
-                                        <tr>
-                                            <td class="text-center">${i + 1}</td>
-                                            <td class="text-right">${s.s || ''}</td>
-                                            <td class="text-right">${s.cs || ''}</td>
-                                            <td class="text-right">${q}</td>
-                                            <td class="d-flex align-items-center">
-                                                <input type="number"
-                                                       class="form-control form-control-sm me-2 sizeQtyInput"
-                                                       name="SizeQty_${item.lotNo}_${i + 1}"
-                                                       data-lot-no="${item.lotNo}"
-                                                       data-size-index="${i + 1}"
-                                                       data-size-qty-approver="${s.approverID}"
-                                                       min="0"
-                                                       max="99999999"
-                                                       step="any"
-                                                       value="${ttQtyToPack}"
-                                                       style="width: 100px;"
-                                                       onchange="validateQty(this,${q})" 
-                                                       ${isDefined ? 'readonly' : ''} />
-                                                       ${buttonSizeForceDefine}
-                                                       <span class="badge badge-orange">${ s.approver != '' ? '<i class="fas fa-user-check"></i> ' + s.approver : '' }</span >
-                                            </td>
-                                        </tr>
-                                    `;}).join('');
-
-                                row += `
-                                    <tr class="expandable-body d-none">
-                                        <td colspan="7">
-                                            <div class="card d-flex">
-                                                <div class="card-body table-responsive pt-0">
-                                                    <div class="row justify-content-center">
-                                                        <div class="col-12 col-md-10 col-lg-8">
-                                                            <table class="table table-sm table-hover">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <tr>
-                                                                            <th style="width: 5%" class="text-center">#</th>
-                                                                            <th style="width: 20%" class="text-right">Size ลูกค้า</th>
-                                                                            <th style="width: 20%" class="text-right">Size บริษัท</th>
-                                                                            <th style="width: 15%" class="text-right">จำนวนสั่ง</th>
-                                                                            <th style="width: 40%" class="text-right">แจ้งยอด</th>
-                                                                        </tr>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    ${sizeRows}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `;
-                            }
-
-                            $tbody.append(row);
-                        });
-
-                        if (hasDefined) {
-                            $('#actionButtons').removeClass('d-none').addClass('d-flex');
-                            $('#reportButtons').removeClass('d-none').addClass('d-flex');
-                            $('#tblOrderToSend tbody input.qtyInput').prop('readonly', true);
-                        } else {
-                            $('#actionButtons').removeClass('d-none').addClass('d-flex');
-                            $('#reportButtons').addClass('d-none').removeClass('d-flex');
-                        }
-                    } else {
-                        $('#actionButtons').addClass('d-none').removeClass('d-flex');
-                        $('#reportButtons').addClass('d-none').removeClass('d-flex');
-                        $tbody.append(`<tr><td colspan="7" class="text-center">ไม่พบข้อมูล</td></tr>`);
-                    }
-                },
-                error: async function (xhr) {
-                    $('#loadingIndicator').hide();
-                    await showError(`เกิดข้อผิดพลาดในการค้นหา (${xhr.status})`);
-                }
-            });
-        } else {
-            $('#loadingIndicator').hide();
-            await showWarning("กรุณากรอกเลขคำสั่งซื้อ");
-        }
+        FindOrderToSendQty();
     });
 
     $(document).on('change', '.sizeQtyInput', function () {
         const $input = $(this);
         const lotNo = $input.data('lot-no');
+
+        if (isForceSendAction) return;
 
         const $sizeInputs = $(`input.sizeQtyInput[data-lot-no="${lotNo}"]`);
 
@@ -179,13 +20,12 @@
             sum += val;
         });
 
-
-
         const $qtyInput = $(`tr[data-lot-no="${lotNo}"] input.qtyInput`);
         if ($qtyInput.length) {
             $qtyInput.val(sum);
         }
     });
+
 
     $(document).on('keydown', '#txtFindOrderNo', function (e) {
         if (e.key === 'Enter') {
@@ -276,7 +116,7 @@
                     data: formData,
                     success: async function () {
                         await showSuccess("บันทึกข้อมูลเรียบร้อยแล้ว");
-                        resetPage();
+                        FindOrderToSendQty();
                     },
                     error: async function (xhr) {
                         if (xhr.status === 400 && xhr.responseText.includes("ไม่มีข้อมูลที่เปลี่ยนแปลง")) {
@@ -305,7 +145,7 @@
             $(this).prop('readonly', false);
         });
 
-        console.log('เปิดให้แก้ไขทุกช่อง (Lot + Size).');
+        $('.btn-force-to-send').removeClass('d-none');
     });
 
 
@@ -415,19 +255,60 @@
 
         const newQty = Number($('#txtforce-adjust-qty').val()) || 0;
 
+        // กรณี ForceSend ของ sizeInput
         if ($sizeInput && $sizeInput.length > 0) {
-            $sizeInput.val(newQty).trigger('input');
+            isForceSendAction = true;
+
+            const lotNo = $sizeInput.data('lot-no');
+            const $qtyInput = $(`tr[data-lot-no="${lotNo}"] input.qtyInput`);
+
+            const oldSizeVal = parseFloat($sizeInput.val()) || 0;
+            const diff = newQty - oldSizeVal;
+
+            // อัปเดตค่าขนาด
+            $sizeInput.val(newQty);
             $sizeInput.attr('data-size-qty-approver', userId);
-        } else if ($row && $row.length > 0) {
-            $row.find('input.qtyInput').val(newQty);
-            $row.find('input.qtyInput').attr('data-qty-approver', userId);
-        } else {
+
+            // ปรับยอดรวมหลัก (qtyInput) โดยตรง
+            if ($qtyInput.length) {
+                const oldLotVal = parseFloat($qtyInput.val()) || 0;
+                $qtyInput.val(oldLotVal + diff);
+
+                // Highlight สีพื้นหลังแสดงว่าถูกอัปเดต
+                $qtyInput.css({
+                    backgroundColor: '#ffe79b',
+                    transition: 'background-color 0.3s ease'
+                });
+                setTimeout(() => {
+                    $qtyInput.css('background-color', '');
+                }, 1000);
+            }
+
+            isForceSendAction = false;
+        }
+        // กรณี ForceSend ของแถวหลัก (Lot)
+        else if ($row && $row.length > 0) {
+            const $qtyInput = $row.find('input.qtyInput');
+            $qtyInput.val(newQty);
+            $qtyInput.attr('data-qty-approver', userId);
+
+            // Highlight สีพื้นหลัง
+            $qtyInput.css({
+                backgroundColor: '#ffe79b',
+                transition: 'background-color 0.3s ease'
+            });
+            setTimeout(() => {
+                $qtyInput.css('background-color', '');
+            }, 1000);
+        }
+        else {
             await showWarning('ไม่พบ input ที่ต้องการปรับยอด');
             return;
         }
 
         $('#modal-force-send-qty').removeData('row').removeData('sizeInput').modal('hide');
     });
+
 
     $(document).on('keydown', '#txtforce-adjust-qty', function (e) {
         if (e.key === 'Enter') {
@@ -447,6 +328,174 @@
     });
 
 });
+
+async function FindOrderToSendQty() {
+    $('#loadingIndicator').show();
+    const orderNo = $('#txtFindOrderNo').val();
+
+    if (orderNo != '') {
+        $.ajax({
+            url: urlGetOrderToSendQty,
+            method: 'GET',
+            data: { orderNo: orderNo },
+            success: function (res) {
+                $('#loadingIndicator').hide();
+                const $tbody = $('#tblOrderToSend tbody');
+                $tbody.empty();
+
+                const percentage = $('#tblOrderToSend .custom-percentage');
+                percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่ต่ำกว่า ${res.persentage}% ของจำนวนสัง`);
+
+                $('#txtCustCode').val(res.custCode);
+                $('#txtGrade').val(res.grade);
+                $('#txtSCountry').val(res.sCountry);
+
+                const IsOrderDefined = res.isOrderDefined || false;
+                const lots = res?.lots || [];
+
+                if (lots.length > 0) {
+                    let hasDefined = false;
+
+                    lots.forEach((item, index) => {
+                        const ttQty = item.ttQty || 0;
+                        const qtySi = item.qtySi || 0;
+                        const sendTtQty = item.sendTtQty || 0;
+                        const isDefined = !!item.isDefined || !!IsOrderDefined;
+                        if (isDefined) hasDefined = true;
+
+                        const hasSize = item.size && item.size.length > 0;
+                        const readonlyAttr = hasSize ? 'readonly' : (isDefined ? 'readonly' : '');
+                        const buttonForceDefine = !hasSize ? (!isDefined ? '<button type="button" class="btn btn-warning btn-sm btn-force-to-send" onclick="ShowForceSendQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '<button type="button" class="btn btn-warning btn-sm btn-force-to-send d-none" onclick="ShowForceSendQtyModal(event)"><i class="fas fa-sliders-h"></i></button>') : '';
+
+                        let row = `
+                                <tr data-lot-no="${item.lotNo}"
+                                    data-list-no="${item.listNo || ''}"
+                                    data-edes-fn="${item.edesFn || ''}"
+                                    data-tdes-art="${item.tdesArt || ''}"
+                                    data-ttqty="${item.ttQty}"
+                                    data-valid-ttqty="${ttQty}"
+                                    ${item.size?.length > 0 ? 'data-widget="expandable-table" aria-expanded="false"' : ""}
+                                    onclick="showImg(this, '${item.picture}')" style="cursor: pointer;">
+                                        <td class="text-center">${index + 1}</td>
+                                        <td class="text-left">${item.lotNo}</td>
+                                        <td class="text-left">${item.article}</td>
+                                        <td class="text-right">${ttQty}</td>
+                                        <td class="text-right">${qtySi}</td>
+                                        <td class="text-right">${sendTtQty}</td>
+                                        <td class="d-flex align-items-center">
+                                            <input type="number"
+                                                   class="form-control form-control-sm me-2 qtyInput"
+                                                   data-qty-approver="${item.approverID}"
+                                                   min="0"
+                                                   max="99999999"
+                                                   step="1"
+                                                   style="width:100px;"
+                                                   name="TtQtyToPack_${item.lotNo}"
+                                                   value="${item.ttQtyToPack}"
+                                                   onchange="validateQty(this,${ttQty}, ${res.percentage})"
+                                                   ${readonlyAttr} />
+                                                   ${buttonForceDefine}
+                                                   <span class="badge badge-orange">${item.approver != '' ? '<i class="fas fa-user-check"></i> ' + item.approver : ''}</span>
+                                        </td>
+                                </tr>`;
+
+                        if (item.size && item.size.length > 0) {
+                            let totalQtyToPack = 0;
+
+                            const sizeRows = item.size.map((s, i) => {
+                                const q = s.q || 0;
+                                const ttQtyToPack = s.ttQtyToPack || 0;
+                                totalQtyToPack += ttQtyToPack;
+
+                                const buttonSizeForceDefine = !isDefined ? '<button type="button" class="btn btn-warning btn-sm btn-force-to-send" onclick="ShowForceSendSizeQtyModal(event)"><i class="fas fa-sliders-h"></i></button>' : '<button type="button" class="btn btn-warning btn-sm btn-force-to-send d-none" onclick="ShowForceSendSizeQtyModal(event)"><i class="fas fa-sliders-h"></i></button>';
+
+                                return `
+                                        <tr>
+                                            <td class="text-center">${i + 1}</td>
+                                            <td class="text-right">${s.s || ''}</td>
+                                            <td class="text-right">${s.cs || ''}</td>
+                                            <td class="text-right">${q}</td>
+                                            <td class="d-flex align-items-center">
+                                                <input type="number"
+                                                       class="form-control form-control-sm me-2 sizeQtyInput"
+                                                       name="SizeQty_${item.lotNo}_${i + 1}"
+                                                       data-lot-no="${item.lotNo}"
+                                                       data-size-index="${i + 1}"
+                                                       data-size-qty-approver="${s.approverID}"
+                                                       min="0"
+                                                       max="99999999"
+                                                       step="1"
+                                                       value="${ttQtyToPack}"
+                                                       style="width: 100px;"
+                                                       onchange="validateQty(this,${q}, ${res.percentage})" 
+                                                       ${isDefined ? 'readonly' : ''} />
+                                                       ${buttonSizeForceDefine}
+                                                       <span class="badge badge-orange">${s.approver != '' ? '<i class="fas fa-user-check"></i> ' + s.approver : ''}</span >
+                                            </td>
+                                        </tr>
+                                    `;
+                            }).join('');
+
+                            row += `
+                                    <tr class="expandable-body d-none">
+                                        <td colspan="7">
+                                            <div class="card d-flex">
+                                                <div class="card-body table-responsive pt-0">
+                                                    <div class="row justify-content-center">
+                                                        <div class="col-12 col-md-10 col-lg-8">
+                                                            <table class="table table-sm table-hover">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <tr>
+                                                                            <th style="width: 5%" class="text-center">#</th>
+                                                                            <th style="width: 20%" class="text-right">Size ลูกค้า</th>
+                                                                            <th style="width: 20%" class="text-right">Size บริษัท</th>
+                                                                            <th style="width: 15%" class="text-right">จำนวนสั่ง</th>
+                                                                            <th style="width: 40%" class="text-right">แจ้งยอด</th>
+                                                                        </tr>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    ${sizeRows}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                        }
+
+                        $tbody.append(row);
+                    });
+
+                    if (hasDefined) {
+                        $('#actionButtons').removeClass('d-none').addClass('d-flex');
+                        $('#reportButtons').removeClass('d-none').addClass('d-flex');
+                        $('#tblOrderToSend tbody input.qtyInput').prop('readonly', true);
+                    } else {
+                        $('#actionButtons').removeClass('d-none').addClass('d-flex');
+                        $('#reportButtons').addClass('d-none').removeClass('d-flex');
+                    }
+                } else {
+                    $('#actionButtons').addClass('d-none').removeClass('d-flex');
+                    $('#reportButtons').addClass('d-none').removeClass('d-flex');
+                    $tbody.append(`<tr><td colspan="7" class="text-center">ไม่พบข้อมูล</td></tr>`);
+                }
+            },
+            error: async function (xhr) {
+                $('#loadingIndicator').hide();
+                await showError(`เกิดข้อผิดพลาดในการค้นหา (${xhr.status})`);
+            }
+        });
+    } else {
+        $('#loadingIndicator').hide();
+        await showWarning("กรุณากรอกเลขคำสั่งซื้อ");
+    }
+
+}
 
 async function printToPDF(printTo) {
     const orderNo = $('#txtFindOrderNo').val();
@@ -580,8 +629,8 @@ function ShowForceSendSizeQtyModal(event) {
 }
 
 
-function validateQty(input, ttQty) {
-    const minAllowed = ttQty - Math.ceil(ttQty * 0.02);
+function validateQty(input, ttQty, percentage) {
+    const minAllowed = ttQty - Math.ceil(ttQty * (percentage/100));
     let val = parseInt(input.value, 10);
 
     if (isNaN(val) || val < 0) {

@@ -4,7 +4,9 @@ using JPStockPacking.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 using static JPStockPacking.Services.Helper.Enum;
+using static JPStockPacking.Services.Implement.PackedMangementService;
 
 namespace JPStockPacking.Controllers
 {
@@ -19,7 +21,9 @@ namespace JPStockPacking.Controllers
         IAssignmentService assignmentService,
         ICheckQtyToSendService checkQtyToSendService,
         IBreakService breakService,
-        ILostService lostService) : Controller
+        ILostService lostService,
+        IPackedMangementService packedMangementService,
+        Serilog.ILogger logger) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -33,12 +37,13 @@ namespace JPStockPacking.Controllers
         private readonly ICheckQtyToSendService _checkQtyToSendService = checkQtyToSendService;
         private readonly IBreakService _breakService = breakService;
         private readonly ILostService _lostService = lostService;
+        private readonly IPackedMangementService _packedMangementService = packedMangementService;
+        private readonly Serilog.ILogger _logger = logger;
 
         [Authorize]
         public IActionResult Index()
         {
             ViewBag.AppVersion = _appSettings.AppVersion;
-            ViewBag.DatabaseVersion = _appSettings.DatabaseVersion;
             return View();
         }
 
@@ -60,13 +65,16 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> ReceiveManagement()
         {
-            var result = await _receiveManagementService.GetTopJPReceivedAsync(null);
+            var result = await _receiveManagementService.GetTopJPReceivedAsync(null, null, null);
+            _logger.Information("GetTopJPReceivedAsync : {@result}", result);
+
             return PartialView("~/Views/Partial/_ReceiveManagment.cshtml", result);
         }
 
         [Authorize]
-        public IActionResult PackedManagement()
+        public async Task<IActionResult> PackedManagementAsync()
         {
+            ViewBag.BreakDescriptions = await _breakService.GetBreakDescriptionsAsync();
             return PartialView("~/Views/Partial/_PackedManagement.cshtml");
         }
 
@@ -74,7 +82,7 @@ namespace JPStockPacking.Controllers
         public IActionResult CheckQtyToPack()
         {
             var apiSettings = _configuration.GetSection("SendQtySettings");
-            var Persentage = apiSettings["Persentage"];
+            var Persentage = apiSettings["Percentage"];
             ViewBag.Persentage = Persentage;
             return PartialView("~/Views/Partial/_CheckQtyToPack.cshtml");
         }
@@ -85,6 +93,21 @@ namespace JPStockPacking.Controllers
             ViewBag.Employees = await _pISService.GetAvailableEmployeeAsync();
             List<UserModel> res = await _pISService.GetUser(new ReqUserModel());
             return PartialView("~/Views/Partial/_UserManagement.cshtml", res);
+        }
+
+        [Authorize]
+        public IActionResult AppSettings()
+        {
+            var SendQtySettings = _configuration.GetSection("SendQtySettings");
+            var SendQtyPercentage = SendQtySettings["Percentage"];
+
+            var SendToStoreSettings = _configuration.GetSection("SendToStoreSettings");
+            var SendToStorePercentage = SendToStoreSettings["Percentage"];
+
+            ViewBag.SendQtyPercentage = SendQtyPercentage;
+            ViewBag.SendToStorePercentage = SendToStorePercentage;
+
+            return PartialView("~/Views/Partial/_AppSetting.cshtml");
         }
 
         [HttpPost]
@@ -110,10 +133,10 @@ namespace JPStockPacking.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> ImportReceiveNo(string receiveNo)
+        public async Task<IActionResult> ImportReceiveNo(string receiveNo, string orderNo, string lotNo)
         {
             if (receiveNo == string.Empty && receiveNo == null) return BadRequest();
-            var res = await _receiveManagementService.GetJPReceivedByReceiveNoAsync(receiveNo);
+            var res = await _receiveManagementService.GetJPReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
             return Ok(res);
         }
 
@@ -247,7 +270,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> GetOrderToSendQty(string orderNo)
         {
-            var result = await _checkQtyToSendService.GetOrderToSendQtyAsync(orderNo);
+            var result = await _checkQtyToSendService.GetOrderToSendQtyAsync(orderNo, null);
             return Ok(result);
         }
 
@@ -281,11 +304,11 @@ namespace JPStockPacking.Controllers
             SendToPackModel result;
             if (printTo == PrintTo.Export)
             {
-                result = await _checkQtyToSendService.GetOrderToSendQtyWithPriceAsync(orderNo);
+                result = await _checkQtyToSendService.GetOrderToSendQtyWithPriceAsync(orderNo, User.GetUserId());
             }
             else
             {
-                result = await _checkQtyToSendService.GetOrderToSendQtyAsync(orderNo);
+                result = await _checkQtyToSendService.GetOrderToSendQtyAsync(orderNo, User.GetUserId());
             }
 
             var pdfBytes = _reportService.GenerateSendQtyToPackReport(result, printTo);
@@ -323,15 +346,15 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> GetReceiveRow(string receiveNo)
         {
-            var result = await _receiveManagementService.GetTopJPReceivedAsync(receiveNo);
+            var result = await _receiveManagementService.GetTopJPReceivedAsync(receiveNo, null, null);
             return Ok(result.FirstOrDefault());
         }
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetReceiveList(string receiveNo)
+        public async Task<IActionResult> GetReceiveList(string receiveNo, string orderNo, string lotNo)
         {
-            var result = await _receiveManagementService.GetTopJPReceivedAsync(receiveNo);
+            var result = await _receiveManagementService.GetTopJPReceivedAsync(receiveNo, orderNo, lotNo);
             return Ok(result);
         }
 
@@ -534,7 +557,144 @@ namespace JPStockPacking.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
-
         }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetOrderToStore(string orderNo)
+        {
+            var result = await _packedMangementService.GetOrderToStoreAsync(orderNo);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> SendToStore([FromBody] SendStockInput sendStockInput)
+        {
+            try
+            {
+                var res = await _packedMangementService.SendStockAsync(sendStockInput);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmToSendStore([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                var a = await _packedMangementService.ConfirmToSendStoreAsync(lotNos, userId);
+                var b = await _packedMangementService.ConfirmToSendMeltAsync(lotNos, userId);
+                var c = await _packedMangementService.ConfirmToSendExportAsync(lotNos, userId);
+
+                string message = $"Store: {(a.IsSuccess ? "สำเร็จ" : "ล้มเหลว")}\n" +
+                                 $"Melt: {(b.IsSuccess ? "สำเร็จ" : "ล้มเหลว")}\n" +
+                                 $"Export: {(c.IsSuccess ? "สำเร็จ" : "ล้มเหลว")}";
+
+                BaseResponseModel responseModel = new()
+                {
+                    IsSuccess = a.IsSuccess || b.IsSuccess || c.IsSuccess,
+                    Message = message
+                };
+
+                return Ok(responseModel);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> PrintSendToAllReport([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                List<TempPack> result = await _packedMangementService.GetAllDocToPrint(lotNos, userId);
+                byte[] pdfBytes = _reportService.GenerateSenToReport(result);
+
+                string contentDisposition = $"inline; filename=AllSendToReport_{DateTime.Now:yyyyMMdd}.pdf";
+                Response.Headers.Append("Content-Disposition", contentDisposition);
+
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> UpdateAppSettings([FromBody] UpdateAppSettingsModel updateAppSettingsModel, [FromServices] IWebHostEnvironment env)
+        {
+            var environmentName = env.EnvironmentName;
+
+            var fileName = environmentName switch
+            {
+                "Production" => "appsettings.Production.json",
+                "Staging" => "appsettings.Staging.json",
+                _ => "appsettings.Development.json"
+            };
+
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound($"ไม่พบไฟล์ {fileName}");
+
+            try
+            {
+                string json = await System.IO.File.ReadAllTextAsync(filePath);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement.Clone();
+
+                var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json)!;
+
+                var sendQtySettings = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    root.GetProperty("SendQtySettings").GetRawText()
+                )!;
+                sendQtySettings["Persentage"] = updateAppSettingsModel.ChxQtyPersentage;
+
+                var sendToStoreSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    root.GetProperty("SendToStoreSettings").GetRawText()
+                )!;
+                sendToStoreSettings["Persentage"] = updateAppSettingsModel.MinWgPersentage;
+
+                dict["SendQtySettings"] = sendQtySettings;
+                dict["SendToStoreSettings"] = sendToStoreSettings;
+
+                string updatedJson = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(filePath, updatedJson);
+
+                (_configuration as IConfigurationRoot)?.Reload();
+
+                return Ok(new BaseResponseModel
+                {
+                    IsSuccess = true,
+                    Message = $"อัปเดต {fileName} สำเร็จ (Environment: {environmentName})"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+
     }
 }

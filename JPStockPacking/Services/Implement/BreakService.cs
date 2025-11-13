@@ -22,6 +22,7 @@ namespace JPStockPacking.Services.Implement
                 join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo
                 join desc in _sPDbContext.BreakDescription on bek.BreakDescriptionId equals desc.BreakDescriptionId into descJoin
                 from desc in descJoin.DefaultIfEmpty()
+                where bek.IsActive
                 select new LostAndRepairModel
                 {
                     BreakID = bek.BreakId,
@@ -73,15 +74,14 @@ namespace JPStockPacking.Services.Implement
             var lotExists = await _sPDbContext.Lot.FirstOrDefaultAsync(l => l.LotNo == lotNo && l.IsActive);
 
             var revs = await _sPDbContext.Received
-                .Where(l => l.LotNo == lotNo && l.IsActive)
+                .Where(l => l.LotNo == lotNo && l.IsActive && l.TtQty > 0)
                 .OrderByDescending(r => r.TtQty)
                 .ToListAsync();
 
             if (revs.Count == 0)
                 throw new KeyNotFoundException($"ไม่พบ LotNo: {lotNo}");
 
-            //  เช็ครวมยอด ttqty ก่อนเข้าลูป
-            int totalQty = revs.Sum(r => (int)(r.TtQty ?? 0));
+            double totalQty = (double)revs.Sum(r => r.TtQty ?? 0);
             if (breakQty > totalQty)
                 throw new InvalidOperationException($"จำนวน Break ({breakQty}) มากกว่ายอดรวมทั้งหมด ({totalQty}) ของ Lot {lotNo}");
 
@@ -95,23 +95,22 @@ namespace JPStockPacking.Services.Implement
                     if (remainingQty <= 0)
                         break;
 
-                    double ttQty = (double)rev.TtQty!;
-                    if (ttQty <= 0)
+                    if (rev.TtQty == null || rev.TtQty <= 0)
                         continue;
 
-                    double newQty = ttQty - remainingQty;
-                    double oldQty = (double)rev.TtQty!;
+                    double oldQty = (double)rev.TtQty;
                     double oldWg = rev.TtWg ?? 0;
-                    double newWg = oldQty > 0 ? (oldWg / oldQty) * newQty : 0;
+                    double newQty = oldQty - remainingQty;
+                    double newWg = oldQty > 0 ? (oldWg / oldQty) * Math.Max(newQty, 0) : 0;
 
                     if (newQty >= 0)
                     {
-                        // Break ได้พอดี หรือไม่เกิน
                         _sPDbContext.Break.Add(new Break
                         {
                             ReceivedId = rev.ReceivedId,
                             BreakQty = (decimal)remainingQty,
                             PreviousQty = (decimal)oldQty,
+                            PreviousWg = oldWg,
                             BreakDescriptionId = breakDes,
                             IsReported = false,
                             IsActive = true,
@@ -122,23 +121,28 @@ namespace JPStockPacking.Services.Implement
                         lotExists!.ReceivedQty = (lotExists.ReceivedQty ?? 0) - (decimal)remainingQty;
                         lotExists.AssignedQty = (lotExists.AssignedQty ?? 0) - (decimal)remainingQty;
                         lotExists.ReturnedQty = Math.Max((lotExists.ReturnedQty ?? 0) - (decimal)remainingQty, 0);
+                        lotExists.UpdateDate = DateTime.Now;
 
                         rev.TtQty = (decimal)newQty;
                         rev.TtWg = Math.Round(newWg, 2);
                         rev.UpdateDate = DateTime.Now;
+
+                        _sPDbContext.Received.Update(rev);
+
                         remainingQty = 0;
 
                         await UpdateJobBillSendStockAndSpdreceive(rev.BillNumber, (decimal)newQty, (decimal)Math.Round(newWg, 2));
                     }
                     else
                     {
-                        // break เกิน rev นี้ ต้องไปต่อ rev ถัดไป
-                        double breakUsed = ttQty;
+                        double breakUsed = oldQty;
+
                         _sPDbContext.Break.Add(new Break
                         {
                             ReceivedId = rev.ReceivedId,
                             BreakQty = (decimal)breakUsed,
                             PreviousQty = (decimal)oldQty,
+                            PreviousWg = oldWg,
                             BreakDescriptionId = breakDes,
                             IsReported = false,
                             IsActive = true,
@@ -149,12 +153,15 @@ namespace JPStockPacking.Services.Implement
                         lotExists!.ReceivedQty = (lotExists.ReceivedQty ?? 0) - (decimal)breakUsed;
                         lotExists.AssignedQty = (lotExists.AssignedQty ?? 0) - (decimal)breakUsed;
                         lotExists.ReturnedQty = Math.Max((lotExists.ReturnedQty ?? 0) - (decimal)breakUsed, 0);
+                        lotExists.UpdateDate = DateTime.Now;
 
                         rev.TtQty = 0;
                         rev.TtWg = 0;
                         rev.UpdateDate = DateTime.Now;
 
-                        remainingQty = Math.Abs(newQty); // จำนวนที่เหลือต้องไปหักต่อ
+                        _sPDbContext.Received.Update(rev);
+
+                        remainingQty = Math.Abs(newQty);
 
                         await UpdateJobBillSendStockAndSpdreceive(rev.BillNumber, 0, 0);
                     }
@@ -189,8 +196,8 @@ namespace JPStockPacking.Services.Implement
                     jobBillSendStock.Ttwg = TtWg;
                 }
 
-                //await _jPDbContext.SaveChangesAsync();
-                //await transaction.CommitAsync();
+                await _jPDbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
             catch (Exception)
             {

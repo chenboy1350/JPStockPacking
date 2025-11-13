@@ -1,4 +1,11 @@
 ﻿$(document).ready(function () {
+    $(document).on('keydown', '#txtFindReceivedNo, #txtFindOrderNo, #txtFindLotNo', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            findReceive();
+        }
+    });
+
     $(document).on('click', '#btnUpdateLot', async function () {
         $('#loadingIndicator').show();
 
@@ -70,6 +77,9 @@
 });
 
 function showModalUpdateLot(receiveNo) {
+    const txtFindOrderNo = $('#txtFindOrderNo').val().trim();
+    const txtFindLotNo = $('#txtFindLotNo').val().trim();
+
     const modal = $('#modal-update');
     const tbody = modal.find('#tbl-received-body');
 
@@ -84,9 +94,12 @@ function showModalUpdateLot(receiveNo) {
     $.ajax({
         url: urlImportReceiveNo,
         method: 'GET',
-        data: { receiveNo: receiveNo },
+        data: {
+            receiveNo: receiveNo,
+            orderNo: txtFindOrderNo,
+            lotNo: txtFindLotNo,
+        },
         dataType: 'json',
-        cache: false
     })
     .done(function (items) {
         tbody.empty();
@@ -193,18 +206,22 @@ function showModalUpdateLot(receiveNo) {
 }
 
 async function findReceive() {
-    const keyword = $('#txtFindReceivedNo').val().trim();
+    const txtFindReceivedNo = $('#txtFindReceivedNo').val().trim();
+    const txtFindOrderNo = $('#txtFindOrderNo').val().trim();
+    const txtFindLotNo = $('#txtFindLotNo').val().trim();
+
     const tbody = $('#tbl-main tbody');
-
-    console.log('typeof html =', typeof html);
-
 
     tbody.html('<tr><td colspan="5" class="text-center text-muted">กำลังค้นหา...</td></tr>');
 
     $.ajax({
         url: urlGetReceiveList,
         method: 'GET',
-        data: { receiveNo: keyword },
+        data: {
+            receiveNo: txtFindReceivedNo,
+            orderNo: txtFindOrderNo,
+            lotNo: txtFindLotNo,
+        },
         success: function (rows) {
             if (!rows || rows.length === 0) {
                 tbody.html('<tr><td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
@@ -238,7 +255,7 @@ async function findReceive() {
             tbody.html(body);
         },
         error: function (xhr) {
-            tbody.html(`<tr><td colspan="3" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})</td></tr>`);
+            tbody.html(`<tr><td colspan="5" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})</td></tr>`);
         }
     });
 }
@@ -281,6 +298,8 @@ function refreshReceiveRow(receiveNo) {
 
 function ClearFindByReceive() {
     $("#txtFindReceivedNo").val("");
+    $("#txtFindOrderNo").val("");
+    $("#txtFindLotNo").val("");
 
     findReceive()
 }

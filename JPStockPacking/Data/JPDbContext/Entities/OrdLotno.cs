@@ -293,4 +293,7 @@ public partial class OrdLotno
     [StringLength(1)]
     [Unicode(false)]
     public string TypeLot { get; set; } = null!;
+
+    [InverseProperty("OrdLotno")]
+    public virtual ICollection<JobDetail> JobDetail { get; set; } = new List<JobDetail>();
 }

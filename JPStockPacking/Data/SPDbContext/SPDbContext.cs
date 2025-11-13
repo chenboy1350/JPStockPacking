@@ -24,6 +24,8 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<BreakDescription> BreakDescription { get; set; }
 
+    public virtual DbSet<Export> Export { get; set; }
+
     public virtual DbSet<Lost> Lost { get; set; }
 
     public virtual DbSet<Lot> Lot { get; set; }
@@ -31,6 +33,8 @@ public partial class SPDbContext : DbContext
     public virtual DbSet<LotNotify> LotNotify { get; set; }
 
     public virtual DbSet<MappingPermission> MappingPermission { get; set; }
+
+    public virtual DbSet<Melt> Melt { get; set; }
 
     public virtual DbSet<Order> Order { get; set; }
 
@@ -50,6 +54,8 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<SendQtyToPackDetailSize> SendQtyToPackDetailSize { get; set; }
 
+    public virtual DbSet<Store> Store { get; set; }
+
     public virtual DbSet<WorkTable> WorkTable { get; set; }
 
     public virtual DbSet<WorkTableMember> WorkTableMember { get; set; }
@@ -66,6 +72,11 @@ public partial class SPDbContext : DbContext
         modelBuilder.Entity<AssignmentReceived>(entity =>
         {
             entity.HasKey(e => e.AssignmentReceivedId).HasName("PK_Assignment");
+        });
+
+        modelBuilder.Entity<Export>(entity =>
+        {
+            entity.HasKey(e => e.ExportId).HasName("PK_ExportDetailID");
         });
 
         modelBuilder.Entity<MappingPermission>(entity =>

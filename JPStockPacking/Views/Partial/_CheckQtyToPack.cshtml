@@ -109,7 +109,7 @@
             <div class="col-12 col-md-10 col-lg-8 d-flex justify-content-between align-items-center">
                 <h3 class="card-title">รายการล็อต</h3>
                 <div id="actionButtons" class="d-none">
-                    <button class="btn btn-secondary me-2" id="btnClearQty">Clear</button>
+                    <button class="btn btn-secondary me-2" id="btnClearQty">เคลียร์ค่าทั้งหมด</button>
                     <button class="btn btn-warning me-2" id="btnEditQty">แก้ไข</button>
                     <button class="btn btn-primary me-2" id="btnSubmitOrderToSend">แจ้งยอด</button>
                 </div>
@@ -131,10 +131,10 @@
                             <th style="width: 5%" class="text-center">#</th>
                             <th style="width: 20%" class="text-left">เลขล็อต</th>
                             <th style="width: 15%" class="text-left">รหัสสินค้า</th>
-                            <th style="width: 15%" class="text-right">จำนวนทั้งหมด</th>
-                            <th style="width: 15%" class="text-right">จำนวนซิ</th>
+                            <th style="width: 15%" class="text-right">จำนวนสั่ง</th>
+                            <th style="width: 15%" class="text-right">Si</th>
                             <th style="width: 15%" class="text-right">ส่งแพ็คแล้ว</th>
-                            <th class="text-center custom-percentage">แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่เกิน @ViewBag.Persentage% ของจำนวนเสีย</th>
+                            <th class="text-center custom-percentage">แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่ต่ำกว่า @ViewBag.Persentage% ของจำนวนสั่ง</th>
                         </tr>
                     </thead>
                     <tbody id="">

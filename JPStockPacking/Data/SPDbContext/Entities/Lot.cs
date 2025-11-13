@@ -31,6 +31,23 @@ public partial class Lot
 
     public double? TtWg { get; set; }
 
+    [Column(TypeName = "numeric(18, 1)")]
+    public decimal? Si { get; set; }
+
+    [StringLength(10)]
+    [Unicode(false)]
+    public string? Unit { get; set; }
+
+    [Column("TDesFn")]
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? TdesFn { get; set; }
+
+    [Column("EDesFn")]
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? EdesFn { get; set; }
+
     [StringLength(50)]
     [Unicode(false)]
     public string? Article { get; set; }

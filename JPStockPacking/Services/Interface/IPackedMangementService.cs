@@ -1,0 +1,15 @@
+﻿using JPStockPacking.Models;
+using static JPStockPacking.Services.Implement.PackedMangementService;
+
+namespace JPStockPacking.Services.Interface
+{
+    public interface IPackedMangementService
+    {
+        Task<List<OrderToStoreModel>> GetOrderToStoreAsync(string orderNo);
+        Task<BaseResponseModel> SendStockAsync(SendStockInput input);
+        Task<BaseResponseModel> ConfirmToSendStoreAsync(string[] lotNos, string userId);
+        Task<BaseResponseModel> ConfirmToSendMeltAsync(string[] lotNos, string userId);
+        Task<BaseResponseModel> ConfirmToSendExportAsync(string[] lotNos, string userId);
+        Task<List<TempPack>> GetAllDocToPrint(string[] lotNos, string userid);
+    }
+}

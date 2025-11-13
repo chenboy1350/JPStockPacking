@@ -290,63 +290,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="modal-update">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าของล็อต : [lotNo]</h4>
-                <input type="hidden" id="hddUpdateLotNo" value="" />
-                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-head-fixed text-nowrap">
-                        <thead>
-                            <tr>
-                                <th>เลขที่ใบรับ</th>
-                                <th>หมายเลขล็อต</th>
-                                <th>เลขที่คำสั่งซื้อ</th>
-                                <th>ลำดับที่</th>
-                                <th>เลขที่งาน</th>
-                                <th>รหัสสินค้า</th>
-                                <th>จำนวน</th>
-                                <th>น้ำหนักรวม(g)</th>
-                                <th>เลือก</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-received-body">
-                            <tr>
-                                <td>[ReceivedNo]</td>
-                                <td>[LotNo]</td>
-                                <td>[OrderNo]</td>
-                                <td>[ListNo]</td>
-                                <td>[Barcode]</td>
-                                <td>[Article]</td>
-                                <td>[Ttqty]</td>
-                                <td>[Ttwg]</td>
-                                <td>
-                                    <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="checkboxReceivedNo">
-                                        <label for="checkboxReceivedNo">
-                                        </label>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-warning" id="btnUpdateLot">รับเข้า</button>
-                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 <div class="modal fade" id="modal-assign">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -514,35 +457,6 @@
                                     </div>
                                 </div>
                             </div>
-                            @*<div class="row">
-                                <div class="col-3 mt-2">
-                                </div>
-                                <div class="col-3 mt-2">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <div id="breakDes" style="display:none;">
-                                        <label for="ddlBreakDes"><span style="color:red;">*</span> อาการที่ชำรุด</label>
-                                        <select id="ddlBreakDes" name="ddlBreakDes" class="form-control" style="width: 100%">
-                                            <option value="" selected>-- เลือกอาการ --</option>
-                                            @foreach (var des in ViewBag.BreakDescriptions)
-                                            {
-                                                <option value="@des.BreakDescriptionId">@des.Name</option>
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <div id="breakDes2" style="display:none;">
-                                        <label for="txtAddBreakDes">เพิ่มใหม่</label>
-                                        <div class="input-group">
-                                            <input type="text" id="txtAddBreakDes" class="form-control" placeholder="อาการที่ชำรุด" style="display:none;">
-                                            <span class="input-group-append">
-                                                <button type="button" id="btnAddBreakDes" class="btn btn-info btn-flat"><i class="fas fa-plus"></i></button>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>*@
                         </div>
                     </div>
                 </div>
@@ -702,57 +616,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="modal-Sendto">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Send Lot : 2500010703 To</h4>
-                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="card card-default">
-                    <div class="card-header">
-                        <h3 class="card-title">Return Detail</h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body" style="display: block;">
-                        <div class="row">
-                            <div class="form-group">
-                                <div class="col-3">
-                                    <label>Send To Store</label>
-                                    <input type="text" class="form-control" placeholder="Enter ...">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <label>Send to Refine</label>
-                                    <input type="text" class="form-control" placeholder="Enter ...">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <label>Center Amount</label>
-                                    <input type="text" class="form-control" placeholder="Enter ...">
-                                </div>
-                                <div class="col-3 mt-2">
-                                    <label>Total</label>
-                                    <input type="text" class="form-control" placeholder="">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
-                <button type="button" class="btn btn-info">Send</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="modal-approve-to-print">
     <div class="modal-dialog modal-md">
         <div class="modal-content">
@@ -809,7 +672,7 @@
             <div class="modal-body">
                 <div class="card card-default">
                     <label for="txtLostQty">กรอกจำนวนที่สูญหาย</label>
-                    <input type="number" min="0" step="any" id="txtLostQty" class="form-control">
+                    <input type="number" min="0" step="0.5" id="txtLostQty" class="form-control">
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
@@ -831,7 +694,7 @@
             <div class="modal-body">
                 <div class="">
                     <label for="txtBreakQty">กรอกจำนวนที่เสียหาย</label>
-                    <input type="number" min="0" id="txtBreakQty" step="any" class="form-control">
+                    <input type="number" min="0" id="txtBreakQty" step="0.5" class="form-control">
                     <label for="ddlBreakDes"><span style="color:red;">*</span> อาการที่ชำรุด</label>
                     <select id="ddlBreakDes" name="ddlBreakDes" class="form-control" style="width: 100%">
                         <option value="" selected>-- เลือกอาการ --</option>

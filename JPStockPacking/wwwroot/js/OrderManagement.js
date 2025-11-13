@@ -1,4 +1,11 @@
 ﻿$(document).ready(function () {
+    $(document).on('keydown', '#txtOrderNo, #txtCustCode', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchOrdersByDateRange();
+        }
+    });
+
     $(document).on('show.bs.collapse', '.accordion-collapse', function () {
         var accordionItem = $(this).closest('.accordion-item');
 
@@ -767,7 +774,6 @@ async function showModalTableMember(assignedID) {
     });
 }
 
-
 function showModalAssign(lotNo) {
     clearModalAssignValues()
     const modal = $('#modal-assign');
@@ -1165,6 +1171,31 @@ async function printLostToPDF() {
             showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
         }
     });
+}
+
+async function reversBreak(breakID) {
+    await showSaveConfirm(
+        `ต้องการยกเลิกรายการแจ้งซ่อมนี้ใช่หรือไม่`, "ยืนยันการยกเลิกรายการ", async () => {
+            const formData = new FormData();
+            formData.append("breakID", breakID);
+
+            $.ajax({
+                url: urlCancelBreak,
+                type: 'DELETE',
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: async () => {
+                    $('#loadingIndicator').hide();
+                    await showSuccess("ยกเลิกรายการเรียบร้อย");
+                },
+                error: async (xhr) => {
+                    $('#loadingIndicator').hide();
+                    await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
+                }
+            });
+        }
+    );
 }
 
 function clearModalAssignValues() {

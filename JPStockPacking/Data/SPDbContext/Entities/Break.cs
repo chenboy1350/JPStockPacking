@@ -21,6 +21,8 @@ public partial class Break
     [Column(TypeName = "decimal(18, 1)")]
     public decimal? PreviousQty { get; set; }
 
+    public double? PreviousWg { get; set; }
+
     [Column(TypeName = "decimal(18, 1)")]
     public decimal? BreakQty { get; set; }
 

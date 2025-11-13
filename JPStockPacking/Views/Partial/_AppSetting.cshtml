@@ -1,0 +1,28 @@
+﻿<div class="card d-flex">
+    <div class="card-header">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8 d-flex justify-content-between align-items-center">
+                <h3 class="card-title">รายการตั้งค่า</h3>
+                <div id="actionButtons" class="">
+                    <button class="btn btn-primary me-2" id="btnSaveAppSettings">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body table-responsive pt-0" style="height: 73vh;">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8">
+                <div class="d-flex align-items-center gap-2 flex-wrap pt-2">
+                    <label for="txtChxQtyPercentage" class="form-label mb-0 text-end" style="width:150px;">% ส่งแพ็คขั้นต่ำ</label>
+                    <input type="number" id="txtChxQtyPercentage" min="0" max="100" class="form-control me-2" style="width:100px;" value="@ViewBag.SendQtyPercentage" />
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap pt-2">
+                    <label for="txtMinWgPercentage" class="form-label mb-0 text-end" style="width:150px;">% น้ำหนักส่งหลอม</label>
+                    <input type="number" id="txtMinWgPercentage" min="0" max="100" class="form-control me-2" style="width:100px;" value="@ViewBag.SendToStorePercentage" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="ตั้งค่าทั่วไป"></div>

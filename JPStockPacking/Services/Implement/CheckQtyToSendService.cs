@@ -1,4 +1,5 @@
 ﻿using JPStockPacking.Data.JPDbContext;
+using JPStockPacking.Data.JPDbContext.Entities;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
@@ -15,15 +16,11 @@ namespace JPStockPacking.Services.Implement
         private readonly IPISService _pISService = pISService;
         private readonly IConfiguration _configuration = configuration;
 
-        public async Task<SendToPackModel> GetOrderToSendQtyAsync(string orderNo)
+        public async Task<SendToPackModel> GetOrderToSendQtyAsync(string orderNo, int? userid)
         {
             var apiSettings = _configuration.GetSection("SendQtySettings");
-            var Persentage = apiSettings["Persentage"];
-
-            var OrdLotno = _jPDbContext.OrdLotno
-                .Where(x => x.OrderNo == orderNo)
-                .Select(x => x.LotNo)
-                .Distinct();
+            var Percentage = apiSettings["Percentage"];
+            var ReportApprover = apiSettings["ReportApprover"];
 
             var baseData = await (
                 from a in _jPDbContext.OrdHorder
@@ -49,8 +46,8 @@ namespace JPStockPacking.Services.Implement
                     }
                 ) on b.LotNo equals d.Lotno into gj3
                 from d in gj3.DefaultIfEmpty()
-                where a.OrderNo == orderNo && a.Factory == true
-                orderby b.LotNo
+                where a.OrderNo == orderNo && a.Factory == true && !string.IsNullOrEmpty(b.LotNo)
+                orderby b.ListNo
                 select new
                 {
                     a.OrderNo,
@@ -63,6 +60,7 @@ namespace JPStockPacking.Services.Implement
                     b.Barcode,
                     Article = c.Article ?? string.Empty,
                     g.Tunit,
+                    b.Unit,
                     g.TdesArt,
                     f.EdesFn,
                     f.TdesFn,
@@ -101,6 +99,7 @@ namespace JPStockPacking.Services.Implement
             var sizeMap = await GetSizeByLotBulkAsync(orderNo, lotNos);
 
             var lots = new List<SendToPackLots>();
+            var users = await _pISService.GetAllUser();
 
             foreach (var x in baseData)
             {
@@ -109,7 +108,7 @@ namespace JPStockPacking.Services.Implement
 
                 if (lotDetail.Approver != 0 && lotDetail.Approver != null)
                 {
-                    List<UserModel> user = await _pISService.GetUser(new ReqUserModel { UserID = lotDetail.Approver });
+                    var user = users != null ? users.Where(x => x.UserID == lotDetail.Approver).ToList() : [];
 
                     var lot = new SendToPackLots
                     {
@@ -117,6 +116,7 @@ namespace JPStockPacking.Services.Implement
                         ListNo = x.ListNo ?? string.Empty,
                         Barcode = x.Barcode ?? string.Empty,
                         Article = x.Article,
+                        Unit = x.Unit ?? string.Empty,
                         Tunit = x.Tunit ?? string.Empty,
                         EdesFn = x.EdesFn ?? string.Empty,
                         TdesFn = x.TdesFn ?? string.Empty,
@@ -130,7 +130,7 @@ namespace JPStockPacking.Services.Implement
                         IsDefined = lotDetail.TtQty > 0,
                         ApproverID = user.FirstOrDefault()!.UserID.ToString(),
                         Approver = $"{user.FirstOrDefault()!.FirstName} {user.FirstOrDefault()!.LastName}".Trim(),
-                        Persentage = int.TryParse(Persentage, out var p) ? p : 0,
+                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -144,6 +144,7 @@ namespace JPStockPacking.Services.Implement
                         ListNo = x.ListNo ?? string.Empty,
                         Barcode = x.Barcode ?? string.Empty,
                         Article = x.Article,
+                        Unit = x.Unit ?? string.Empty,
                         Tunit = x.Tunit ?? string.Empty,
                         EdesFn = x.EdesFn ?? string.Empty,
                         TdesFn = x.TdesFn ?? string.Empty,
@@ -157,15 +158,16 @@ namespace JPStockPacking.Services.Implement
                         IsDefined = lotDetail.TtQty > 0,
                         ApproverID = string.Empty,
                         Approver = string.Empty,
-                        Persentage = int.TryParse(Persentage, out var p) ? p : 0,
+                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
                     lots.Add(lot);
                 }
-
-
             }
+
+            var Sender = users != null && userid != null ? users.Where(x => x.UserID == userid).ToList() : [];
+            var Approver = users != null ? users.Where(x => x.UserID == Convert.ToInt32(ReportApprover)).ToList() : [];
 
             return new SendToPackModel
             {
@@ -175,15 +177,18 @@ namespace JPStockPacking.Services.Implement
                 SCountry = baseData[0].Scountry ?? string.Empty,
                 Special = baseData[0].Special ?? string.Empty,
                 IsOrderDefined = lots.Any(l => l.IsDefined),
-                Persentage = int.TryParse(Persentage, out var pv) ? pv : 0,
-                Lots = lots
+                Percentage = int.TryParse(Percentage, out var pv) ? pv : 0,
+                Approver = Approver != null && Approver.Count != 0 ? $"{Approver.FirstOrDefault()!.FirstName} {Approver.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                Sender = Sender != null && Sender.Count != 0 ? $"{Sender.FirstOrDefault()!.FirstName} {Sender.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                Lots = lots = [.. lots.OrderBy(o => Convert.ToDouble(o.ListNo))]
             };
         }
 
-        public async Task<SendToPackModel> GetOrderToSendQtyWithPriceAsync(string orderNo)
+        public async Task<SendToPackModel> GetOrderToSendQtyWithPriceAsync(string orderNo, int? userid)
         {
             var apiSettings = _configuration.GetSection("SendQtySettings");
-            var Persentage = apiSettings["Persentage"];
+            var Percentage = apiSettings["Percentage"];
+            var ReportApprover = apiSettings["ReportApprover"];
 
             var OrdLotno = _jPDbContext.OrdLotno
                 .Where(x => x.OrderNo == orderNo)
@@ -213,8 +218,8 @@ namespace JPStockPacking.Services.Implement
                 ) on b.LotNo equals d.Lotno into gj3
                 from d in gj3.DefaultIfEmpty()
 
-                where a.Factory == true
-                orderby b.LotNo
+                where a.Factory == true && !string.IsNullOrEmpty(b.LotNo)
+                orderby b.ListNo
                 select new
                 {
                     a.OrderNo,
@@ -227,6 +232,7 @@ namespace JPStockPacking.Services.Implement
                     b.Barcode,
                     Article = c.Article ?? string.Empty,
                     g.Tunit,
+                    b.Unit,
                     g.TdesArt,
                     f.EdesFn,
                     f.TdesFn,
@@ -267,6 +273,7 @@ namespace JPStockPacking.Services.Implement
             var sizeMap = await GetSizeByLotBulkAsync(orderNo, lotNos);
 
             var lots = new List<SendToPackLots>();
+            var users = await _pISService.GetAllUser();
 
             foreach (var x in baseData)
             {
@@ -275,7 +282,7 @@ namespace JPStockPacking.Services.Implement
 
                 if (lotDetail.Approver != 0 && lotDetail.Approver != null)
                 {
-                    List<UserModel> user = await _pISService.GetUser(new ReqUserModel { UserID = lotDetail.Approver });
+                    var user = users != null ? users.Where(x => x.UserID == lotDetail.Approver).ToList() : [];
 
                     var lot = new SendToPackLots
                     {
@@ -283,6 +290,7 @@ namespace JPStockPacking.Services.Implement
                         ListNo = x.ListNo ?? string.Empty,
                         Barcode = x.Barcode ?? string.Empty,
                         Article = x.Article,
+                        Unit = x.Unit ?? string.Empty,
                         Tunit = x.Tunit ?? string.Empty,
                         EdesFn = x.EdesFn ?? string.Empty,
                         TdesFn = x.TdesFn ?? string.Empty,
@@ -292,7 +300,7 @@ namespace JPStockPacking.Services.Implement
                         EnPrice = x.Price.ToString().EncodeToText(),
                         EnTtPrice = ((decimal)x.Price * x.TtQty ?? 0).ToString(string.Format("N{0}", baseData[0].PriceDec)).EncodeToText(),
                         DePrice = x.Price,
-                        DeTtPrice = x.Price * (double)x.TtQty!,
+                        DeTtPrice = x.Price * (double)(x.TtQty ?? 0),
 
                         EnSendQtyPrice = ((decimal)x.Price * lotDetail.TtQty).ToString(string.Format("N{0}", baseData[0].PriceDec)).EncodeToText(),
                         DeSendQtyPrice = x.Price * (double)lotDetail.TtQty,
@@ -303,7 +311,7 @@ namespace JPStockPacking.Services.Implement
                         TtQtyToPack = lotDetail.TtQty,
                         IsDefined = lotDetail.TtQty > 0,
                         Approver = $"{user.FirstOrDefault()!.FirstName} {user.FirstOrDefault()!.LastName}".Trim(),
-                        Persentage = int.TryParse(Persentage, out var p) ? p : 0,
+                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -317,6 +325,7 @@ namespace JPStockPacking.Services.Implement
                         ListNo = x.ListNo ?? string.Empty,
                         Barcode = x.Barcode ?? string.Empty,
                         Article = x.Article,
+                        Unit = x.Unit ?? string.Empty,
                         Tunit = x.Tunit ?? string.Empty,
                         EdesFn = x.EdesFn ?? string.Empty,
                         TdesFn = x.TdesFn ?? string.Empty,
@@ -326,7 +335,7 @@ namespace JPStockPacking.Services.Implement
                         EnPrice = x.Price.ToString().EncodeToText(),
                         EnTtPrice = ((decimal)x.Price * x.TtQty ?? 0).ToString(string.Format("N{0}", baseData[0].PriceDec)).EncodeToText(),
                         DePrice = x.Price,
-                        DeTtPrice = x.Price * (double)x.TtQty!,
+                        DeTtPrice = x.Price * (double)(x.TtQty ?? 0),
 
                         EnSendQtyPrice = ((decimal)x.Price * lotDetail.TtQty).ToString(string.Format("N{0}", baseData[0].PriceDec)).EncodeToText(),
                         DeSendQtyPrice = x.Price * (double)lotDetail.TtQty,
@@ -337,7 +346,7 @@ namespace JPStockPacking.Services.Implement
                         TtQtyToPack = lotDetail.TtQty,
                         IsDefined = lotDetail.TtQty > 0,
                         Approver = string.Empty,
-                        Persentage = int.TryParse(Persentage, out var p) ? p : 0,
+                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -346,6 +355,9 @@ namespace JPStockPacking.Services.Implement
 
 
             }
+
+            var Sender = users != null && userid != null ? users.Where(x => x.UserID == userid).ToList() : [];
+            var Approver = users != null ? users.Where(x => x.UserID == Convert.ToInt32(ReportApprover)).ToList() : [];
 
             return new SendToPackModel
             {
@@ -357,10 +369,14 @@ namespace JPStockPacking.Services.Implement
                 IsOrderDefined = lots.Any(l => l.IsDefined),
                 SumTtQty = (double)lots.Sum(l => l.TtQty),
                 SumTtPrice = lots.Sum(l => l.DeTtPrice).ToString(string.Format("N{0}", baseData[0].PriceDec)).EncodeToText().ToUpper(),
-                Persentage = int.TryParse(Persentage, out var pv) ? pv : 0,
-                SumSendTtQty = (double)lots.Sum(l => l.SendTtQty),
+                Percentage = int.TryParse(Percentage, out var pv) ? pv : 0,
+                SumPCSendTtQty = (double)lots.Where(l => l.Unit.Trim() == "PC").Sum(l => l.TtQtyToPack),
+                SumPRSendTtQty = (double)lots.Where(l => l.Unit.Trim() == "PR").Sum(l => l.TtQtyToPack),
+                SumSendTtQty = (double)lots.Sum(l => l.TtQtyToPack),
                 SumSendTtPrice = lots.Sum(l => l.DeSendQtyPrice).ToString(string.Format("N{0}", baseData[0].PriceDec)).EncodeToText().ToUpper(),
-                Lots = lots
+                Approver = Approver != null && Approver.Count != 0 ? $"{Approver.FirstOrDefault()!.FirstName} {Approver.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                Sender = Sender != null && Sender.Count != 0 ? $"{Sender.FirstOrDefault()!.FirstName} {Sender.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                Lots = [.. lots.OrderBy(o => Convert.ToDouble(o.ListNo))]
             };
         }
 
@@ -400,6 +416,7 @@ namespace JPStockPacking.Services.Implement
                 );
 
             var result = new Dictionary<string, List<Size>>(StringComparer.OrdinalIgnoreCase);
+            var users = await _pISService.GetAllUser();
 
             foreach (var lot in filteredLots)
             {
@@ -439,7 +456,7 @@ namespace JPStockPacking.Services.Implement
                     {
                         if (approver != 0)
                         {
-                            List<UserModel> user = await _pISService.GetUser(new ReqUserModel { UserID = approver });
+                            var user = users != null ? users.Where(x => x.UserID == approver).ToList() : [];
 
                             sizes.Add(new Size
                             {

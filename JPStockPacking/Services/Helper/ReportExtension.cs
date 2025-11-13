@@ -3,8 +3,6 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Globalization;
-using static JPStockPacking.Services.Implement.AuthService;
-using static JPStockPacking.Services.Implement.OrderManagementService;
 
 namespace JPStockPacking.Services.Helper
 {
@@ -30,10 +28,19 @@ namespace JPStockPacking.Services.Helper
 
                                 table.Cell().RowSpan(3).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
 
-                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                if (!string.IsNullOrEmpty(item.Approver))
+                                {
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo} ✵").FontSize(8).SemiBold();
+                                }
+                                else
+                                {
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                }
+
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt}/{item.TdesFn}").FontSize(6).SemiBold();
+                                if (!string.IsNullOrEmpty(item.Approver)) table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"ยืนยันโดย : {item.Approver}").FontSize(6).SemiBold();
 
                                 static IContainer CellStyle(IContainer container)
                                 {
@@ -69,57 +76,82 @@ namespace JPStockPacking.Services.Helper
                                     columns.RelativeColumn(1);
                                 });
 
-                                table.Cell().RowSpan(8).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
 
-                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                if (item.Size.Any(x => !string.IsNullOrEmpty(x.Approver)))
+                                {
+                                    table.Cell().RowSpan(9).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo} ✵").FontSize(8).SemiBold();
+                                }
+                                else
+                                {
+                                    table.Cell().RowSpan(8).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                }
+
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
-
                                 table.Cell().ColumnSpan(13).Element(CellStyle).AlignLeft().Text($"{item.TdesArt}/{item.TdesFn}").FontSize(6).SemiBold();
-
-                                table.Cell().Element(CellStyle).AlignRight().Text($"ขนาด").FontSize(7).SemiBold();
-
-                                for (int i = 0; i < 12; i += 1)
+                                if (item.Size != null && item.Size.Count != 0)
                                 {
-                                    if (item.Size.Count >= i + 1)
-                                    {
-                                        var a = item.Size[i];
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.S}").FontSize(7).SemiBold();
-                                    }
-                                    else
-                                    {
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
-                                    }
-                                }
+                                    var approvers = string.Join(", ", item.Size.Where(s => !string.IsNullOrEmpty(s.Approver)).Select(s => s.Approver));
 
-                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนสั่ง").FontSize(7);
+                                    if (!string.IsNullOrEmpty(approvers))
+                                    {
+                                        table.Cell().ColumnSpan(13).Element(CellStyle).AlignLeft().Text($"ยืนยันโดย : {approvers}").FontSize(6).SemiBold();
+                                    }
 
-                                for (int i = 0; i < 12; i += 1)
-                                {
-                                    if (item.Size.Count >= i + 1)
-                                    {
-                                        var a = item.Size[i];
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.Q}").FontSize(7);
-                                    }
-                                    else
-                                    {
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
-                                    }
-                                }
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"ขนาด").FontSize(7).SemiBold();
 
-                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนแจ้ง").FontSize(7).Underline();
+                                    for (int i = 0; i < 12; i += 1)
+                                    {
+                                        if (item.Size.Count >= i + 1)
+                                        {
+                                            var a = item.Size[i];
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"{a.S}").FontSize(7).SemiBold();
+                                        }
+                                        else
+                                        {
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        }
+                                    }
 
-                                for (int i = 0; i < 12; i += 1)
-                                {
-                                    if (item.Size.Count >= i + 1)
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนสั่ง").FontSize(7);
+
+                                    for (int i = 0; i < 12; i += 1)
                                     {
-                                        var a = item.Size[i];
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.TtQtyToPack}").FontSize(7).Underline();
+                                        if (item.Size.Count >= i + 1)
+                                        {
+                                            var a = item.Size[i];
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"{a.Q}").FontSize(7);
+                                        }
+                                        else
+                                        {
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        }
                                     }
-                                    else
+
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนแจ้ง").FontSize(7).Underline();
+
+                                    for (int i = 0; i < 12; i += 1)
                                     {
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        if (item.Size.Count >= i + 1)
+                                        {
+                                            var a = item.Size[i];
+                                            if (!string.IsNullOrEmpty(a.Approver))
+                                            {
+                                                table.Cell().Element(CellStyle).AlignCenter().Text($"{a.TtQtyToPack} ✵").FontSize(7).Underline();
+                                            }
+                                            else
+                                            {
+                                                table.Cell().Element(CellStyle).AlignCenter().Text($"{a.TtQtyToPack}").FontSize(7).Underline();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        }
                                     }
+
                                 }
 
                                 static IContainer CellStyle(IContainer container)
@@ -150,13 +182,22 @@ namespace JPStockPacking.Services.Helper
                                     columns.RelativeColumn(1);
                                 });
 
-                                table.Cell().RowSpan(3).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
-
-                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
-                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
-                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
+                                if (!string.IsNullOrEmpty(item.Approver))
+                                {
+                                    table.Cell().RowSpan(4).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo} ✵").FontSize(8).SemiBold();
+                                }
+                                else
+                                {
+                                    table.Cell().RowSpan(3).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
+                                }
+                                var Unit = item.Tunit == "คู่" ? "PR" : "PC";
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {Unit}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {Unit}").FontSize(8).SemiBold();
                                 table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt.Trim()}/{item.TdesFn.Trim()}").FontSize(7).SemiBold();
-                                table.Cell().RowSpan(3).ColumnSpan(7).Element(CellStyle).AlignCenter().Text($"{item.EnSendQtyPrice.ToUpper()}").FontSize(8).SemiBold();
+                                if (!string.IsNullOrEmpty(item.Approver)) table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"ยืนยันโดย : {item.Approver}").FontSize(6).SemiBold();
+                                table.Cell().RowSpan(3).ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.EnSendQtyPrice.ToUpper()}").FontSize(8).SemiBold();
 
                                 static IContainer CellStyle(IContainer container)
                                 {
@@ -192,57 +233,83 @@ namespace JPStockPacking.Services.Helper
                                     columns.RelativeColumn(1);
                                 });
 
-                                table.Cell().RowSpan(8).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
-
-                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
-                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {item.Tunit}").FontSize(8).SemiBold();
-                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {item.Tunit}").FontSize(8).SemiBold();
-                                table.Cell().RowSpan(2).ColumnSpan(6).Element(CellStyle).AlignCenter().Text($"{item.EnSendQtyPrice.ToUpper()}").FontSize(8).SemiBold();
-                                table.Cell().ColumnSpan(7).Element(CellStyle).AlignLeft().Text($"{item.TdesArt.Trim()}/{item.TdesFn.Trim()}").FontSize(7).SemiBold();
-
-                                table.Cell().Element(CellStyle).AlignRight().Text($"ขนาด").FontSize(7).SemiBold();
-
-                                for (int i = 0; i < 12; i += 1)
+                                if (item.Size.Any(x => !string.IsNullOrEmpty(x.Approver)))
                                 {
-                                    if (item.Size.Count >= i + 1)
-                                    {
-                                        var a = item.Size[i];
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.S}").FontSize(7).SemiBold();
-                                    }
-                                    else
-                                    {
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
-                                    }
+                                    table.Cell().RowSpan(9).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo} ✵").FontSize(8).SemiBold();
                                 }
-
-                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนสั่ง").FontSize(7);
-
-                                for (int i = 0; i < 12; i += 1)
+                                else
                                 {
-                                    if (item.Size.Count >= i + 1)
-                                    {
-                                        var a = item.Size[i];
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.Q}").FontSize(7);
-                                    }
-                                    else
-                                    {
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
-                                    }
+                                    table.Cell().RowSpan(8).Element(CellStyle).AlignCenter().AlignMiddle().Height(60).Width(70).Element(container => container.RenderItemImage(null, item.ImagePath));
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8).SemiBold();
                                 }
+                                var Unit = item.Tunit == "คู่" ? "PR" : "PC";
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดสั่ง {item.TtQty} {Unit}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"ยอดแจ้ง {item.TtQtyToPack} {Unit}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(6).Element(CellStyle).AlignCenter().Text($"{item.EnSendQtyPrice.ToUpper()}").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(13).Element(CellStyle).AlignLeft().Text($"{item.TdesArt.Trim()}/{item.TdesFn.Trim()}").FontSize(7).SemiBold();
 
-                                table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนแจ้ง").FontSize(7).Underline();
-
-                                for (int i = 0; i < 12; i += 1)
+                                if (item.Size != null && item.Size.Count != 0)
                                 {
-                                    if (item.Size.Count >= i + 1)
+                                    var approvers = string.Join(", ", item.Size.Where(s => !string.IsNullOrEmpty(s.Approver)).Select(s => s.Approver));
+
+                                    if (!string.IsNullOrEmpty(approvers))
                                     {
-                                        var a = item.Size[i];
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"{a.TtQtyToPack}").FontSize(7).Underline();
+                                        table.Cell().ColumnSpan(13).Element(CellStyle).AlignLeft().Text($"ยืนยันโดย : {approvers}").FontSize(6).SemiBold();
                                     }
-                                    else
+
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"ขนาด").FontSize(7).SemiBold();
+
+                                    for (int i = 0; i < 12; i += 1)
                                     {
-                                        table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        if (item.Size.Count >= i + 1)
+                                        {
+                                            var a = item.Size[i];
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"{a.S}").FontSize(7).SemiBold();
+                                        }
+                                        else
+                                        {
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        }
                                     }
+
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนสั่ง").FontSize(7);
+
+                                    for (int i = 0; i < 12; i += 1)
+                                    {
+                                        if (item.Size.Count >= i + 1)
+                                        {
+                                            var a = item.Size[i];
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"{a.Q}").FontSize(7);
+                                        }
+                                        else
+                                        {
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        }
+                                    }
+
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"จำนวนแจ้ง").FontSize(7).Underline();
+
+                                    for (int i = 0; i < 12; i += 1)
+                                    {
+                                        if (item.Size.Count >= i + 1)
+                                        {
+                                            var a = item.Size[i];
+                                            if (!string.IsNullOrEmpty(a.Approver))
+                                            {
+                                                table.Cell().Element(CellStyle).AlignCenter().Text($"{a.TtQtyToPack} ✵").FontSize(7).Underline();
+                                            }
+                                            else
+                                            {
+                                                table.Cell().Element(CellStyle).AlignCenter().Text($"{a.TtQtyToPack}").FontSize(7).Underline();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            table.Cell().Element(CellStyle).AlignCenter().Text($"");
+                                        }
+                                    }
+
                                 }
 
                                 static IContainer CellStyle(IContainer container)
@@ -544,6 +611,189 @@ namespace JPStockPacking.Services.Helper
             }
         }
 
+        public static void SendToHeader(this IContainer container, TempPackPage tempPackPage)
+        {
+            container.PaddingBottom(5).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(30);
+                });
+
+                table.Cell().ColumnSpan(7).Element(CellStyle).AlignCenter().Text($"{tempPackPage.Title} ({tempPackPage.OrderNoAndCusCode})").FontSize(16).SemiBold();
+
+                table.Cell().Element(CellStyle).AlignLeft().Text($"เลขที่ใบรับ").FontSize(11);
+                table.Cell().ColumnSpan(2).Element(CellStyle).AlignLeft().Text($": {tempPackPage.Doc}").FontSize(11);
+
+                table.Cell().ColumnSpan(3).Element(CellStyle).AlignRight().Text($"วันที่พิมพ์ : ").FontSize(11);
+                table.Cell().ColumnSpan(1).Element(CellStyle).AlignRight().Text($"{DateTime.Now:dd/MM/yyyy}").FontSize(11);
+
+                table.Cell().Element(CellStyle).AlignLeft().Text($"ส่งไป").FontSize(11);
+                table.Cell().ColumnSpan(2).Element(CellStyle).AlignLeft().Text($": {tempPackPage.SendTo}").FontSize(11);
+
+                table.Cell().ColumnSpan(3).Element(CellStyle).AlignRight().Text($"วันที่ออกเอกสาร : ").FontSize(11);
+                table.Cell().ColumnSpan(1).Element(CellStyle).AlignRight().Text($"{tempPackPage.ListDate:dd/MM/yyyy}").FontSize(11);
+
+                static IContainer CellStyle(IContainer c) => c.Padding(3);
+            });
+        }
+
+        public static void SendToReportContent(this IContainer container, List<TempPackPage> model)
+        {
+            container.Column(col =>
+            {
+                foreach (var tempack in model)
+                {
+                    // ส่วนหัว
+                    col.Item().PaddingTop(5).Element(c => c.SendToHeader(tempack));
+
+                    // ตาราง (ShowOnce เพื่อไม่ให้แตกข้ามหน้า)
+                    col.Item().PaddingVertical(2).ShowOnce().Element(c =>
+                    {
+                        c.Table(table =>
+                        {
+                            // คำนวณจำนวนคอลัมน์ตาม SendType
+                            int columnCount = GetColumnCount(tempack.SendType);
+
+                            // กำหนดโครงสร้างคอลัมน์
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KX") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(3);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KM") columns.RelativeColumn(2);
+                            });
+
+                            // Header
+                            table.Cell().Element(CellStyle).AlignCenter().Text("ListNo").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("เลขที่งานช่าง\nครั้งที่ส่ง").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
+                            if (tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text("FN").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("ชื่อช่าง").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("น้ำหนักรวม\n(กรัม)").FontSize(8);
+                            if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("สาเหตุ").FontSize(8);
+
+                            // Data rows
+                            var maxRows = CalculateMaxRows();
+                            var displayModel = tempack.TempPacks.Take(maxRows).ToList();
+
+                            foreach (var item in displayModel)
+                            {
+                                table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.JobBarcode}\n{item.NumSend}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
+                                if (tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.FinishingEN} / {item.FinishingTH}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"({item.EmpCode}) {item.Name}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OkTtl}").FontSize(8);
+                                if (tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text($"{(int)item.OkTtl} {item.Unit}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OkWg}").FontSize(8);
+                                if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.BreakDescription}").FontSize(8);
+
+                            }
+
+                            // Footer: รวมยอด
+
+                            table.Cell().ColumnSpan((uint)columnCount).Padding(2).Column(row =>
+                            {
+                                row.Item()
+                                    .PaddingTop(20)
+                                    .Element(container =>
+                                    {
+                                        container.Row(row =>
+                                        {
+                                            if (tempack.SendType != "KX")
+                                            {
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PC").Sum(s => s.OkTtl)}     ชิ้น").AlignCenter().FontSize(11);
+                                                });
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PR").Sum(s => s.OkTtl)}     คู่").AlignCenter().FontSize(11);
+                                                });
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"น้ำหนักรวม     {displayModel.Sum(s => s.OkWg)}     กรัม").AlignCenter().FontSize(11);
+                                                });
+                                            }
+                                            else
+                                            {
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"").AlignCenter().FontSize(11);
+                                                });
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PC").Sum(s => s.OkTtl)}     PC").AlignCenter().FontSize(11);
+                                                });
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PR").Sum(s => s.OkTtl)}     PR").AlignCenter().FontSize(11);
+                                                });
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text($"").AlignCenter().FontSize(11);
+                                                });
+                                            }
+                                        });
+                                    });
+                            });
+
+                            // Footer: ลายเซ็น
+                            table.Cell().ColumnSpan((uint)columnCount).Padding(2).Column(row =>
+                            {
+                                row.Item()
+                                    .PaddingTop(60)
+                                    .Element(container =>
+                                    {
+                                        container.Row(row =>
+                                        {
+                                            row.RelativeItem().AlignCenter().Column(col =>
+                                            {
+                                                col.Item().Text("(...............................)").AlignCenter().FontSize(11);
+                                                col.Item().Text($"{tempack.Reporter}").FontSize(11).AlignCenter();
+                                                col.Item().Text("ผู้ส่งสินค้า").FontSize(11).AlignCenter();
+                                            });
+                                            row.RelativeItem().AlignCenter().Column(col =>
+                                            {
+                                                col.Item().Text("(...............................)").AlignCenter().FontSize(11);
+                                                col.Item().Text("ผู้รับสินค้า").FontSize(11).AlignCenter();
+                                            });
+                                            row.RelativeItem().AlignCenter().Column(col =>
+                                            {
+                                                col.Item().Text("(...............................)").AlignCenter().FontSize(11);
+                                                col.Item().Text("QA Packing").FontSize(11).AlignCenter();
+                                            });
+                                        });
+                                    });
+                            });
+                        });
+                    });
+
+                    col.Item().PageBreak();
+                }
+            });
+
+            // ฟังก์ชันตกแต่งเซลล์
+            static IContainer CellStyle(IContainer container)
+            {
+                return container
+                    .Border(0.5f)
+                    .BorderColor(Colors.Black)
+                    .Padding(3);
+            }
+        }
         private static int CalculateMaxRows()
         {
             // คำนวณประมาณจากขนาดฟอนต์และ padding
@@ -554,6 +804,21 @@ namespace JPStockPacking.Services.Helper
             var rowHeight = 20;
 
             return Math.Max(1, (int)((availableHeight - usedHeight) / rowHeight));
+        }
+
+        // Helper: คำนวณจำนวนคอลัมน์จริง
+        private static int GetColumnCount(string sendType)
+        {
+            int count = 1; // "ลำดับ"
+            if (sendType is "KS" or "KM") count += 1; // เลขที่งานช่าง/ครั้งที่ส่ง
+            if (sendType is "KS" or "KM" or "KX") count += 1; // รหัสสินค้า
+            if (sendType is "KX") count += 1; // FN
+            if (sendType is "KS" or "KM") count += 1; // ชื่อช่าง
+            if (sendType is "KS" or "KM" or "KX") count += 1; // จำนวน
+            if (sendType is "KS" or "KM") count += 1; // น้ำหนักรวม
+            if (sendType is "KM") count += 1; // สาเหตุ
+
+            return count;
         }
     }
 }

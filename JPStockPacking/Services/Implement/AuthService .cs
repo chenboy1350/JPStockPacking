@@ -11,11 +11,14 @@ namespace JPStockPacking.Services.Implement
     public class AuthService(
         IHttpContextAccessor contextAccessor,
         ICookieAuthService cookieAuthService,
-        IConfiguration configuration) : IAuthService
+        IConfiguration configuration,
+        Serilog.ILogger logger
+        ) : IAuthService
     {
         private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
         private readonly ICookieAuthService _cookieAuthService = cookieAuthService;
         private readonly IConfiguration _configuration = configuration;
+        private readonly Serilog.ILogger _logger = logger;
 
         public async Task<LoginResult> LoginUserAsync(string username, string password, bool rememberMe)
         {
@@ -23,6 +26,8 @@ namespace JPStockPacking.Services.Implement
             {
                 var context = _contextAccessor.HttpContext!;
                 var authResult = await ValidateUserAsync(username, password);
+
+                _logger.Information("AuthResult: {@AuthResult}", authResult);
 
                 if (authResult == null || string.IsNullOrEmpty(authResult.AccessToken))
                     return new LoginResult { Success = false, Message = "Invalid credentials" };
@@ -99,12 +104,16 @@ namespace JPStockPacking.Services.Implement
             var context = _contextAccessor.HttpContext!;
             var refreshToken = context.Request.Cookies["RefreshToken"];
 
+            _logger.Information("refreshToken Cookies : {@refreshToken}", refreshToken);
+
             if (string.IsNullOrEmpty(refreshToken))
                 return new RefreshTokenResult { Success = false, Message = "No refresh token found" };
 
             try
             {
                 var refreshResult = await CallRefreshTokenApi(refreshToken);
+
+                _logger.Information("RefreshResult: {@RefreshResult}", refreshResult);
 
                 if (refreshResult == null || string.IsNullOrEmpty(refreshResult.AccessToken))
                     return new RefreshTokenResult { Success = false, Message = "Failed to refresh token" };

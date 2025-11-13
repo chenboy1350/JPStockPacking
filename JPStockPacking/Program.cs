@@ -6,6 +6,7 @@ using JPStockPacking.Services.Implement;
 using JPStockPacking.Services.Interface;
 using JPStockPacking.Services.Middleware;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,8 @@ builder.Services.Configure<SendQtyModel>(builder.Configuration.GetSection("SendQ
 builder.Services.AddTransient<TokenHandler>();
 builder.Services.AddHttpClient("ApiClient").AddHttpMessageHandler<TokenHandler>();
 
+builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
+
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<ICookieAuthService, CookieAuthService>();
@@ -38,6 +41,7 @@ builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 builder.Services.AddScoped<ICheckQtyToSendService, CheckQtyToSendService>();
 builder.Services.AddScoped<IBreakService, BreakService>();
 builder.Services.AddScoped<ILostService, LostService>();
+builder.Services.AddScoped<IPackedMangementService, PackedMangementService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

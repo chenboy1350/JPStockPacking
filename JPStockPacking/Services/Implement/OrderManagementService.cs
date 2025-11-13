@@ -10,11 +10,7 @@ using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class OrderManagementService(
-        JPDbContext jPDbContext,
-        SPDbContext sPDbContext,
-        IProductionPlanningService productionPlanningService,
-        IPISService pISService) : IOrderManagementService
+    public class OrderManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService, IPISService pISService) : IOrderManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
@@ -26,8 +22,7 @@ namespace JPStockPacking.Services.Implement
             var today = DateTime.Now.Date;
 
             // 1) Base query: filter ตั้งแต่แรก
-            var ordersQuery = _sPDbContext.Order
-                .Where(o => o.IsActive);
+            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSuccess);
 
             if (!string.IsNullOrEmpty(orderNo))
                 ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));
@@ -51,7 +46,7 @@ namespace JPStockPacking.Services.Implement
                 .ToDictionaryAsync(x => x.OrderNo, x => x);
 
             var lots = await _sPDbContext.Lot
-                .Where(l => l.IsActive && orderNos.Contains(l.OrderNo))
+                .Where(l => l.IsActive && !l.IsSuccess && orderNos.Contains(l.OrderNo))
                 .GroupBy(l => l.OrderNo)
                 .ToDictionaryAsync(g => g.Key, g => g.ToList());
 
@@ -561,11 +556,6 @@ namespace JPStockPacking.Services.Implement
                 lot.ReturnedQty = (lot.ReturnedQty ?? 0) + returnQty;
                 lot.UpdateDate = DateTime.Now;
 
-                if ((lot.TtQty ?? 0) > 0 && lot.ReturnedQty >= lot.TtQty)
-                {
-                    lot.IsSuccess = true;
-                }
-
                 await _sPDbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -771,7 +761,7 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task RecalculateScheduleAsync()
+        private async Task RecalculateScheduleAsync()
         {
             const int tables = 6;
             const double hoursPerTablePerDay = 8.5;
