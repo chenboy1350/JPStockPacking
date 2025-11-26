@@ -1,7 +1,9 @@
-﻿@model JPStockPacking.Models.ScheduleListModel
+﻿@model JPStockPacking.Models.PagedScheduleListModel
 
 @{
     var today = DateTime.Now.Date;
+    var totalPages = (int)Math.Ceiling((double)Model.TotalItems / Model.PageSize);
+    var currentPage = Model.Page;
 }
 
 <div class="container-fluid">
@@ -18,43 +20,25 @@
                         <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
                             <div class="accordion-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>OrderNo</label>
                                             <input type="text" id="txtOrderNo" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>LotNo</label>
+                                            <input type="text" id="txtLotNo" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>CustCode</label>
                                             <input type="text" id="txtCustCode" class="form-control">
                                         </div>
                                     </div>
                                 </div>
-@*                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>From Date</label>
-                                            <input type="date" id="fromDate" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>To Date</label>
-                                            <input type="date" id="toDate" class="form-control">
-                                        </div>
-                                    </div>
-                                </div> *@
-@*                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="groupMode"></label>
-                                            <input type="radio" name="groupMode" value="0" checked /> Day
-                                            <label for="groupMode2"></label>
-                                            <input type="radio" id="groupMode2" name="groupMode" value="1" /> Week
-                                        </div>
-                                    </div>
-                                </div> *@
                                 <button class="btn btn-secondary" onclick="ClearFindBy()">Clear</button>
                                 <button class="btn btn-primary" onclick="fetchOrdersByDateRange()">ค้นหา</button>
                             </div>
@@ -72,16 +56,16 @@
                 <div class="justify-content-center">
                     <h3 class="card-title">รายการคำสั่งซื้อ</h3>
                     <div class="d-flex justify-content-end">
-                        <input type="text" class="form-control me-2" id="txtGoTo" placeholder="ไปที่ OrderNo/LotNo" style="width:180px">
-                        <button class="btn btn-primary me-2" id="btnGoTo"><i class="fas fa-search"></i></button>
-                        <button class="btn btn-warning btn-sm me-2" onclick="showModalLost('')"><i class="far fa-eye-slash"></i> หาย</button>
-                        <button class="btn btn-warning btn-sm" onclick="showModalBreak('')"><i class="fas fa-hammer"></i> ซ่อม</button>
+                        <button class="btn btn-warning btn-sm me-2" onclick="showModalLost('')"><i class="far fa-eye-slash"></i> รายการหาย</button>
+                        <button class="btn btn-warning btn-sm" onclick="showModalBreak('')"><i class="fas fa-hammer"></i> รายการซ่อม</button>
                     </div>
                 </div>
             </div>
             <div class="card-body">
+
+
                 <div class="accordion" id="accordionOrder">
-                    @foreach (var order in Model.Days)
+                    @foreach (var order in Model.Data.Days)
                     {
                         foreach (var item in order.Orders)
                         {
@@ -125,35 +109,20 @@
                                         <table class="table table-striped projects">
                                             <thead>
                                                 <tr>
-                                                    <th style="width: 1%">
-                                                        #
-                                                    </th>
-                                                    <th style="width: 20%">
-                                                        หมายเลขล็อต
-                                                    </th>
-                                                    <th style="width: 10%">
-                                                        ลำดับที่
-                                                    </th>
-                                                    <th style="width: 15%">
-                                                        การมอบหมาย
-                                                    </th>
-                                                    <th>
-                                                        ความคืบหน้า
-                                                    </th>
-                                                    <th style="width: 8%" class="text-center">
-                                                        สถานะ
-                                                    </th>
-                                                    <th style="width: 30%">
-                                                    </th>
+                                                    <th style="width: 1%">#</th>
+                                                    <th style="width: 20%">หมายเลขล็อต</th>
+                                                    <th style="width: 10%">ลำดับที่</th>
+                                                    <th style="width: 15%">การมอบหมาย</th>
+                                                    <th>ความคืบหน้า</th>
+                                                    <th style="width: 8%" class="text-center">สถานะ</th>
+                                                    <th style="width: 30%"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach (var lot in item.CustomLot)
                                                 {
                                                     <tr data-lot-no="@lot.LotNo">
-                                                        <td>
-                                                            #
-                                                        </td>
+                                                        <td>#</td>
                                                         <td>
                                                             <a>
                                                                 <strong>@lot.LotNo</strong>
@@ -161,13 +130,9 @@
                                                                 @Html.Raw((item.IsPackingLate == true && lot.IsAllReturned != true) ? "<i class='fas fa-fire-alt' style='color: red; '></i>" : "")
                                                             </a>
                                                             <br />
-                                                            <small>
-                                                                ปรับปรุงล่าสุด : @(lot.UpdateDate ?? "N/A")
-                                                            </small>
+                                                            <small>ปรับปรุงล่าสุด : @(lot.UpdateDate ?? "N/A")</small>
                                                         </td>
-                                                        <td>
-                                                            @lot.ListNo
-                                                        </td>
+                                                        <td>@lot.ListNo</td>
                                                         <td>
                                                             @foreach (var asnt in lot.AssignTo)
                                                             {
@@ -184,23 +149,19 @@
 
                                                                     if (!lot.IsAllReceived)
                                                                     {
-                                                                        // ยังรับของไม่ครบ
                                                                         progressHtml = $"<div class='progress-bar bg-orange' role='progressbar' aria-valuenow='{percent}' aria-valuemin='0' aria-valuemax='100' style='width: {percent}% '></div>";
                                                                     }
                                                                     else if (lot.IsAllReceived && !lot.IsPacking)
                                                                     {
-                                                                        // รับของครบแล้ว แต่ยังไม่เริ่มบรรจุ
                                                                         progressHtml = $"<div class='progress-bar bg-light-orange' role='progressbar' aria-valuenow='{percent}' aria-valuemin='0' aria-valuemax='100' style='width: {percent}% '></div>";
                                                                     }
                                                                     else if (lot.IsPacking && !lot.IsAllReturned)
                                                                     {
-                                                                        // กำลังบรรจุ
                                                                         var packPercent = lot.TtQty > 0 ? (lot.ReturnedQty * 100 / lot.TtQty) : 0;
                                                                         progressHtml = $"<div class='progress-bar bg-warning' role='progressbar' aria-valuenow='{packPercent}' aria-valuemin='0' aria-valuemax='100' style='width: {packPercent}% '></div>";
                                                                     }
                                                                     else if (lot.IsAllReturned)
                                                                     {
-                                                                        // บรรจุครบแล้ว
                                                                         progressHtml = $"<div class='progress-bar bg-info' role='progressbar' aria-valuenow='100' aria-valuemin='0' aria-valuemax='100' style='width: 100% '></div>";
                                                                     }
                                                                 }
@@ -228,7 +189,6 @@
                                                                         progressText = $"{lot.TtQty} / {lot.TtQty}";
                                                                     }
                                                                 }
-
                                                                 @progressText
                                                             </small>
                                                         </td>
@@ -284,6 +244,87 @@
                             </div>
                         }
                     }
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="row mt-3">
+                    <div class="col-sm-12">
+                        <nav aria-label="Page navigation">
+                            <div class="d-flex justify-content-between">
+                                <div class="dataTables_info">
+                                    แสดง @((Model.Page - 1) * Model.PageSize + 1) ถึง @(Math.Min(Model.Page * Model.PageSize, Model.TotalItems)) จาก @Model.TotalItems รายการ
+                                </div>
+                                <div class="dataTables_length float-end">
+                                    <label>
+                                        แสดง
+                                        <select id="pageSize" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="changePageSize(this.value)">
+                                            <option value="10" selected="@(Model.PageSize == 10 ? "selected" : null)">10</option>
+                                            <option value="20" selected="@(Model.PageSize == 25 ? "selected" : null)">20</option>
+                                            <option value="30" selected="@(Model.PageSize == 50 ? "selected" : null)">30</option>
+                                            <option value="50" selected="@(Model.PageSize == 50 ? "selected" : null)">50</option>
+                                        </select>
+                                        รายการ
+                                    </label>
+                                </div>
+                                <ul class="pagination justify-content-center">
+                                    <!-- First Page -->
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="#" onclick="goToPage(1); return false;">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+
+                                    <!-- Previous Page -->
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="#" onclick="goToPage(@(currentPage - 1)); return false;">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+
+                                    @{
+                                        var startPage = Math.Max(1, currentPage - 2);
+                                        var endPage = Math.Min(totalPages, currentPage + 2);
+
+                                        if (startPage > 1)
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        }
+
+                                        for (int i = startPage; i <= endPage; i++)
+                                        {
+                                            var pageNum = i;
+                                            <li class="page-item @(currentPage == pageNum ? "active" : "")">
+                                                <a class="page-link" href="#" onclick="goToPage(@pageNum); return false;">@pageNum</a>
+                                            </li>
+                                        }
+
+                                        if (endPage < totalPages)
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        }
+                                    }
+
+                                    <!-- Next Page -->
+                                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                        <a class="page-link" href="#" onclick="goToPage(@(currentPage + 1)); return false;">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+
+                                    <!-- Last Page -->
+                                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                        <a class="page-link" href="#" onclick="goToPage(@totalPages); return false;">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
@@ -524,7 +565,7 @@
                         </div>
                     </div>
                     <!-- /.card-header -->
-                    <div class="card-body table-responsive p-0" style="height: 300px;">
+                    <div class="card-body table-responsive p-0" style="height: 600px;">
                         <table class="table table-head-fixed table-striped  text-nowrap">
                             <thead>
                                 <tr>
@@ -580,7 +621,7 @@
                         </div>
                     </div>
                     <!-- /.card-header -->
-                    <div class="card-body table-responsive p-0" style="height: 300px;">
+                    <div class="card-body table-responsive p-0" style="height: 600px;">
                         <table class="table table-head-fixed table-striped table-hover text-nowrap">
                             <thead>
                                 <tr>

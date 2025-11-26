@@ -56,6 +56,10 @@ public partial class Lot
     [Unicode(false)]
     public string? Barcode { get; set; }
 
+    [Column("EDesArt")]
+    [Unicode(false)]
+    public string? EdesArt { get; set; }
+
     [Column("TDesArt")]
     [Unicode(false)]
     public string? TdesArt { get; set; }

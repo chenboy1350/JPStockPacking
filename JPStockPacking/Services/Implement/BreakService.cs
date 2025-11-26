@@ -131,7 +131,7 @@ namespace JPStockPacking.Services.Implement
 
                         remainingQty = 0;
 
-                        await UpdateJobBillSendStockAndSpdreceive(rev.BillNumber, (decimal)newQty, (decimal)Math.Round(newWg, 2));
+                        await UpdateJobBillSendStockAndSpdreceive(rev.BillNumber, rev.ReceiveId, rev.ReceiveNo, (decimal)newQty, (decimal)Math.Round(newWg, 2));
                     }
                     else
                     {
@@ -163,7 +163,7 @@ namespace JPStockPacking.Services.Implement
 
                         remainingQty = Math.Abs(newQty);
 
-                        await UpdateJobBillSendStockAndSpdreceive(rev.BillNumber, 0, 0);
+                        await UpdateJobBillSendStockAndSpdreceive(rev.BillNumber, rev.ReceiveId, rev.ReceiveNo, 0, 0);
                     }
                 }
 
@@ -177,12 +177,12 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task UpdateJobBillSendStockAndSpdreceive(int Billnumber, decimal TtQty, decimal TtWg)
+        private async Task UpdateJobBillSendStockAndSpdreceive(int Billnumber, int ID, string ReceiveNo, decimal TtQty, decimal TtWg)
         {
             using var transaction = await _jPDbContext.Database.BeginTransactionAsync();
             try
             {
-                var spdreceive = await _jPDbContext.Spdreceive.FirstOrDefaultAsync(o => o.Billnumber == Billnumber);
+                var spdreceive = await _jPDbContext.Spdreceive.OrderByDescending(o => o.Ttqty).FirstOrDefaultAsync(o => o.Billnumber == Billnumber && o.Id == ID && o.ReceiveNo == ReceiveNo);
                 if (spdreceive != null)
                 {
                     spdreceive.Ttqty = TtQty;

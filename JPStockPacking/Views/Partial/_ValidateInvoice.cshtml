@@ -1,0 +1,63 @@
+﻿<div class="container-fluid">
+    <div class="card d-flex">
+        <div class="card-header">
+            <h3 class="card-title">ค้นหารายการใบแจ้งหนี้</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" id="dtInvFromDate" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Invoice</label>
+                        <input type="text" id="txtInvoice" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group clearfix">
+                        <div class="icheck-primary d-inline">
+                            <input type="radio" id="radioPrimary1" name="r1" value="1" checked>
+                            <label for="radioPrimary1">
+                                All
+                            </label>
+                        </div>
+                        <div class="icheck-primary d-inline">
+                            <input type="radio" id="radioPrimary2" name="r1" value="2">
+                            <label for="radioPrimary2">
+                                Incorrect
+                            </label>
+                        </div>
+                        <div class="icheck-primary d-inline">
+                            <input type="radio" id="radioPrimary3" name="r1" value="3">
+                            <label for="radioPrimary3">
+                                Correct
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" id="dtInvToDate" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>OrderNo</label>
+                        <input type="text" id="txtInvOrderNo" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="ClearInvoice()">Clear</button>
+            <button class="btn btn-primary" onclick="FindInvoice()">ค้นหา</button>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="ตรวจสอบใบส่งออก"></div>

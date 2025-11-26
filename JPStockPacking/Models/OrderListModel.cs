@@ -24,7 +24,8 @@ namespace JPStockPacking.Models
     {
         public string OrderNo { get; set; } = string.Empty;
         public string CustCode { get; set; } = string.Empty;
-        public string FactoryDate { get; set; } = string.Empty;
+        public DateTime FactoryDate { get; set; }
+        public string FactoryDateTH { get; set; } = string.Empty;
         public string OrderDate { get; set; } = string.Empty;
         public string SeldDate1 { get; set; } = string.Empty;
         public string OrdDate { get; set; } = string.Empty;
@@ -71,5 +72,14 @@ namespace JPStockPacking.Models
         public bool IsAllReturned { get; set; } = false;
         public bool IsAllAssigned { get; set; } = false;
         public List<TableMemberModel> TableMembers { get; set; } = [];
+    }
+
+    public class PagedScheduleListModel
+    {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalItems { get; set; }
+
+        public ScheduleListModel Data { get; set; } = new();
     }
 }

@@ -30,7 +30,7 @@ namespace JPStockPacking.Services.Implement
                 await UpdateAllReceivedItemsAsync(receiveId);
             }
 
-            await UpdateReceiveHeaderStatusAsync(receiveNo);
+            //await UpdateReceiveHeaderStatusAsync(receiveNo);
         }
 
         private async Task ImportOrderAsync(string orderNo)
@@ -236,7 +236,7 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task<List<Order>> GetJPOrderAsync(string orderNo)
+        private async Task<List<Order>> GetJPOrderAsync(string orderNo)
         {
             var Orders = await (from a in _jPDbContext.OrdHorder
                                 join b in _jPDbContext.OrdOrder on a.OrderNo equals b.Ordno into bGroup
@@ -245,9 +245,9 @@ namespace JPStockPacking.Services.Implement
                                 where a.OrderNo == orderNo
                                       && a.FactoryDate!.Value.Year == DateTime.Now.Year
                                       && a.Factory == true
-                                      //&& !a.OrderNo.StartsWith("S")
-                                      //&& (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      //&& _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+                                      && !a.OrderNo.StartsWith("S")
+                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
+                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
 
                                 orderby a.FactoryDate descending
 
@@ -296,9 +296,9 @@ namespace JPStockPacking.Services.Implement
                               where a.FactoryDate!.Value.Year == DateTime.Now.Year
                                       && a.Factory == true
                                       && !string.IsNullOrEmpty(b.LotNo)
-                                      //&& !a.OrderNo.StartsWith("S")
-                                      //&& (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      //&& _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+                                      && !a.OrderNo.StartsWith("S")
+                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
+                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
 
                               orderby a.FactoryDate descending
 
@@ -315,6 +315,7 @@ namespace JPStockPacking.Services.Implement
                                   Article = e.Article,
                                   Barcode = b.Barcode,
                                   TdesArt = f.TdesArt,
+                                  EdesArt = f.EdesArt,
                                   TdesFn = i.TdesFn,
                                   EdesFn = i.EdesFn,
                                   MarkCenter = f.MarkCenter,
@@ -439,8 +440,7 @@ namespace JPStockPacking.Services.Implement
             return result;
         }
 
-
-        private async Task RecalculateScheduleAsync()
+        public async Task RecalculateScheduleAsync()
         {
             const int tables = 6;
             const double hoursPerTablePerDay = 8.5;

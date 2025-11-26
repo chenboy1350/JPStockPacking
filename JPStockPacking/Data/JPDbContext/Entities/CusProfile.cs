@@ -515,6 +515,9 @@ public partial class CusProfile
     [Column("Commission_Fee", TypeName = "decimal(18, 2)")]
     public decimal? CommissionFee { get; set; }
 
+    [InverseProperty("CusCodeNavigation")]
+    public virtual ICollection<ExHminv> ExHminv { get; set; } = new List<ExHminv>();
+
     [InverseProperty("CustCodeNavigation")]
     public virtual ICollection<JobDetail> JobDetail { get; set; } = new List<JobDetail>();
 

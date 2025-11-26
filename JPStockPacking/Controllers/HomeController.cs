@@ -1,3 +1,4 @@
+using JPStockPacking.Data.JPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using static JPStockPacking.Services.Helper.Enum;
-using static JPStockPacking.Services.Implement.PackedMangementService;
 
 namespace JPStockPacking.Controllers
 {
@@ -23,6 +23,7 @@ namespace JPStockPacking.Controllers
         IBreakService breakService,
         ILostService lostService,
         IPackedMangementService packedMangementService,
+        IComparedInvoiceService comparedInvoiceService,
         Serilog.ILogger logger) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
@@ -38,6 +39,7 @@ namespace JPStockPacking.Controllers
         private readonly IBreakService _breakService = breakService;
         private readonly ILostService _lostService = lostService;
         private readonly IPackedMangementService _packedMangementService = packedMangementService;
+        private readonly IComparedInvoiceService _comparedInvoiceService = comparedInvoiceService;
         private readonly Serilog.ILogger _logger = logger;
 
         [Authorize]
@@ -50,9 +52,10 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> OrderManagement()
         {
+            await _orderManagementService.ImportOrderAsync();
             ViewBag.Tables = await _orderManagementService.GetTableAsync();
             ViewBag.BreakDescriptions = await _breakService.GetBreakDescriptionsAsync();
-            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(GroupMode.Day, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue);
+            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(GroupMode.Day, string.Empty, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue, 1, 10);
             return PartialView("~/Views/Partial/_OrderManagement.cshtml", result);
         }
 
@@ -72,7 +75,7 @@ namespace JPStockPacking.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> PackedManagementAsync()
+        public async Task<IActionResult> PackedManagement()
         {
             ViewBag.BreakDescriptions = await _breakService.GetBreakDescriptionsAsync();
             return PartialView("~/Views/Partial/_PackedManagement.cshtml");
@@ -88,11 +91,23 @@ namespace JPStockPacking.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> UserManagementAsync()
+        public IActionResult ValidateInvoice()
+        {
+            return PartialView("~/Views/Partial/_ValidateInvoice.cshtml");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> UserManagement()
         {
             ViewBag.Employees = await _pISService.GetAvailableEmployeeAsync();
             List<UserModel> res = await _pISService.GetUser(new ReqUserModel());
             return PartialView("~/Views/Partial/_UserManagement.cshtml", res);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> FormulaManagement()
+        {
+            return PartialView("~/Views/Partial/_FormulaManagement.cshtml");
         }
 
         [Authorize]
@@ -110,27 +125,6 @@ namespace JPStockPacking.Controllers
             return PartialView("~/Views/Partial/_AppSetting.cshtml");
         }
 
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> ImportOrder(string orderNo)
-        {
-            try
-            {
-                if (orderNo == string.Empty && orderNo == null) return BadRequest();
-                await _orderManagementService.ImportOrderAsync(orderNo);
-                //await _orderManagementService.GetUpdateLotAsync();
-                return Ok();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> ImportReceiveNo(string receiveNo, string orderNo, string lotNo)
@@ -142,9 +136,9 @@ namespace JPStockPacking.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetOrder(string orderNo, string custCode, DateTime fdate, DateTime edate, GroupMode groupMode)
+        public async Task<IActionResult> GetOrder(string orderNo, string lotNo, string custCode, DateTime fdate, DateTime edate, GroupMode groupMode, int page, int pageSize)
         {
-            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(groupMode, orderNo, custCode, fdate, edate);
+            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(groupMode, orderNo, lotNo, custCode, fdate, edate, page, pageSize);
             return Ok(result);
         }
 
@@ -283,7 +277,7 @@ namespace JPStockPacking.Controllers
 
             try
             {
-                await _checkQtyToSendService.DefineToPackAsync(request.OrderNo, request.Lots);
+                await _checkQtyToSendService.DefineToPackAsync(request.OrderNo, request.Lots, User.GetUserId());
                 return Ok("บันทึกข้อมูลเรียบร้อย");
             }
             catch (InvalidOperationException ex)
@@ -614,7 +608,6 @@ namespace JPStockPacking.Controllers
             }
         }
 
-
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> PrintSendToAllReport([FromForm] string[] lotNos, [FromForm] string userId)
@@ -625,6 +618,26 @@ namespace JPStockPacking.Controllers
                 byte[] pdfBytes = _reportService.GenerateSenToReport(result);
 
                 string contentDisposition = $"inline; filename=AllSendToReport_{DateTime.Now:yyyyMMdd}.pdf";
+                Response.Headers.Append("Content-Disposition", contentDisposition);
+
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetComparedInvoice([FromBody] ComparedInvoiceFilterModel comparedInvoiceFilterModel)
+        {
+            try
+            {
+                List<ComparedInvoiceModel> result = await _comparedInvoiceService.GetFilteredInvoice(comparedInvoiceFilterModel);
+                byte[] pdfBytes = _reportService.GenerateComparedInvoiceReport(comparedInvoiceFilterModel, result, comparedInvoiceFilterModel.InvoiceType);
+
+                string contentDisposition = $"inline; filename=ComINV{DateTime.Now:yyyyMMdd}.pdf";
                 Response.Headers.Append("Content-Disposition", contentDisposition);
 
                 return File(pdfBytes, "application/pdf");

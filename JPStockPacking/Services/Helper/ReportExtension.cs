@@ -450,11 +450,7 @@ namespace JPStockPacking.Services.Helper
                         table.Cell().Element(CellStyle).AlignCenter().Text("จำนวนที่\nส่งซ่อม").FontSize(8);
                         table.Cell().Element(CellStyle).AlignCenter().Text("อาการ").FontSize(8);
 
-                        // Data rows - จำกัดจำนวนแถวตามพื้นที่ที่มี
-                        var maxRows = CalculateMaxRows(); // คำนวณจำนวนแถวสูงสุดที่แสดงได้
-                        var displayModel = model.Take(maxRows).ToList();
-
-                        foreach (var item in displayModel)
+                        foreach (var item in model)
                         {
                             table.Cell().Element(CellStyle).AlignCenter().Text("#").FontSize(8);
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ReceiveNo}").FontSize(8);
@@ -570,7 +566,6 @@ namespace JPStockPacking.Services.Helper
                             table.Cell().Element(CellStyle).AlignCenter().Text($"{item.LostQty}").FontSize(8);
                         }
 
-
                         // Footer signature
                         table.Cell().ColumnSpan(6).Padding(2).Column(row =>
                         {
@@ -684,11 +679,7 @@ namespace JPStockPacking.Services.Helper
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("น้ำหนักรวม\n(กรัม)").FontSize(8);
                             if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("สาเหตุ").FontSize(8);
 
-                            // Data rows
-                            var maxRows = CalculateMaxRows();
-                            var displayModel = tempack.TempPacks.Take(maxRows).ToList();
-
-                            foreach (var item in displayModel)
+                            foreach (var item in tempack.TempPacks)
                             {
                                 table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.JobBarcode}\n{item.NumSend}").FontSize(8);
@@ -716,15 +707,15 @@ namespace JPStockPacking.Services.Helper
                                             {
                                                 row.RelativeItem().AlignCenter().Column(col =>
                                                 {
-                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PC").Sum(s => s.OkTtl)}     ชิ้น").AlignCenter().FontSize(11);
+                                                    col.Item().Text($"รวม     {tempack.TempPacks.Where(w => w.Unit.Trim() == "PC").Sum(s => s.OkTtl)}     ชิ้น").AlignCenter().FontSize(11);
                                                 });
                                                 row.RelativeItem().AlignCenter().Column(col =>
                                                 {
-                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PR").Sum(s => s.OkTtl)}     คู่").AlignCenter().FontSize(11);
+                                                    col.Item().Text($"รวม     {tempack.TempPacks.Where(w => w.Unit.Trim() == "PR").Sum(s => s.OkTtl)}     คู่").AlignCenter().FontSize(11);
                                                 });
                                                 row.RelativeItem().AlignCenter().Column(col =>
                                                 {
-                                                    col.Item().Text($"น้ำหนักรวม     {displayModel.Sum(s => s.OkWg)}     กรัม").AlignCenter().FontSize(11);
+                                                    col.Item().Text($"น้ำหนักรวม     {tempack.TempPacks.Sum(s => s.OkWg)}     กรัม").AlignCenter().FontSize(11);
                                                 });
                                             }
                                             else
@@ -735,11 +726,11 @@ namespace JPStockPacking.Services.Helper
                                                 });
                                                 row.RelativeItem().AlignCenter().Column(col =>
                                                 {
-                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PC").Sum(s => s.OkTtl)}     PC").AlignCenter().FontSize(11);
+                                                    col.Item().Text($"รวม     {(int)tempack.TempPacks.Where(w => w.Unit.Trim() == "PC").Sum(s => s.OkTtl)}     PC").AlignCenter().FontSize(11);
                                                 });
                                                 row.RelativeItem().AlignCenter().Column(col =>
                                                 {
-                                                    col.Item().Text($"รวม     {displayModel.Where(w => w.Unit.Trim() == "PR").Sum(s => s.OkTtl)}     PR").AlignCenter().FontSize(11);
+                                                    col.Item().Text($"รวม     {(int)tempack.TempPacks.Where(w => w.Unit.Trim() == "PR").Sum(s => s.OkTtl)}     PR").AlignCenter().FontSize(11);
                                                 });
                                                 row.RelativeItem().AlignCenter().Column(col =>
                                                 {
@@ -754,7 +745,7 @@ namespace JPStockPacking.Services.Helper
                             table.Cell().ColumnSpan((uint)columnCount).Padding(2).Column(row =>
                             {
                                 row.Item()
-                                    .PaddingTop(60)
+                                    .PaddingTop(30)
                                     .Element(container =>
                                     {
                                         container.Row(row =>
@@ -794,19 +785,7 @@ namespace JPStockPacking.Services.Helper
                     .Padding(3);
             }
         }
-        private static int CalculateMaxRows()
-        {
-            // คำนวณประมาณจากขนาดฟอนต์และ padding
-            // Header ประมาณ 50 point, Footer ประมาณ 80 point
-            // แต่ละแถวประมาณ 20 point (ฟอนต์ 8 + padding)
-            var availableHeight = (PageSizes.A4.Height - (0.5f * 2 * 72 / 2.54f) - 20) / 2; // ครึ่งหน้า
-            var usedHeight = 130; // header + footer + margins
-            var rowHeight = 20;
 
-            return Math.Max(1, (int)((availableHeight - usedHeight) / rowHeight));
-        }
-
-        // Helper: คำนวณจำนวนคอลัมน์จริง
         private static int GetColumnCount(string sendType)
         {
             int count = 1; // "ลำดับ"

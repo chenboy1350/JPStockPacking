@@ -1,5 +1,4 @@
 ﻿using JPStockPacking.Data.JPDbContext;
-using JPStockPacking.Data.JPDbContext.Entities;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
@@ -130,7 +129,7 @@ namespace JPStockPacking.Services.Implement
                         IsDefined = lotDetail.TtQty > 0,
                         ApproverID = user.FirstOrDefault()!.UserID.ToString(),
                         Approver = $"{user.FirstOrDefault()!.FirstName} {user.FirstOrDefault()!.LastName}".Trim(),
-                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
+                        Percentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -158,7 +157,7 @@ namespace JPStockPacking.Services.Implement
                         IsDefined = lotDetail.TtQty > 0,
                         ApproverID = string.Empty,
                         Approver = string.Empty,
-                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
+                        Percentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -311,7 +310,7 @@ namespace JPStockPacking.Services.Implement
                         TtQtyToPack = lotDetail.TtQty,
                         IsDefined = lotDetail.TtQty > 0,
                         Approver = $"{user.FirstOrDefault()!.FirstName} {user.FirstOrDefault()!.LastName}".Trim(),
-                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
+                        Percentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -346,7 +345,7 @@ namespace JPStockPacking.Services.Implement
                         TtQtyToPack = lotDetail.TtQty,
                         IsDefined = lotDetail.TtQty > 0,
                         Approver = string.Empty,
-                        Persentage = int.TryParse(Percentage, out var p) ? p : 0,
+                        Percentage = int.TryParse(Percentage, out var p) ? p : 0,
                         Size = sizes ?? []
                     };
 
@@ -493,7 +492,7 @@ namespace JPStockPacking.Services.Implement
             return result;
         }
 
-        public async Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots)
+        public async Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots, int? userid)
         {
             await using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
 
@@ -509,9 +508,18 @@ namespace JPStockPacking.Services.Implement
                         OrderNo = orderNo,
                         IsActive = true,
                         CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
+                        CreateBy = userid,
+                        UpdateDate = DateTime.Now,
+                        UpdateBy = userid
                     };
                     _sPDbContext.SendQtyToPack.Add(header);
+                    await _sPDbContext.SaveChangesAsync();
+                }
+                else
+                {
+                    header.UpdateDate = DateTime.Now;
+                    header.UpdateBy = userid;
+
                     await _sPDbContext.SaveChangesAsync();
                 }
 

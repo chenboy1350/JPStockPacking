@@ -27,7 +27,7 @@ $(document).ready(function () {
     });
 
 
-    $(document).on('keydown', '#txtFindOrderNo', function (e) {
+    $(document).on('keydown', '#txtFindOrderNoToSendQty', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             $('#btnFindOrderToSend').click();
@@ -41,7 +41,7 @@ $(document).ready(function () {
     $(document).on('click', '#btnSubmitOrderToSend', async function () {
         await showSaveConfirm(
             "ยืนยันการแจ้งยอดใช่หรือไม่?", "ยืนยันการแจ้งยอด", async () => {
-                const orderNo = $('#txtFindOrderNo').val();
+                const orderNo = $('#txtFindOrderNoToSendQty').val();
                 const lots = [];
                 let hasAnyQty = false;
 
@@ -331,7 +331,7 @@ $(document).ready(function () {
 
 async function FindOrderToSendQty() {
     $('#loadingIndicator').show();
-    const orderNo = $('#txtFindOrderNo').val();
+    const orderNo = $('#txtFindOrderNoToSendQty').val();
 
     if (orderNo != '') {
         $.ajax({
@@ -344,7 +344,7 @@ async function FindOrderToSendQty() {
                 $tbody.empty();
 
                 const percentage = $('#tblOrderToSend .custom-percentage');
-                percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่ต่ำกว่า ${res.persentage}% ของจำนวนสัง`);
+                percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่ต่ำกว่า ${res.percentage}% ของจำนวนสัง`);
 
                 $('#txtCustCode').val(res.custCode);
                 $('#txtGrade').val(res.grade);
@@ -376,7 +376,7 @@ async function FindOrderToSendQty() {
                                     data-valid-ttqty="${ttQty}"
                                     ${item.size?.length > 0 ? 'data-widget="expandable-table" aria-expanded="false"' : ""}
                                     onclick="showImg(this, '${item.picture}')" style="cursor: pointer;">
-                                        <td class="text-center">${index + 1}</td>
+                                        <td class="text-center">${item.listNo}</td>
                                         <td class="text-left">${item.lotNo}</td>
                                         <td class="text-left">${item.article}</td>
                                         <td class="text-right">${ttQty}</td>
@@ -498,7 +498,7 @@ async function FindOrderToSendQty() {
 }
 
 async function printToPDF(printTo) {
-    const orderNo = $('#txtFindOrderNo').val();
+    const orderNo = $('#txtFindOrderNoToSendQty').val();
     if (!orderNo || orderNo == '') {
         await showWarning('กรุณาเลือก Order No');
         return;
@@ -516,7 +516,7 @@ async function printToPDF(printTo) {
 }
 
 function resetPage() {
-    $('#txtFindOrderNo').val('');
+    $('#txtFindOrderNoToSendQty').val('');
 
     $('#txtCustCode').val('');
     $('#txtGrade').val('');

@@ -22,6 +22,10 @@ public partial class JPDbContext : DbContext
 
     public virtual DbSet<CusZoneType> CusZoneType { get; set; }
 
+    public virtual DbSet<ExDminv> ExDminv { get; set; }
+
+    public virtual DbSet<ExHminv> ExHminv { get; set; }
+
     public virtual DbSet<JobBill> JobBill { get; set; }
 
     public virtual DbSet<JobBillSendStock> JobBillSendStock { get; set; }
@@ -257,6 +261,164 @@ public partial class JPDbContext : DbContext
             entity.Property(e => e.CusZoneId).ValueGeneratedNever();
             entity.Property(e => e.CusZoneName).HasDefaultValue("");
             entity.Property(e => e.RefSale).HasDefaultValue("");
+        });
+
+        modelBuilder.Entity<ExDminv>(entity =>
+        {
+            entity.HasKey(e => new { e.Code, e.MinvNo, e.LotNo, e.Article, e.SetNo, e.OrderNo, e.Efn, e.ListGem, e.ListGem1, e.Barcode }).HasFillFactor(90);
+
+            entity.HasIndex(e => new { e.MinvNo, e.LotNo, e.Barcode, e.SetNo, e.Article, e.Code }, "ExDMInv1")
+                .IsUnique()
+                .HasFillFactor(90);
+
+            entity.HasIndex(e => new { e.MinvNo, e.Code }, "IX_ExDMInv")
+                .IsUnique()
+                .HasFillFactor(90);
+
+            entity.HasIndex(e => new { e.MinvNo, e.LotNo, e.SetNo, e.OrderNo }, "IX_ExDMInv_1").HasFillFactor(90);
+
+            entity.HasIndex(e => new { e.MinvNo, e.SetNo, e.Barcode, e.OrderNo }, "IX_ExDMInv_2").HasFillFactor(90);
+
+            entity.HasIndex(e => e.Code, "IX_ExDMInv_3")
+                .IsUnique()
+                .HasFillFactor(90);
+
+            entity.Property(e => e.Code).ValueGeneratedOnAdd();
+            entity.Property(e => e.LotNo).HasDefaultValue("");
+            entity.Property(e => e.Article).HasDefaultValue("");
+            entity.Property(e => e.SetNo).HasDefaultValue("");
+            entity.Property(e => e.OrderNo).HasDefaultValue("");
+            entity.Property(e => e.Efn).HasDefaultValue("");
+            entity.Property(e => e.ListGem).HasDefaultValue("");
+            entity.Property(e => e.ListGem1)
+                .HasDefaultValue("")
+                .HasComment("รายการพลอยที่แก้ไขเอง");
+            entity.Property(e => e.Barcode)
+                .HasDefaultValue("")
+                .HasComment("Barcode");
+            entity.Property(e => e.Barcode1).HasDefaultValue("");
+            entity.Property(e => e.Barcode10).HasDefaultValue("");
+            entity.Property(e => e.Barcode11).HasDefaultValue("");
+            entity.Property(e => e.Barcode12).HasDefaultValue("");
+            entity.Property(e => e.Barcode2).HasDefaultValue("");
+            entity.Property(e => e.Barcode3).HasDefaultValue("");
+            entity.Property(e => e.Barcode4).HasDefaultValue("");
+            entity.Property(e => e.Barcode5).HasDefaultValue("");
+            entity.Property(e => e.Barcode6).HasDefaultValue("");
+            entity.Property(e => e.Barcode7).HasDefaultValue("");
+            entity.Property(e => e.Barcode8).HasDefaultValue("");
+            entity.Property(e => e.Barcode9).HasDefaultValue("");
+            entity.Property(e => e.EUnit).HasDefaultValue("");
+            entity.Property(e => e.Edes).HasDefaultValue("");
+            entity.Property(e => e.EdesFn1).HasDefaultValue("");
+            entity.Property(e => e.Epoxycolor)
+                .HasDefaultValue("")
+                .HasComment("ลงยาสี");
+            entity.Property(e => e.GroupCust).HasDefaultValue("");
+            entity.Property(e => e.Hscode).HasDefaultValue("");
+            entity.Property(e => e.InvNo).HasDefaultValue("");
+            entity.Property(e => e.MakeUnit).HasDefaultValue(" ");
+            entity.Property(e => e.NotHistory).HasComment("ไมีมีประวัติ");
+            entity.Property(e => e.OrderCust).HasDefaultValue("");
+            entity.Property(e => e.Q1).HasDefaultValue(0m);
+            entity.Property(e => e.Q10).HasDefaultValue(0m);
+            entity.Property(e => e.Q11).HasDefaultValue(0m);
+            entity.Property(e => e.Q12).HasDefaultValue(0m);
+            entity.Property(e => e.Q2).HasDefaultValue(0m);
+            entity.Property(e => e.Q3).HasDefaultValue(0m);
+            entity.Property(e => e.Q4).HasDefaultValue(0m);
+            entity.Property(e => e.Q5).HasDefaultValue(0m);
+            entity.Property(e => e.Q6).HasDefaultValue(0m);
+            entity.Property(e => e.Q7).HasDefaultValue(0m);
+            entity.Property(e => e.Q8).HasDefaultValue(0m);
+            entity.Property(e => e.Q9).HasDefaultValue(0m);
+            entity.Property(e => e.SizeZone).HasDefaultValue("");
+            entity.Property(e => e.TtPrice).HasDefaultValue(0.0000m);
+            entity.Property(e => e.TtQty).HasDefaultValue(0m);
+            entity.Property(e => e.Ttwg).HasDefaultValue(0m);
+            entity.Property(e => e.WgPerPc).HasDefaultValue(0m);
+        });
+
+        modelBuilder.Entity<ExHminv>(entity =>
+        {
+            entity.HasKey(e => new { e.MinvNo, e.InvNo }).HasFillFactor(90);
+
+            entity.ToTable("ExHMInv", "dbo", tb => tb.HasTrigger("tgInvDate"));
+
+            entity.Property(e => e.AddressSend).HasDefaultValue("");
+            entity.Property(e => e.Adjust).HasDefaultValue(1m);
+            entity.Property(e => e.Agreement).HasDefaultValue("");
+            entity.Property(e => e.ApplicantAdd1).HasDefaultValue("");
+            entity.Property(e => e.ApplicantName).HasDefaultValue("");
+            entity.Property(e => e.AwbNo).HasDefaultValue("");
+            entity.Property(e => e.BankItem).HasDefaultValue(1);
+            entity.Property(e => e.Condition).HasDefaultValue("COUNTRY  OF  ORIGIN  THAILAND.");
+            entity.Property(e => e.ConsigneeAdd1).HasDefaultValue("");
+            entity.Property(e => e.ConsigneeAdd2).HasDefaultValue("");
+            entity.Property(e => e.ConsigneeAdd3).HasDefaultValue("");
+            entity.Property(e => e.ConsigneeAdd4).HasDefaultValue("");
+            entity.Property(e => e.ConsigneeName).HasDefaultValue("");
+            entity.Property(e => e.Currency).HasDefaultValue("");
+            entity.Property(e => e.CustomerName).HasDefaultValue("");
+            entity.Property(e => e.DestinationCity).HasDefaultValue("");
+            entity.Property(e => e.Docno)
+                .HasDefaultValue("")
+                .HasComment("เลขที่ใบเบิกตัด Stock");
+            entity.Property(e => e.Freight).HasDefaultValue("");
+            entity.Property(e => e.GrossWg).HasDefaultValue(0m);
+            entity.Property(e => e.Header).HasDefaultValue("");
+            entity.Property(e => e.Insurance).HasDefaultValue("");
+            entity.Property(e => e.InvRemark1).HasDefaultValue("");
+            entity.Property(e => e.InvRemark2).HasDefaultValue("");
+            entity.Property(e => e.InvRepno).HasDefaultValue("");
+            entity.Property(e => e.Mdecimal).HasDefaultValue(4);
+            entity.Property(e => e.NetWg).HasDefaultValue(0m);
+            entity.Property(e => e.NotifyAdd1).HasDefaultValue("");
+            entity.Property(e => e.NotifyAdd2).HasDefaultValue("");
+            entity.Property(e => e.NotifyAdd3).HasDefaultValue("");
+            entity.Property(e => e.NotifyAdd4).HasDefaultValue("");
+            entity.Property(e => e.NotifyName).HasDefaultValue("");
+            entity.Property(e => e.Payment).HasDefaultValue("");
+            entity.Property(e => e.Pfob).HasDefaultValue(0.0000m);
+            entity.Property(e => e.Pfob1).HasComment("เก็บ Fob ก่อน Adjust ราคารวม");
+            entity.Property(e => e.Pfreight).HasDefaultValue(0m);
+            entity.Property(e => e.PgrandTt).HasDefaultValue(0.0000m);
+            entity.Property(e => e.Pinsurance).HasDefaultValue(0m);
+            entity.Property(e => e.Pless1).HasDefaultValue(0m);
+            entity.Property(e => e.Pless2).HasDefaultValue(0m);
+            entity.Property(e => e.Pless3).HasDefaultValue(0m);
+            entity.Property(e => e.Pless4).HasDefaultValue(0m);
+            entity.Property(e => e.Pless5).HasDefaultValue(0m);
+            entity.Property(e => e.Pplus1).HasDefaultValue(0m);
+            entity.Property(e => e.Pplus2).HasDefaultValue(0m);
+            entity.Property(e => e.Pplus3).HasDefaultValue(0m);
+            entity.Property(e => e.Pplus4).HasDefaultValue(0m);
+            entity.Property(e => e.Pplus5).HasDefaultValue(0m);
+            entity.Property(e => e.Ppostage).HasDefaultValue(0m);
+            entity.Property(e => e.ProNo).HasDefaultValue("");
+            entity.Property(e => e.Puntil).HasDefaultValue(0m);
+            entity.Property(e => e.RemarkDimension).HasDefaultValue("");
+            entity.Property(e => e.ToOrderOf).HasDefaultValue("");
+            entity.Property(e => e.Tpless).HasDefaultValue(0m);
+            entity.Property(e => e.Tpplus).HasDefaultValue(0m);
+            entity.Property(e => e.TtBox).HasDefaultValue(0m);
+            entity.Property(e => e.TtPfob).HasDefaultValue(0.0000m);
+            entity.Property(e => e.TtPless).HasDefaultValue(0m);
+            entity.Property(e => e.TtPplus).HasDefaultValue(0m);
+            entity.Property(e => e.Ttaccount1).HasComment("บริหาร");
+            entity.Property(e => e.Ttaccount2).HasComment("บัญชี");
+            entity.Property(e => e.UpStock).HasComment("ปรับปรุง Stock=1");
+            entity.Property(e => e.Vw).HasComment("Value Weight");
+            entity.Property(e => e.WareHouseAdd1).HasDefaultValue("");
+            entity.Property(e => e.WareHouseAdd2).HasDefaultValue("");
+            entity.Property(e => e.WareHouseAdd3).HasDefaultValue("");
+            entity.Property(e => e.WareHouseAdd4).HasDefaultValue("");
+            entity.Property(e => e.WareHouseName).HasDefaultValue("");
+
+            entity.HasOne(d => d.CusCodeNavigation).WithMany(p => p.ExHminv)
+                .HasPrincipalKey(p => p.CusCode)
+                .HasForeignKey(d => d.CusCode)
+                .HasConstraintName("FK_ExHMInv_CusProfile");
         });
 
         modelBuilder.Entity<JobBill>(entity =>

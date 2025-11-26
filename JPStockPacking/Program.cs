@@ -42,6 +42,8 @@ builder.Services.AddScoped<ICheckQtyToSendService, CheckQtyToSendService>();
 builder.Services.AddScoped<IBreakService, BreakService>();
 builder.Services.AddScoped<ILostService, LostService>();
 builder.Services.AddScoped<IPackedMangementService, PackedMangementService>();
+builder.Services.AddScoped<IComparedInvoiceService, ComparedInvoiceService>();
+builder.Services.AddScoped<ICustomerGroupService, CustomerGroupService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

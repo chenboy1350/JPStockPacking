@@ -7,8 +7,6 @@ using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Linq;
-using System.Reflection;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
@@ -32,10 +30,12 @@ namespace JPStockPacking.Services.Implement
                 .Select(g => new
                 {
                     LotNo = g.Key,
-                    TtWg = g.Sum(x => (double?)x.TtWg),
-                    TtQty = g.Sum(x => (decimal?)x.TtQty),
-                    g.FirstOrDefault()!.IsSended,
-                    g.FirstOrDefault()!.IsStored
+                    StoreFixedQty = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    StoreFixedWg = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    StoreDraftQty = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    StoreDraftWg = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    HasStoreDraft = g.Any(x => string.IsNullOrEmpty(x.Doc)),
+                    HasStoreSent = g.Any(x => !string.IsNullOrEmpty(x.Doc))
                 });
 
             var sumMelt = _sPDbContext.Melt
@@ -45,10 +45,12 @@ namespace JPStockPacking.Services.Implement
                 {
                     LotNo = g.Key,
                     g.FirstOrDefault()!.BreakDescriptionId,
-                    TtWg = g.Sum(x => (double?)x.TtWg),
-                    TtQty = g.Sum(x => (decimal?)x.TtQty),
-                    g.FirstOrDefault()!.IsSended,
-                    g.FirstOrDefault()!.IsMelted
+                    MeltFixedQty = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    MeltFixedWg = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    MeltDraftQty = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    MeltDraftWg = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    HasMeltDraft = g.Any(x => string.IsNullOrEmpty(x.Doc)),
+                    HasMeltSent = g.Any(x => !string.IsNullOrEmpty(x.Doc))
                 });
 
             var sumExport = _sPDbContext.Export
@@ -57,10 +59,14 @@ namespace JPStockPacking.Services.Implement
                 .Select(g => new
                 {
                     LotNo = g.Key,
-                    TtWg = g.Sum(x => (double?)x.TtWg),
-                    TtQty = g.Sum(x => (decimal?)x.TtQty),
-                    g.FirstOrDefault()!.IsSended
+                    ExportFixedQty = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    ExportFixedWg = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    ExportDraftQty = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    ExportDraftWg = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    HasExportDraft = g.Any(x => string.IsNullOrEmpty(x.Doc)),
+                    HasExportSent = g.Any(x => !string.IsNullOrEmpty(x.Doc))
                 });
+
 
             var baseData = await (
                 from ord in _sPDbContext.Order
@@ -95,20 +101,24 @@ namespace JPStockPacking.Services.Implement
                     Packed_Qty = lot != null ? (lot.ReturnedQty ?? 0) : 0,
                     Percentage = !string.IsNullOrEmpty(Percentage) ? decimal.Parse(Percentage) : 0,
 
-                    Store_Qty = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.TtQty).FirstOrDefault() ?? 0,
-                    Store_Wg = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.TtWg).FirstOrDefault() ?? 0,
-                    IsStoreSended = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.IsSended).FirstOrDefault(),
-                    IsStored = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.IsStored).FirstOrDefault(),
+                    Store_Qty = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.StoreDraftQty).FirstOrDefault(),
+                    Store_Wg = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.StoreDraftWg).FirstOrDefault(),
+                    IsStoreSended = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.HasStoreSent).FirstOrDefault(),
+                    Store_FixedQty = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.StoreFixedQty).FirstOrDefault(),
+                    Store_FixedWg = sumStore.Where(x => x.LotNo == lot.LotNo).Select(x => x.StoreFixedWg).FirstOrDefault(),
 
-                    Melt_Qty = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.TtQty).FirstOrDefault() ?? 0,
-                    Melt_Wg = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.TtWg).FirstOrDefault() ?? 0,
+                    Melt_Qty = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.MeltDraftQty).FirstOrDefault(),
+                    Melt_Wg = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.MeltDraftWg).FirstOrDefault(),
+                    IsMeltSended = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.HasMeltSent).FirstOrDefault(),
+                    Melt_FixedQty = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.MeltFixedQty).FirstOrDefault(),
+                    Melt_FixedWg = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.MeltFixedWg).FirstOrDefault(),
                     BreakDescriptionId = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.BreakDescriptionId).FirstOrDefault(),
-                    IsMeltSended = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.IsSended).FirstOrDefault(),
-                    IsMelted = sumMelt.Where(x => x.LotNo == lot.LotNo).Select(x => x.IsMelted).FirstOrDefault(),
 
-                    Export_Qty = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.TtQty).FirstOrDefault() ?? 0,
-                    Export_Wg = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.TtWg).FirstOrDefault() ?? 0,
-                    IsExportSended = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.IsSended).FirstOrDefault(),
+                    Export_Qty = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.ExportDraftQty).FirstOrDefault(),
+                    Export_Wg = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.ExportDraftWg).FirstOrDefault(),
+                    IsExportSended = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.HasExportSent).FirstOrDefault(),
+                    Export_FixedQty = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.ExportFixedQty).FirstOrDefault(),
+                    Export_FixedWg = sumExport.Where(x => x.LotNo == lot.LotNo).Select(x => x.ExportFixedWg).FirstOrDefault(),
                 }
             ).ToListAsync();
 
@@ -123,7 +133,7 @@ namespace JPStockPacking.Services.Implement
                 // ดึง Received ทั้งหมดที่ LotNo ตรง
                 var receivedList = await _sPDbContext.Received
                     .Where(x => x.LotNo == input.LotNo)
-                    .OrderByDescending(o => o.CreateDate) // ล่าสุดก่อน
+                    .OrderByDescending(o => o.CreateDate)
                     .ToListAsync();
 
                 if (receivedList == null || receivedList.Count == 0)
@@ -136,11 +146,10 @@ namespace JPStockPacking.Services.Implement
                     };
                 }
 
-                // หาตัวล่าสุดที่ Doc ยังว่างใน Store / Melt / Export
+                // หาตัวล่าสุดที่ Doc ยังว่างใน Store / Melt
                 var received = receivedList.FirstOrDefault(r =>
                     !_sPDbContext.Store.Any(s => s.BillNumber == r.BillNumber && s.Doc != string.Empty) &&
-                    !_sPDbContext.Melt.Any(m => m.BillNumber == r.BillNumber && m.Doc != string.Empty) &&
-                    !_sPDbContext.Export.Any(e => e.LotNo == r.LotNo && e.Doc != string.Empty)
+                    !_sPDbContext.Melt.Any(m => m.BillNumber == r.BillNumber && m.Doc != string.Empty)
                 );
 
                 if (received == null)
@@ -224,8 +233,7 @@ namespace JPStockPacking.Services.Implement
                 }
 
                 // ===== EXPORT =====
-                var export = await _sPDbContext.Export
-                    .FirstOrDefaultAsync(x => x.LotNo == input.LotNo);
+                var export = await _sPDbContext.Export.FirstOrDefaultAsync(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc));
 
                 if (export == null && input.KxQty > 0)
                 {
@@ -233,7 +241,6 @@ namespace JPStockPacking.Services.Implement
                     {
                         LotNo = input.LotNo,
                         Doc = string.Empty,
-                        BillNumber = billNumber,
                         TtQty = input.KxQty,
                         TtWg = (double)input.KxWg,
                         Approver = input.Approver,
@@ -249,7 +256,7 @@ namespace JPStockPacking.Services.Implement
                 else if (input.KxQty == 0)
                 {
                     await _sPDbContext.Export
-                        .Where(x => x.LotNo == input.LotNo)
+                        .Where(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc))
                         .ExecuteDeleteAsync();
                 }
                 else if (export != null && export.TtQty != input.KxQty)
@@ -568,28 +575,27 @@ namespace JPStockPacking.Services.Implement
         private async Task<List<TempPack>> GetExportAsync(string[] lotNos)
         {
             List<TempPack> tempPacks = await (from expt in _sPDbContext.Export
-                                   join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
-                                   from lot in gjLot.DefaultIfEmpty()
-                                   join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
-                                   from ord in gjOrd.DefaultIfEmpty()
-                                   where lotNos.Contains(expt.LotNo)
-                                      && (expt.Doc == "" || expt.Doc == null)
-                                      && expt.CreateDate!.Value.Year == DateTime.Now.Year
-                                   select new TempPack
-                                   {
-                                       LotNo = expt.LotNo,
-                                       OrderNo = ord != null ? ord.OrderNo : string.Empty,
-                                       CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
-                                       Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                       BillNumber = expt.BillNumber,
-                                       SendDate = expt.CreateDate!.Value,
-                                       Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
-                                       FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
-                                       FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
-                                       SendType = "KX",
-                                       OkTtl = expt.TtQty,
-                                       OkWg = (decimal)expt.TtWg!,
-                                   }).ToListAsync();
+                                              join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
+                                              from lot in gjLot.DefaultIfEmpty()
+                                              join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
+                                              from ord in gjOrd.DefaultIfEmpty()
+                                              where lotNos.Contains(expt.LotNo)
+                                                 && (expt.Doc == "" || expt.Doc == null)
+                                                 && expt.CreateDate!.Value.Year == DateTime.Now.Year
+                                              select new TempPack
+                                              {
+                                                  LotNo = expt.LotNo,
+                                                  OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                                                  CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                                                  Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                                                  SendDate = expt.CreateDate!.Value,
+                                                  Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                                                  FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                                                  FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                                                  SendType = "KX",
+                                                  OkTtl = expt.TtQty,
+                                                  OkWg = (decimal)expt.TtWg!,
+                                              }).ToListAsync();
             return tempPacks;
         }
 
@@ -813,8 +819,8 @@ namespace JPStockPacking.Services.Implement
                     await connection.ExecuteAsync(sqlInsertDetail, new
                     {
                         ReceiveNo = receiveNo,
-                        Article = pack.Article,
-                        Barcode = pack.Barcode,
+                        pack.Article,
+                        pack.Barcode,
                         Lotno = pack.LotNo,
                         Price = 0,
                         Ttwg = pack.OkWg,
@@ -826,7 +832,7 @@ namespace JPStockPacking.Services.Implement
                         Chksize = pack.ChkSize,
                         Upday = now,
                         Billnumber = pack.BillNumber,
-                        SizeNoOrd = pack.SizeNoOrd,
+                        pack.SizeNoOrd,
                         Boxno = defaultBox,
                         Numsend = pack.NumSend,
 
@@ -1089,7 +1095,6 @@ namespace JPStockPacking.Services.Implement
                                                   OrderNo = ord != null ? ord.OrderNo : string.Empty,
                                                   CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
                                                   Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                  BillNumber = expt.BillNumber,
                                                   Doc = expt.Doc ?? string.Empty,
                                                   MdateSend = expt.CreateDate!.Value,
                                                   Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
@@ -1211,87 +1216,5 @@ namespace JPStockPacking.Services.Implement
 
             return newDoc;
         }
-
-
-        public class SendStockInput
-        {
-            public SendStockInput()
-            {
-                LotNo = string.Empty;
-                BillNumber = 0;
-                SizeNoOrd = false;
-                ItemSend = "01";
-                KsQty = 0;
-                KsWg = 0;
-                KmQty = 0;
-                KmWg = 0;
-                KmDes = 0;
-                KxQty = 0;
-                KxWg = 0;
-                ReturnFound = false;
-                UserId = string.Empty;
-            }
-
-            public string LotNo { get; set; } = string.Empty;
-            public int BillNumber { get; set; } = 0;
-            public bool SizeNoOrd { get; set; } = false;
-            public string ItemSend { get; set; } = string.Empty;
-
-            public decimal KsQty { get; set; } = 0;
-            public decimal KsWg { get; set; } = 0;
-
-            public decimal KmQty { get; set; } = 0;
-            public decimal KmWg { get; set; } = 0;
-            public int KmDes { get; set; } = 0;
-
-            public decimal KxQty { get; set; } = 0;
-            public decimal KxWg { get; set; } = 0;
-            public int Approver { get; set; } = 0;
-
-            public bool ReturnFound { get; set; } = false;
-            public string UserId { get; set; } = string.Empty;
-        }
-
-        public class OrderToStoreModel
-        {
-            public string OrderNo { get; set; } = string.Empty;
-            public string CustCode { get; set; } = string.Empty;
-            public string Article { get; set; } = string.Empty;
-            public string LotNo { get; set; } = string.Empty;
-            public string ListNo { get; set; } = string.Empty;
-            public decimal TtQty { get; set; } = 0;
-            public double TtWg { get; set; } = 0;
-            public decimal Si { get; set; } = 0;
-            public decimal SendPack_Qty { get; set; } = 0;
-            public decimal SendToPack_Qty { get; set; } = 0;
-            public decimal Packed_Qty { get; set; } = 0;
-
-            public decimal Store_Qty { get; set; } = 0;
-            public double Store_Wg { get; set; } = 0;
-            public bool IsStoreSended { get; set; } = false;
-            public bool IsStored { get; set; } = false;
-
-            public decimal Melt_Qty { get; set; } = 0;
-            public double Melt_Wg { get; set; } = 0;
-            public int BreakDescriptionId { get; set; } = 0;
-            public bool IsMeltSended { get; set; } = false;
-            public bool IsMelted { get; set; } = false;
-
-
-            public decimal Export_Qty { get; set; } = 0;
-            public double Export_Wg { get; set; } = 0;
-            public bool IsExportSended { get; set; } = false;
-
-            public decimal Percentage { get; set; } = 0;
-        }
-
-        public sealed class SaveResult
-        {
-            public string ReceiveNo { get; init; } = "";
-            public int InsertedDetails { get; init; }
-            public int UpdatedSendStockRows { get; init; }
-            public int UpdatedJobBills { get; init; }
-        }
-
     }
 }

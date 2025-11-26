@@ -104,6 +104,10 @@ namespace JPStockPacking.Services.Helper
             return null;
         }
 
+        public static decimal Trim2(this decimal value) => Math.Truncate(value * 100) / 100;
 
+        public static double Trim2(this double value) => Math.Truncate(value * 100) / 100;
+
+        public static double ToDouble(this decimal value) => Convert.ToDouble(value);
     }
 }

@@ -10,14 +10,260 @@ using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class OrderManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService, IPISService pISService) : IOrderManagementService
+    public class OrderManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IPISService pISService, IReceiveManagementService receiveManagementService) : IOrderManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
-        private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
         private readonly IPISService _pISService = pISService;
+        private readonly IReceiveManagementService _receiveManagementService = receiveManagementService;
 
-        public async Task<ScheduleListModel> GetOrderAndLotByRangeAsync(GroupMode groupMode, string orderNo, string custCode, DateTime fromDate, DateTime toDate)
+        public async Task<PagedScheduleListModel> GetOrderAndLotByRangeAsync(GroupMode groupMode, string orderNo, string lotNo, string custCode, DateTime fromDate, DateTime toDate, int page, int pageSize)
+        {
+            var today = DateTime.Now.Date;
+
+            // 1) Base query
+            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSuccess);
+
+            if (!string.IsNullOrEmpty(orderNo))
+            ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));
+
+            if (!string.IsNullOrEmpty(lotNo))
+            {
+                ordersQuery = from ord in ordersQuery
+                              join lt in _sPDbContext.Lot on ord.OrderNo equals lt.OrderNo
+                              where lt.IsActive && !lt.IsSuccess && lt.LotNo.Contains(lotNo)
+                              select ord;
+            }
+
+            if (!string.IsNullOrEmpty(custCode))
+                ordersQuery = ordersQuery.Where(o => o.CustCode!.Contains(custCode));
+
+            if (fromDate != DateTime.MinValue)
+                ordersQuery = ordersQuery.Where(o => o.PackStartDate >= fromDate);
+
+            if (toDate != DateTime.MinValue)
+                ordersQuery = ordersQuery.Where(o => o.PackStartDate <= toDate);
+
+            // 2) Count
+            int totalItems = await ordersQuery.CountAsync();
+
+            // 3) Apply paging
+            var orders = await ordersQuery
+                .OrderByDescending(o => o.FactoryDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // 4) Preload child data only for paged orders
+            var orderNos = orders.Select(o => o.OrderNo).ToList();
+
+            var orderNotifies = await _sPDbContext.OrderNotify
+                .Where(x => x.IsActive && orderNos.Contains(x.OrderNo))
+                .ToDictionaryAsync(x => x.OrderNo, x => x);
+
+            var lotsQuery = _sPDbContext.Lot
+                .Where(l => l.IsActive && !l.IsSuccess && orderNos.Contains(l.OrderNo));
+
+            //if (!string.IsNullOrEmpty(lotNo))
+            //{
+            //    lotsQuery = lotsQuery.Where(l => l.LotNo.Contains(lotNo));
+            //    orders = orders.Where(o => lotsQuery.Any(l => l.OrderNo == o.OrderNo)).ToList();
+            //}
+
+            var lots = await lotsQuery
+                .GroupBy(l => l.OrderNo)
+                .ToDictionaryAsync(g => g.Key, g => g.ToList());
+
+            var lotNos = lots.SelectMany(g => g.Value.Select(l => l.LotNo)).ToList();
+
+            var assignedTables = await (
+                from ass in _sPDbContext.Assignment
+                join asmr in _sPDbContext.AssignmentReceived on ass.AssignmentId equals asmr.AssignmentId
+                join asnt in _sPDbContext.AssignmentTable on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
+                join wt in _sPDbContext.WorkTable on asnt.WorkTableId equals wt.Id
+                join rev in _sPDbContext.Received on asmr.ReceivedId equals rev.ReceivedId
+                where lotNos.Contains(rev.LotNo) && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
+                select new { rev.LotNo, ass.AssignmentId, wt.Name }
+            ).ToListAsync();
+
+            var assignedTableDict = assignedTables
+                .GroupBy(a => a.LotNo)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => new AssignedWorkTableModel
+                    {
+                        AssignmentId = x.AssignmentId,
+                        TableName = x.Name!
+                    }).Distinct().ToList()
+                );
+
+            var lotNotifies = await _sPDbContext.LotNotify
+                .Where(l => lotNos.Contains(l.LotNo) && l.IsActive)
+                .ToDictionaryAsync(l => l.LotNo, l => l);
+
+            var repairs = await (
+                from bek in _sPDbContext.Break
+                join rev in _sPDbContext.Received on bek.ReceivedId equals rev.ReceivedId
+                join lot in _sPDbContext.Lot on rev.LotNo equals lot.LotNo
+                where lotNos.Contains(lot.LotNo)
+                select lot.LotNo
+            ).Distinct().ToListAsync();
+
+            var losts = await (
+                from los in _sPDbContext.Lost
+                join lot in _sPDbContext.Lot on los.LotNo equals lot.LotNo
+                join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo
+                where lotNos.Contains(lot.LotNo)
+                select lot.LotNo
+            ).Distinct().ToListAsync();
+
+            var notAllAssignedLots = await _sPDbContext.Received
+                .Where(r => lotNos.Contains(r.LotNo) && !r.IsAssigned)
+                .Select(r => r.LotNo)
+                .Distinct()
+                .ToListAsync();
+
+
+            // 5) Compose result
+            var result = new List<CustomOrder>();
+
+            foreach (var order in orders)
+            {
+                orderNotifies.TryGetValue(order.OrderNo, out var notify);
+                lots.TryGetValue(order.OrderNo, out var relatedLots);
+                relatedLots ??= [];
+
+                var operateDays = relatedLots.Sum(l => l.OperateDays ?? 0);
+
+                var packDate = order.OrderDate?.Date ?? DateTime.MinValue;
+                var exportDate = order.SeldDate1?.Date ?? DateTime.MinValue;
+
+                var packDaysRemain = (packDate - today).Days;
+                var exportDaysRemain = (exportDate - today).Days;
+
+                var customLots = relatedLots.Select(l =>
+                {
+                    assignedTableDict.TryGetValue(l.LotNo, out var atables);
+                    lotNotifies.TryGetValue(l.LotNo, out var lotNotify);
+
+                    bool isLotUpdate = lotNotify?.IsUpdate ?? false;
+                    bool isAllReturned = l.TtQty > 0 && l.ReturnedQty >= l.TtQty;
+                    bool isAllReceived = l.TtQty > 0 && l.ReceivedQty >= l.TtQty;
+                    bool isPacking = l.TtQty > 0 && l.AssignedQty > 0;
+                    bool isAllAssigned = !notAllAssignedLots.Contains(l.LotNo);
+                    bool hasRepair = repairs.Contains(l.LotNo);
+                    bool hasLost = losts.Contains(l.LotNo);
+
+                    return new CustomLot
+                    {
+                        LotNo = l.LotNo,
+                        OrderNo = l.OrderNo,
+                        ListNo = l.ListNo!,
+                        CustPcode = l.CustPcode!,
+                        TtQty = l.TtQty ?? 0,
+                        Article = l.Article!,
+                        Barcode = l.Barcode!,
+                        TdesArt = l.TdesArt!,
+                        MarkCenter = l.MarkCenter!,
+                        SaleRem = l.SaleRem!,
+                        IsSuccess = l.IsSuccess,
+                        IsActive = l.IsActive,
+                        IsUpdate = isLotUpdate,
+                        UpdateDate = l.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                        AssignTo = atables ?? [],
+                        IsPacking = isPacking,
+                        IsAllAssigned = isAllAssigned,
+                        ReceivedQty = l.ReceivedQty ?? 0,
+                        ReturnedQty = l.ReturnedQty ?? 0,
+                        IsAllReceived = isAllReceived,
+                        HasRepair = hasRepair,
+                        HasLost = hasLost,
+                        IsAllReturned = isAllReturned
+                    };
+                }).ToList();
+
+                result.Add(new CustomOrder
+                {
+                    OrderNo = order.OrderNo,
+                    CustCode = order.CustCode ?? string.Empty,
+                    FactoryDate = order.FactoryDate ?? DateTime.MinValue,
+                    FactoryDateTH = order.FactoryDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                    OrderDate = order.OrderDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                    SeldDate1 = order.SeldDate1?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                    OrdDate = order.OrdDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                    TotalLot = relatedLots.Count,
+                    SumTtQty = (int)relatedLots.Sum(l => l.TtQty ?? 0),
+                    CompleteLot = relatedLots.Count(l => l.IsSuccess),
+                    OperateDays = operateDays,
+                    StartDate = order.PackStartDate ?? DateTime.MinValue,
+                    StartDateTH = order.PackStartDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                    PackDaysRemain = packDaysRemain,
+                    ExportDaysRemain = exportDaysRemain,
+                    IsUpdate = notify?.IsUpdate ?? false,
+                    IsNew = notify?.IsNew ?? false,
+                    IsActive = order.IsActive,
+                    IsSuccess = order.IsSuccess,
+                    IsReceivedLate = packDaysRemain <= 1 && !order.IsSuccess,
+                    IsPackingLate = exportDaysRemain <= 1 && !order.IsSuccess,
+                    CustomLot = customLots
+                });
+            }
+
+            // 6) Group result
+            var schedule = new ScheduleListModel();
+
+            if (groupMode == GroupMode.Day)
+            {
+                schedule.Days = result
+                    .GroupBy(o => o.FactoryDate.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => new Day
+                    {
+                        Title = g.Key == today ? "Today" : g.Key.ToString("ddd dd MMM yyyy"),
+                        Orders = g.ToList()
+                    }).ToList();
+            }
+            else
+            {
+                schedule.Weeks = result
+                    .GroupBy(o => o.FactoryDate.StartOfWeek())
+                    .OrderBy(g => g.Key)
+                    .Select(g =>
+                    {
+                        var start = g.Key;
+                        var end = start.AddDays(6);
+                        var title = (start <= today && today <= end)
+                            ? "This Week"
+                            : $"{start:dd MMM} – {end:dd MMM yyyy}";
+
+                        var days = g
+                            .GroupBy(x => x.FactoryDate.Date)
+                            .OrderBy(d => d.Key)
+                            .Select(d => new Day
+                            {
+                                Title = d.Key == today ? "Today" : d.Key.ToString("ddd dd MMM"),
+                                Orders = d.ToList()
+                            }).ToList();
+
+                        return new Week
+                        {
+                            Title = title,
+                            Orders = days
+                        };
+                    }).ToList();
+            }
+
+            // 7) Return paged result
+            return new PagedScheduleListModel
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Data = schedule
+            };
+        }
+
+        public async Task<ScheduleListModel> GetOrderAndLotByRangeAsync2(GroupMode groupMode, string orderNo, string custCode, DateTime fromDate, DateTime toDate)
         {
             var today = DateTime.Now.Date;
 
@@ -161,7 +407,8 @@ namespace JPStockPacking.Services.Implement
                 {
                     OrderNo = order.OrderNo,
                     CustCode = order.CustCode ?? "",
-                    FactoryDate = order.FactoryDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                    FactoryDate = order.FactoryDate ?? DateTime.MinValue,
+                    FactoryDateTH = order.FactoryDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
                     OrderDate = order.OrderDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
                     SeldDate1 = order.SeldDate1?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
                     OrdDate = order.OrdDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
@@ -188,7 +435,7 @@ namespace JPStockPacking.Services.Implement
             if (groupMode == GroupMode.Day)
             {
                 schedule.Days = [.. result
-                    .GroupBy(o => o.StartDate.Date)
+                    .GroupBy(o => o.FactoryDate.Date)
                     .OrderBy(g => g.Key)
                     .Select(g => new Day
                     {
@@ -199,7 +446,7 @@ namespace JPStockPacking.Services.Implement
             else
             {
                 schedule.Weeks = [.. result
-                    .GroupBy(o => o.StartDate.StartOfWeek())
+                    .GroupBy(o => o.FactoryDate.StartOfWeek())
                     .OrderBy(g => g.Key)
                     .Select(g =>
                     {
@@ -210,7 +457,7 @@ namespace JPStockPacking.Services.Implement
                             : $"{start:dd MMM} – {end:dd MMM yyyy}";
 
                         var days = g
-                            .GroupBy(x => x.StartDate.Date)
+                            .GroupBy(x => x.FactoryDate.Date)
                             .OrderBy(d => d.Key)
                             .Select(d => new Day
                             {
@@ -331,81 +578,6 @@ namespace JPStockPacking.Services.Implement
                 HasLost = false,
                 IsAllReturned = isAllReturned,
             };
-        }
-
-        public async Task ImportOrderAsync(string orderNo)
-        {
-            List<OrderNotify> orderNotifies = [];
-            List<LotNotify> lotNotifies = [];
-
-            var newLots = new List<Lot>();
-
-            var existingOrder = await _sPDbContext.Order.AnyAsync(o => o.OrderNo == orderNo && o.IsActive);
-            if (existingOrder)
-            {
-                throw new InvalidOperationException("Order นี้มีอยู่ในระบบแล้ว");
-            }
-
-            var newOrders = await GetJPOrderAsync(orderNo);
-
-            if (newOrders.Count != 0)
-            {
-                newLots = await GetJPLotAsync(newOrders);
-
-                if (newLots.Count == 0)
-                {
-                    return;
-                }
-
-                foreach (var order in newOrders)
-                {
-                    orderNotifies.Add(new OrderNotify
-                    {
-                        OrderNo = order.OrderNo,
-                        IsNew = true,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
-
-                foreach (var lot in newLots)
-                {
-                    lotNotifies.Add(new LotNotify
-                    {
-                        LotNo = lot.LotNo,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
-            }
-            else
-            {
-                throw new InvalidOperationException("ไม่พบ Order ที่ต้องการนำเข้า");
-            }
-
-            using var transaction = _sPDbContext.Database.BeginTransaction();
-            try
-            {
-                _sPDbContext.Order.AddRange(newOrders);
-                _sPDbContext.Lot.AddRange(newLots);
-                _sPDbContext.OrderNotify.AddRange(orderNotifies);
-                _sPDbContext.LotNotify.AddRange(lotNotifies);
-
-                await _sPDbContext.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
-            await RecalculateScheduleAsync();
         }
 
         public async Task UpdateAllReceivedItemsAsync(string receiveNo)
@@ -566,101 +738,6 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task<List<Order>> GetJPOrderAsync(string orderNo)
-        {
-            var Orders = await (from a in _jPDbContext.OrdHorder
-                                join b in _jPDbContext.OrdOrder on a.OrderNo equals b.Ordno into bGroup
-                                from b in bGroup.DefaultIfEmpty()
-
-                                where /*a.FactoryDate!.Value.Month == DateTime.Now.AddMonths(-1).Month*/
-                                      a.OrderNo == orderNo
-                                      && a.FactoryDate!.Value.Year == DateTime.Now.Year
-                                      && a.Factory == true
-                                      && !a.OrderNo.StartsWith("S")
-                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
-
-                                orderby a.FactoryDate descending
-
-                                select new Order
-                                {
-                                    OrderNo = a.OrderNo,
-                                    CustCode = a.CustCode,
-                                    FactoryDate = a.FactoryDate,
-                                    OrderDate = b.OrderDate,
-                                    SeldDate1 = b.SeldDate1,
-                                    OrdDate = a.OrdDate,
-
-                                    IsSuccess = false,
-                                    IsActive = true,
-                                    CreateDate = DateTime.Now,
-                                    UpdateDate = DateTime.Now
-                                }).ToListAsync();
-
-            var existingOrders = from a in Orders
-                                 join b in _sPDbContext.Order on a.OrderNo equals b.OrderNo into abGroup
-                                 from b in abGroup.DefaultIfEmpty()
-
-                                 where b == null
-
-                                 select a;
-
-            return [.. existingOrders];
-        }
-
-        public async Task<List<Lot>> GetJPLotAsync(List<Order> newOrders)
-        {
-            var Lots = await (from a in _jPDbContext.OrdHorder
-                              join b in _jPDbContext.OrdLotno on a.OrderNo equals b.OrderNo into abGroup
-                              from b in abGroup.DefaultIfEmpty()
-                              join e in _jPDbContext.CpriceSale on b.Barcode equals e.Barcode into beGroup
-                              from e in beGroup.DefaultIfEmpty()
-                              join f in _jPDbContext.Cprofile on e.Article equals f.Article into efGroup
-                              from f in efGroup.DefaultIfEmpty()
-                              join g in _jPDbContext.OrdDorder on new { b.OrderNo, b.Barcode, b.CustPcode } equals new { g.OrderNo, g.Barcode, g.CustPcode } into bgGroup
-                              from g in bgGroup.DefaultIfEmpty()
-
-                              where /*a.FactoryDate!.Value.Month == DateTime.Now.AddMonths(-1).Month*/
-                                       a.FactoryDate!.Value.Year == DateTime.Now.Year
-                                      && a.Factory == true
-                                      && !string.IsNullOrEmpty(b.LotNo)
-                                      && !a.OrderNo.StartsWith("S")
-                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
-
-                              orderby a.FactoryDate descending
-
-                              select new Lot
-                              {
-                                  LotNo = b.LotNo,
-                                  OrderNo = a.OrderNo,
-                                  ListNo = b.ListNo,
-                                  CustPcode = b.CustPcode,
-                                  TtQty = b.TtQty,
-                                  TtWg = (double?)b.TtWg,
-                                  Article = e.Article,
-                                  Barcode = b.Barcode,
-                                  TdesArt = f.TdesArt,
-                                  MarkCenter = f.MarkCenter,
-                                  SaleRem = g.SaleRem,
-                                  ReceivedQty = 0,
-                                  ReturnedQty = 0,
-                                  OperateDays = _productionPlanningService.CalLotOperateDay(Convert.ToInt32(b.TtQty ?? 0)),
-                                  IsSuccess = false,
-                                  IsActive = true,
-                                  CreateDate = DateTime.Now,
-                                  UpdateDate = DateTime.Now
-                              }).ToListAsync();
-
-            var existingLots = from a in Lots
-                               join b in newOrders on a.OrderNo equals b.OrderNo into abGroup
-                               from b in abGroup.DefaultIfEmpty()
-                               where b != null
-                               select a;
-
-            return [.. existingLots];
-        }
-
         public async Task<List<ReceivedListModel>> GetReceivedAsync(string lotNo)
         {
             var result = await (from a in _sPDbContext.Received
@@ -761,80 +838,112 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        private async Task RecalculateScheduleAsync()
+        public async Task ImportOrderAsync()
         {
-            const int tables = 6;
-            const double hoursPerTablePerDay = 8.5;
-            const double dailyCapacity = tables * hoursPerTablePerDay; // 6 * 8.5 = 51.0 hours/day
+            List<OrderNotify> orderNotifies = [];
+            List<LotNotify> lotNotifies = [];
 
-            var lots = await _sPDbContext.Lot
-                .Where(l => l.IsActive && !l.IsSuccess)
-                .OrderBy(l => l.OrderNo)
-                .ToListAsync();
+            var newLots = new List<Lot>();
 
-            var usedPerDay = new Dictionary<DateTime, double>();
+            var newOrders = await GetJPOrderAsync();
 
-            // Group by Order
-            var lotGroups = lots.GroupBy(l => l.OrderNo);
+            var newOrderNos = newOrders.Select(s => s.OrderNo).Distinct().ToList();
 
-            foreach (var group in lotGroups)
+            var existingOrderNos = await _sPDbContext.Order.Where(o => o.IsActive && o.FactoryDate!.Value.Year == DateTime.Now.Year).Select(o => o.OrderNo).ToListAsync();
+
+            var notExistOrderNos = newOrderNos.Except(existingOrderNos).ToList();
+
+
+            if (newOrders.Count != 0)
             {
-                var relatedLots = group.ToList();
-                var totalHours = relatedLots.Sum(l => (l.OperateDays ?? 0) * hoursPerTablePerDay); // แปลงวันเป็นชั่วโมง
+                newLots = await _receiveManagementService.GetJPLotAsync(newOrders);
 
+                if (newLots.Count == 0) return;
 
-                var deadline = _sPDbContext.Order
-                    .Where(o => o.OrderNo == group.Key)
-                    .Select(o => o.OrderDate)
-                    .FirstOrDefault() ?? DateTime.Today;
-
-                var scheduledStart = _productionPlanningService.FindAvailableStartDate(
-                    totalHours,
-                    deadline,
-                    usedPerDay,
-                    dailyCapacity
-                );
-
-                // Adjust if scheduledStart falls on weekend
-                while (scheduledStart.DayOfWeek == DayOfWeek.Saturday || scheduledStart.DayOfWeek == DayOfWeek.Sunday)
+                foreach (var order in newOrders)
                 {
-                    scheduledStart = scheduledStart.AddDays(-1);
-                }
-
-                // Update lots with same start date (shared)
-                //foreach (var lot in relatedLots)
-                //{
-                //    lot.PackStartDate = scheduledStart;
-                //    lot.PackEndDate = deadline;
-                //}
-
-                var order = await _sPDbContext.Order.FirstOrDefaultAsync(o => o.OrderNo == group.Key);
-                if (order != null)
-                {
-                    order.PackStartDate = scheduledStart;
-                    order.PackEndDate = deadline;
-                }
-
-                // Update usedPerDay tracking in hourly chunks
-                double remainingHours = totalHours;
-                var day = scheduledStart;
-                while (remainingHours > 0)
-                {
-                    if (day.DayOfWeek != DayOfWeek.Saturday && day.DayOfWeek != DayOfWeek.Sunday)
+                    orderNotifies.Add(new OrderNotify
                     {
-                        if (!usedPerDay.ContainsKey(day))
-                            usedPerDay[day] = 0;
+                        OrderNo = order.OrderNo,
+                        IsNew = true,
+                        IsUpdate = false,
+                        IsActive = true,
+                        CreateDate = DateTime.Now,
+                        UpdateDate = DateTime.Now
+                    });
+                }
 
-                        var available = dailyCapacity - usedPerDay[day];
-                        var hoursToUse = Math.Min(available, remainingHours);
-                        usedPerDay[day] += hoursToUse;
-                        remainingHours -= hoursToUse;
-                    }
-                    day = day.AddDays(1);
+                foreach (var lot in newLots)
+                {
+                    lotNotifies.Add(new LotNotify
+                    {
+                        LotNo = lot.LotNo,
+                        IsUpdate = false,
+                        IsActive = true,
+                        CreateDate = DateTime.Now,
+                        UpdateDate = DateTime.Now
+                    });
                 }
             }
+            else return;
 
-            await _sPDbContext.SaveChangesAsync();
+            using var transaction = _sPDbContext.Database.BeginTransaction();
+            try
+            {
+                _sPDbContext.Order.AddRange(newOrders);
+                _sPDbContext.Lot.AddRange(newLots);
+                _sPDbContext.OrderNotify.AddRange(orderNotifies);
+                _sPDbContext.LotNotify.AddRange(lotNotifies);
+
+                await _sPDbContext.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        private async Task<List<Order>> GetJPOrderAsync()
+        {
+            var Orders = await (from a in _jPDbContext.OrdHorder
+                                join b in _jPDbContext.OrdOrder on a.OrderNo equals b.Ordno into bGroup
+                                from b in bGroup.DefaultIfEmpty()
+
+                                where a.FactoryDate!.Value.Year == DateTime.Now.Year
+                                      && a.Factory == true
+                                      && !a.OrderNo.StartsWith("S")
+                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
+                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+
+                                orderby a.FactoryDate descending
+
+                                select new Order
+                                {
+                                    OrderNo = a.OrderNo,
+                                    CustCode = a.CustCode,
+                                    FactoryDate = a.FactoryDate,
+                                    OrderDate = b.OrderDate,
+                                    SeldDate1 = b.SeldDate1,
+                                    OrdDate = a.OrdDate,
+
+                                    IsSuccess = false,
+                                    IsActive = true,
+                                    CreateDate = DateTime.Now,
+                                    UpdateDate = DateTime.Now
+                                }).ToListAsync();
+
+            var existingOrders = from a in Orders
+                                 join b in _sPDbContext.Order on a.OrderNo equals b.OrderNo into abGroup
+                                 from b in abGroup.DefaultIfEmpty()
+
+                                 where b == null
+
+                                 select a;
+
+            return [.. existingOrders];
         }
     }
 }

@@ -74,6 +74,16 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "ValidateInvoice"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("ValidateInvoice", "Home")">
+                                <i class="nav-icon fas fa-clipboard-check"></i>
+                                <p>ตรวจสอบใบส่งออก</p>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.HasClaim("Menu", "UserManagement"))
                     {
                         <li class="nav-header">ADMINISTRATION</li>
@@ -85,6 +95,16 @@
                             <a href="#" class="nav-link" data-action="@Url.Action("UserManagement", "Home")">
                                 <i class="nav-icon fas fa-user-edit"></i>
                                 <p>จัดการบัญชีผู้ใช้</p>
+                            </a>
+                        </li>
+                    }
+
+                    @if (User.HasClaim("Menu", "FormulaManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("FormulaManagement", "Home")">
+                                <i class="nav-icon fas fa-solid fa-book-open"></i>
+                                <p>จัดการสูตรคำนวน</p>
                             </a>
                         </li>
                     }
@@ -141,7 +161,6 @@
         window.urlGetTableToReturn = '@Url.Action("GetTableToReturn", "Home")';
         window.urlGetRecievedToReturn = '@Url.Action("GetRecievedToReturn", "Home")';
         window.urlReturnAssignment = '@Url.Action("ReturnAssignment", "Home")';
-        window.urlImportOrder = '@Url.Action("ImportOrder", "Home")';
         window.urlImportReceiveNo = '@Url.Action("ImportReceiveNo", "Home")';
         window.urlUpdateLotByRevNoItems = '@Url.Action("UpdateLotByRevNoItems", "Home")';
         window.urlGetOrderToSendQty = '@Url.Action("GetOrderToSendQty", "Home")';
@@ -171,6 +190,7 @@
         window.urlCancelToSendStore = '@Url.Action("CancelToSendStore", "Home")';
         window.urlUpdateAppSettings = '@Url.Action("UpdateAppSettings", "Home")';
         window.urlPrintSendToAllReport = '@Url.Action("PrintSendToAllReport", "Home")';
+        window.urlGetComparedInvoice = '@Url.Action("GetComparedInvoice", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -179,6 +199,7 @@
     <script src="~/js/UserManagement.js" asp-append-version="true"></script>
     <script src="~/js/PackedManagement.js" asp-append-version="true"></script>
     <script src="~/js/AppSettings.js" asp-append-version="true"></script>
+    <script src="~/js/ValidateInvoice.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

@@ -28,5 +28,11 @@
             SJ2 = 3
         }
 
+        public enum InvoiceType
+        {
+            All = 1,
+            IncorectOnly = 2,
+            CorrectOnly = 3
+        }
     }
 }

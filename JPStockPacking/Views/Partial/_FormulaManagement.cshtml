@@ -1,0 +1,227 @@
+﻿
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="accordion" id="accordionFilter">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFilter">
+                            <button class="accordion-button collapsed show" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
+                                <strong>Find By</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Formula Name</label>
+                                            <input type="text" id="txt" class="form-control" placeholder="Formula Name">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="">Clear</button>
+                                <button class="btn btn-primary" onclick="">Find</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="card d-flex">
+            <div class="card-header justify-content-between align-content-center">
+                <div class="justify-content-center">
+                    <h3 class="card-title">Formula List</h3>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" onclick=""><i class="fas fa-user-plus"></i> add new formula</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0" style="height:87vh">
+                <table id="tbl-main" class="table table-bordered table-striped table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="text-center" rowspan="2" style="width: 50px;">#</th>
+                            <th class="text-left" rowspan="2" style="width: 150px;">Formula Name</th>
+                            <th class="text-center" rowspan="2" style="width: 100px;">Customer<br>Group</th>
+                            <th class="text-center" rowspan="2" style="width: 100px;">Pack<br>Method</th>
+                            <th class="text-center" rowspan="2" style="width: 100px;">Product<br>Type</th>
+                            <th class="text-center" colspan="5">Variable</th>
+                            <th class="text-center" rowspan="2" style="width: 100px;">Status</th>
+                            <th class="text-center" rowspan="2" style="width: 220px;">Options</th>
+                        </tr>
+                        <tr>
+                            <th class="text-right" style="width: 90px;">Item Count</th>
+                            <th class="text-right" style="width: 80px;">P1</th>
+                            <th class="text-right" style="width: 80px;">P2</th>
+                            <th class="text-right" style="width: 80px;">Average</th>
+                            <th class="text-right" style="width: 80px;">Item/Sec</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-body-formula">
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td class="text-left">ccj82-card</td>
+                            <td class="text-center">Group 1</td>
+                            <td class="text-center">card</td>
+                            <td class="text-center">earring</td>
+                            <td class="text-right">10</td>
+                            <td class="text-right">5.72</td>
+                            <td class="text-right">5.71</td>
+                            <td class="text-right">5.72</td>
+                            <td class="text-right">0.98</td>
+                            <td class="text-center">
+                                <span class="badge badge-success">Active</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-info btn-sm" onclick="">
+                                    <i class="fas fa-pen-square"></i> Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="">
+                                    <i class="fas fa-window-close"></i> Disable
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td class="text-left">ccj82-box</td>
+                            <td class="text-center">Group 1</td>
+                            <td class="text-center">box</td>
+                            <td class="text-center">earring</td>
+                            <td class="text-right">10</td>
+                            <td class="text-right">8.97</td>
+                            <td class="text-right">10.61</td>
+                            <td class="text-right">9.79</td>
+                            <td class="text-right">0.98</td>
+                            <td class="text-center">
+                                <span class="badge badge-success">Active</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-info btn-sm" onclick="">
+                                    <i class="fas fa-pen-square"></i> Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="">
+                                    <i class="fas fa-window-close"></i> Disable
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-add-formula">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">ลงทะเบียนผู้ใช้ใหม่</h4>
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-default">
+                    <div class="card-header">
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display: block;">
+                        <div class="row">
+                            <div class="form-group">
+                                <div class="col-4 mt-2">
+                                    <label>พนักงาน</label>
+                                    <select id="ddlEmp" name="ddlEmp" class="form-control" style="width: 100%">
+                                        <option value="" selected>-- เลือกพนักงาน --</option>
+                                    </select>
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>ชื่อผู้ใช้</label>
+                                    <input type="text" id="txtAddUsername" class="form-control" placeholder="Enter ..." disabled>
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>รหัสผ่าน</label>
+                                    <input type="password" id="txtAddPassword" class="form-control" placeholder="Enter ..." disabled>
+
+                                    <label>ยืนยันรหัสผ่าน</label>
+                                    <input type="password" id="txtAddConfirmPassword" class="form-control" placeholder="Enter ..." disabled>
+                                    <div class="invalid-feedback">รหัสผ่านไม่ตรงกัน</div>
+                                    <div class="valid-feedback">รหัสผ่านตรงกัน</div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
+                <button type="button" id="btnConfirmAddUser" class="btn btn-info">ลงทะเบียน</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-edit-formula">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">แก้ไขบัญชีผู้ใช้</h4>
+                <input type="hidden" id="hddUserId" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-default">
+                    <div class="card-header">
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display: block;">
+                        <div class="row">
+                            <div class="form-group">
+                                <div class="col-4 mt-2">
+                                    <label>เปลี่ยนพนักงาน</label>
+                                    <select id="ddlEditEmp" name="ddlEditEmp" class="form-control" style="width: 100%">
+                                        <option value="" selected>-- เลือกพนักงาน --</option>
+                                    </select>
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>เปลี่ยนชื่อผู้ใช้</label>
+                                    <input type="text" id="txtEditUsername" class="form-control">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>เปลี่ยนรหัสผ่าน</label>
+                                    <input type="password" id="txtEditPassword" class="form-control">
+
+                                    <label>ยืนยันรหัสผ่าน</label>
+                                    <input type="password" id="txtEditConfirmPassword" class="form-control">
+                                    <div class="invalid-feedback">รหัสผ่านไม่ตรงกัน</div>
+                                    <div class="valid-feedback">รหัสผ่านตรงกัน</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
+                <button type="button" id="btnConfirmEditUser" class="btn btn-info">ยืนยันการแก้ไข</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="จัดการสูตรคำนวน"></div>

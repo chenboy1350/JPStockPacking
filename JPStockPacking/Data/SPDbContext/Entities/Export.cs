@@ -16,8 +16,6 @@ public partial class Export
     [Unicode(false)]
     public string LotNo { get; set; } = null!;
 
-    public int BillNumber { get; set; }
-
     [StringLength(10)]
     [Unicode(false)]
     public string Doc { get; set; } = null!;

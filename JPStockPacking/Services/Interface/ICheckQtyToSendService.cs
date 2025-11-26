@@ -6,6 +6,6 @@ namespace JPStockPacking.Services.Interface
     {
         Task<SendToPackModel> GetOrderToSendQtyAsync(string orderNo, int? userid);
         Task<SendToPackModel> GetOrderToSendQtyWithPriceAsync(string orderNo, int? userid);
-        Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots);
+        Task DefineToPackAsync(string orderNo, List<LotToPackDTO> lots, int? userid);
     }
 }

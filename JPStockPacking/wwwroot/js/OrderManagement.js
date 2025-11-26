@@ -1,4 +1,8 @@
-﻿$(document).ready(function () {
+﻿let currentPage = 1;
+let currentPageSize = 10;
+let totalItems = 0;
+
+$(document).ready(function () {
     $(document).on('keydown', '#txtOrderNo, #txtCustCode', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -28,6 +32,12 @@
                 }
             });
         }
+    });
+
+    $(document).on('change', '#pageSize', function () {
+        currentPageSize = parseInt($(this).val());
+        currentPage = 1;
+        fetchOrdersByDateRange();
     });
 
     $(document).on("change", "#cbxTables", async function () {
@@ -265,61 +275,6 @@
         $('#tblMembers .chk-row:enabled').prop('checked', isChecked);
     });
 
-    $(document).on("click", "#btnGoTo", async function () {
-        const keyword = $("#txtGoTo").val().trim().toLowerCase();
-        $("#txtGoTo").val('')
-
-        if (!keyword) return;
-
-        let $target = $(`.accordion-item[data-order-no="${keyword}"]`);
-
-        if ($target.length > 0) {
-            const collapseId = $target.find(".accordion-collapse").attr("id");
-            const $button = $target.find(`button[data-bs-target="#${collapseId}"]`);
-
-            if (!$target.find(".accordion-collapse").hasClass("show")) {
-                $button.click();
-            }
-
-            $("html, body").animate({
-                scrollTop: $target.offset().top - 100
-            }, 200);
-
-            return;
-        }
-
-        $target = $(`tr[data-lot-no="${keyword}"]`);
-        if ($target.length > 0) {
-            const $accordionItem = $target.closest(".accordion-item");
-            const collapseId = $accordionItem.find(".accordion-collapse").attr("id");
-            const $button = $accordionItem.find(`button[data-bs-target="#${collapseId}"]`);
-
-            if (!$accordionItem.find(".accordion-collapse").hasClass("show")) {
-                $button.click();
-            }
-
-            setTimeout(() => {
-                $("html, body").animate({
-                    scrollTop: $target.offset().top - 100
-                }, 200);
-                $target.addClass("table-warning");
-                setTimeout(() => $target.removeClass("table-warning"), 2000);
-            }, 400);
-
-            return;
-        }
-
-        await showWarning("ไม่พบข้อมูล Lot หรือ Order ที่ค้นหา");
-    });
-
-
-    $(document).on("keydown", "#txtGoTo", function (e) {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            $("#btnGoTo").click();
-        }
-    });
-
     $(document).on("click", "#btnAddBreakDes", async function () {
         let txtAddBreakDes = $('#txtAddBreakDes').val();
         if (txtAddBreakDes == '') {
@@ -535,29 +490,42 @@
     });
 });
 
-function fetchOrdersByDateRange() {
+async function fetchOrdersByDateRange() {
     const orderNo = $('#txtOrderNo').val();
+    const lotNo = $('#txtLotNo').val();
     const custCode = $('#txtCustCode').val();
     const fdate = $('#fromDate').val();
     const edate = $('#toDate').val();
-    const groupMode = $('input[name="groupMode"]:checked').val();
+    const groupMode = $('input[name="groupMode"]:checked').val() || 0;
 
     $.ajax({
         url: urlGetOrder,
         type: 'GET',
         data: {
             orderNo: orderNo,
+            lotNo: lotNo,
             custCode: custCode,
             fdate: fdate,
             edate: edate,
             groupMode: groupMode,
+            page: currentPage,
+            pageSize: currentPageSize
         },
         beforeSend: () => $('#loadingIndicator').show(),
-        success: function (data) {
-            renderOrderList(data);
+        success: async function (data) {
+            if (data) {
+                totalItems = data.totalItems || 0;
+                renderOrderList(data.data || data);
+                renderPagination();
+
+                if (lotNo != "") {
+                    goToOrderLot(lotNo);
+                }
+            }
         },
-        error: function (xhr, status, error) {
+        error: function (error) {
             console.error('Error loading order data:', error);
+            $('#loadingIndicator').hide();
         }
     });
 }
@@ -751,10 +719,83 @@ async function updateLotRow(lotNo) {
     }
 }
 
+function renderPagination() {
+    const totalPages = Math.ceil(totalItems / currentPageSize);
+
+    // Update info text
+    const startItem = (currentPage - 1) * currentPageSize + 1;
+    const endItem = Math.min(currentPage * currentPageSize, totalItems);
+    $('.dataTables_info').html(`แสดง ${startItem} ถึง ${endItem} จาก ${totalItems} รายการ`);
+
+    // Update page size dropdown
+    $('#pageSize').val(currentPageSize);
+
+    // Build pagination HTML
+    let paginationHtml = '';
+
+    // First page button
+    paginationHtml += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(1); return false;">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Previous page button
+    paginationHtml += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(${currentPage - 1}); return false;">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+        paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHtml += `
+            <li class="page-item ${currentPage === i ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="goToPage(${i}); return false;">${i}</a>
+            </li>
+        `;
+    }
+
+    if (endPage < totalPages) {
+        paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+    }
+
+    // Next page button
+    paginationHtml += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(${currentPage + 1}); return false;">
+                <i class="fas fa-angle-right"></i>
+            </a>
+        </li>
+    `;
+
+    // Last page button
+    paginationHtml += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(${totalPages}); return false;">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </li>
+    `;
+
+    $('.pagination').html(paginationHtml);
+
+    // Scroll to top after pagination
+    $('html, body').animate({ scrollTop: 0 }, 300);
+}
 
 async function showModalTableMember(assignedID) {
-    console.log(assignedID)
-
     const modal = $('#modal-table-member');
     modal.find('#txtTitleTableMember').html(
         "<i class='fas fa-folder-plus'></i> โต๊ะทำงาน : " + html(assignedID)
@@ -1104,6 +1145,8 @@ async function printBreakToPDF() {
         BreakIDs: breakIDs
     };
 
+    let pdfWindow = window.open('', '_blank');
+
     $.ajax({
         url: urlBreakReport,
         type: 'POST',
@@ -1115,10 +1158,16 @@ async function printBreakToPDF() {
         success: function (data) {
             const blob = new Blob([data], { type: 'application/pdf' });
             const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
+
+            if (pdfWindow) {
+                pdfWindow.location = blobUrl;
+            }
         },
         error: function (xhr) {
-            console.error(xhr);
+            if (pdfWindow) {
+                pdfWindow.close();
+            }
+
             showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
         }
     });
@@ -1153,6 +1202,8 @@ async function printLostToPDF() {
         Password: password
     };
 
+    let pdfWindow = window.open('', '_blank');
+
     $.ajax({
         url: urlLostReport,
         type: 'POST',
@@ -1164,38 +1215,75 @@ async function printLostToPDF() {
         success: function (data) {
             const blob = new Blob([data], { type: 'application/pdf' });
             const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
+
+            if (pdfWindow) {
+                pdfWindow.location = blobUrl;
+            }
         },
         error: function (xhr) {
-            console.error(xhr);
+            if (pdfWindow) {
+                pdfWindow.close();
+            }
+
             showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
         }
     });
 }
 
-async function reversBreak(breakID) {
-    await showSaveConfirm(
-        `ต้องการยกเลิกรายการแจ้งซ่อมนี้ใช่หรือไม่`, "ยืนยันการยกเลิกรายการ", async () => {
-            const formData = new FormData();
-            formData.append("breakID", breakID);
+async function goToOrderLot(keyword) {
+    if (!keyword) return;
 
-            $.ajax({
-                url: urlCancelBreak,
-                type: 'DELETE',
-                processData: false,
-                contentType: false,
-                data: formData,
-                success: async () => {
-                    $('#loadingIndicator').hide();
-                    await showSuccess("ยกเลิกรายการเรียบร้อย");
-                },
-                error: async (xhr) => {
-                    $('#loadingIndicator').hide();
-                    await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
-                }
-            });
+    let $target = $(`.accordion-item[data-order-no="${keyword}"]`);
+
+    if ($target.length > 0) {
+        const collapseId = $target.find(".accordion-collapse").attr("id");
+        const $button = $target.find(`button[data-bs-target="#${collapseId}"]`);
+
+        if (!$target.find(".accordion-collapse").hasClass("show")) {
+            $button.click();
         }
-    );
+
+        $("html, body").animate({
+            scrollTop: $target.offset().top - 100
+        }, 200);
+
+        return;
+    }
+
+    $target = $(`tr[data-lot-no="${keyword}"]`);
+    if ($target.length > 0) {
+        const $accordionItem = $target.closest(".accordion-item");
+        const collapseId = $accordionItem.find(".accordion-collapse").attr("id");
+        const $button = $accordionItem.find(`button[data-bs-target="#${collapseId}"]`);
+
+        if (!$accordionItem.find(".accordion-collapse").hasClass("show")) {
+            $button.click();
+        }
+
+        setTimeout(() => {
+            $("html, body").animate({
+                scrollTop: $target.offset().top - 100
+            }, 200);
+            $target.addClass("table-warning");
+            setTimeout(() => $target.removeClass("table-warning"), 2000);
+        }, 400);
+
+        return;
+    }
+
+    await showWarning("ไม่พบข้อมูล Lot หรือ Order ที่ค้นหา");
+}
+
+function goToPage(page) {
+    if (page < 1) return;
+    currentPage = page;
+    fetchOrdersByDateRange();
+}
+
+function changePageSize(pageSize) {
+    currentPageSize = parseInt(pageSize);
+    currentPage = 1;
+    fetchOrdersByDateRange();
 }
 
 function clearModalAssignValues() {
@@ -1218,11 +1306,11 @@ function CloseModal() {
 }
 
 function ClearFindBy() {
-    $("#txtImportOrderNo").val("");
-    $('#txtImportReceivedNo').val("")
-    $("#fromDate").val("");
-    $("#toDate").val("");
     $("#txtOrderNo").val("");
+    $("#txtLotNo").val("");
     $("#txtCustCode").val("");
+    $("#pageSize").val(10);
+    currentPage = 1;
+    currentPageSize = 10;
     fetchOrdersByDateRange()
 }

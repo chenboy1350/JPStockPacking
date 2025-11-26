@@ -4,6 +4,7 @@ using JPStockPacking.Services.Interface;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Data.SqlTypes;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
@@ -143,7 +144,7 @@ namespace JPStockPacking.Services.Implement
                                             col.Item().AlignRight().Padding(2).Text($"รวมยอดแจ้งทั้งหมด : {model.SumPCSendTtQty} PC / {model.SumPRSendTtQty} PR / {model.SumSendTtPrice}").FontSize(10).Bold();
                                         }
 
-                                        col.Item().PaddingTop(20).Element(container =>
+                                        col.Item().PaddingTop(30).Element(container =>
                                         {
                                             container.Row(row =>
                                             {
@@ -352,5 +353,180 @@ namespace JPStockPacking.Services.Implement
             return document.GeneratePdf();
         }
 
+        public byte[] GenerateComparedInvoiceReport(ComparedInvoiceFilterModel comparedInvoiceFilterModel, List<ComparedInvoiceModel> model, InvoiceType invoiceType)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            if (invoiceType == InvoiceType.CorrectOnly)
+            {
+                model = [.. model.Where(w => w.IsMatched)];
+            }
+            else if (invoiceType == InvoiceType.IncorectOnly)
+            {
+                model = [.. model.Where(w => !w.IsMatched)];
+            }
+
+            //DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;
+            //DateTime ToDate = comparedInvoiceFilterModel.ToDate ?? DateTime.Now;
+
+            //if (comparedInvoiceFilterModel.OrderNo != null || comparedInvoiceFilterModel.InvoiceNo != null)
+            //{
+            //    FromDate = SqlDateTime.MinValue.Value;
+            //    ToDate = SqlDateTime.MaxValue.Value;
+            //}
+
+            //if (comparedInvoiceFilterModel.FromDate != null)
+            //{
+            //    FromDate = comparedInvoiceFilterModel.FromDate.Value;
+            //}
+
+            //if (comparedInvoiceFilterModel.ToDate != null)
+            //{
+            //    ToDate = comparedInvoiceFilterModel.ToDate.Value;
+            //}
+
+            const int rowsPerPage = 46;
+            int totalPages = (int)Math.Ceiling(model.Count / (double)rowsPerPage);
+
+            var document = Document.Create(container =>
+            {
+                for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
+                {
+                    var pageItems = model
+                        .Skip(pageIndex * rowsPerPage)
+                        .Take(rowsPerPage)
+                        .ToList();
+
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4.Portrait());
+                        page.Margin(0.5f, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Tahoma"));
+
+                        page.Header()
+                            .PaddingBottom(5)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"รายงานตรวจสอบการส่งออก").FontSize(11).SemiBold();
+                                table.Cell().Element(CellStyle).AlignRight().Text($"Print Date: {DateTime.Now:dd/MM/yyyy}").FontSize(7);
+
+                                if (comparedInvoiceFilterModel.FromDate != null && comparedInvoiceFilterModel.ToDate != null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.FromDate:dd/MM/yyyy} - {comparedInvoiceFilterModel.ToDate:dd/MM/yyyy}").FontSize(8);
+                                if (comparedInvoiceFilterModel.FromDate != null && comparedInvoiceFilterModel.ToDate == null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.FromDate:dd/MM/yyyy}").FontSize(8);
+                                if (comparedInvoiceFilterModel.FromDate == null && comparedInvoiceFilterModel.ToDate != null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.ToDate:dd/MM/yyyy}").FontSize(8);
+
+
+                                if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.InvoiceNo))
+                                    table.Cell().Element(CellStyle).AlignLeft().Text($"InvoiceNo : {comparedInvoiceFilterModel.InvoiceNo.ToUpper()}").FontSize(8);
+                                if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.OrderNo))
+                                    table.Cell().Element(CellStyle).AlignLeft().Text($"OrderNo : {comparedInvoiceFilterModel.OrderNo}").FontSize(8);
+                                table.Cell().Element(CellStyle).AlignLeft().Text($"Invoice Type : {invoiceType}").FontSize(8);
+
+
+                                static IContainer CellStyle(IContainer container) => container.Padding(3);
+                            });
+
+                        page.Content()
+                            .PaddingVertical(2)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(3);
+                                    columns.RelativeColumn(3);
+                                    columns.RelativeColumn(3);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(2);
+                                });
+
+                                table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("No").FontSize(8).SemiBold();
+                                table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("InvoiceNo").FontSize(8).SemiBold();
+                                table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("OrderNo").FontSize(8).SemiBold();
+                                table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("Article").FontSize(8).SemiBold();
+
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text("EXPORT").FontSize(8).SemiBold();
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text("PACKING").FontSize(8).SemiBold();
+                                table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("RESULT").FontSize(8).SemiBold();
+
+                                table.Cell().Element(CellStyle).AlignCenter().Text("QTY").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().Text("PRICE").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().Text("TOTAL").FontSize(8).SemiBold();
+
+                                table.Cell().Element(CellStyle).AlignCenter().Text("QTY").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().Text("PRICE").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().Text("TOTAL").FontSize(8).SemiBold();
+
+                                int i = pageIndex * rowsPerPage + 1;
+
+                                foreach (var item in pageItems)
+                                {
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{i}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.JPInvoiceNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.CustCode}/{item.JPOrderNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignLeft().Text($"{item.JPArticle}").FontSize(8);
+
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.JPTtQty}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.JPPrice}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.JPTotalPrice}").FontSize(8);
+
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.SPTtQty}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.SPPrice}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.SPTotalPrice}").FontSize(8);
+
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{(!item.IsMatched ? "X" : "")}").FontSize(8);
+
+                                    i++;
+                                }
+
+                                if (pageIndex == totalPages - 1)
+                                {
+                                    table.Cell().ColumnSpan(7).Padding(2).Column(col =>
+                                    {
+                                        col.Item().AlignRight().Padding(2).Text($"EXPORT TOTAL :     {model.Where(w => w.MakeUnit == "PC").Sum(s => s.JPTtQty):N0}    PC").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "PR").Sum(s => s.JPTtQty):N0}    PR").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "SET").Sum(s => s.JPTtQty):N0}  SET").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2).Text($"{(decimal)model.Sum(s => s.JPTotalPrice):N0}    US").FontSize(10).Bold();
+                                    });
+                                    table.Cell().ColumnSpan(4).Padding(2).Column(col =>
+                                    {
+                                        col.Item().AlignRight().Padding(2).Text($"PACKING TOTAL :     {model.Where(w => w.MakeUnit == "PC").Sum(s => s.SPTtQty):N0}    PC").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "PR").Sum(s => s.SPTtQty):N0}    PR").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "SET").Sum(s => s.SPTtQty):N0}  SET").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2).Text($"{(decimal)model.Sum(s => s.SPTotalPrice):N0}    US").FontSize(10).Bold();
+                                    });
+                                }
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Page ");
+                                x.CurrentPageNumber();
+                                x.Span($" of {totalPages}");
+                            });
+
+                        static IContainer CellStyle(IContainer container) =>
+                            container.Border(0.5f).BorderColor(Colors.Black).Padding(3);
+                    });
+                }
+            });
+
+            return document.GeneratePdf();
+        }
     }
 }

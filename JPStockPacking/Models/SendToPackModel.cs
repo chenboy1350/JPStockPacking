@@ -42,7 +42,7 @@
         public bool IsUnderQuota { get; set; } = false;
         public string ApproverID { get; set; } = string.Empty;
         public string Approver { get; set; } = string.Empty;
-        public int Persentage { get; set; } = 0;
+        public int Percentage { get; set; } = 0;
         public string EnPrice { get; set; } = string.Empty;
         public string EnTtPrice { get; set; } = string.Empty;
         public double DePrice { get; set; } = 0;
