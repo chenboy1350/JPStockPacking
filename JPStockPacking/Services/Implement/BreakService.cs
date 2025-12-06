@@ -121,6 +121,7 @@ namespace JPStockPacking.Services.Implement
                         lotExists!.ReceivedQty = (lotExists.ReceivedQty ?? 0) - (decimal)remainingQty;
                         lotExists.AssignedQty = (lotExists.AssignedQty ?? 0) - (decimal)remainingQty;
                         lotExists.ReturnedQty = Math.Max((lotExists.ReturnedQty ?? 0) - (decimal)remainingQty, 0);
+                        lotExists.IsSuccess = false;
                         lotExists.UpdateDate = DateTime.Now;
 
                         rev.TtQty = (decimal)newQty;
@@ -153,6 +154,7 @@ namespace JPStockPacking.Services.Implement
                         lotExists!.ReceivedQty = (lotExists.ReceivedQty ?? 0) - (decimal)breakUsed;
                         lotExists.AssignedQty = (lotExists.AssignedQty ?? 0) - (decimal)breakUsed;
                         lotExists.ReturnedQty = Math.Max((lotExists.ReturnedQty ?? 0) - (decimal)breakUsed, 0);
+                        lotExists.IsSuccess = false;
                         lotExists.UpdateDate = DateTime.Now;
 
                         rev.TtQty = 0;

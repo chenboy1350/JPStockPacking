@@ -6,16 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Assignment
+public partial class MappingCustomerGroup
 {
     [Key]
-    public int AssignmentId { get; set; }
+    [StringLength(50)]
+    [Unicode(false)]
+    public string CustCode { get; set; } = null!;
 
-    public int NumberWorkers { get; set; }
-
-    public bool HasPartTime { get; set; }
-
-    public bool IsReturned { get; set; }
+    [Column("CustomerGroupID")]
+    public int CustomerGroupId { get; set; }
 
     public bool IsActive { get; set; }
 

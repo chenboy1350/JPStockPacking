@@ -31,7 +31,7 @@ namespace JPStockPacking.Services.Implement
             {
                 ordersQuery = from ord in ordersQuery
                               join lt in _sPDbContext.Lot on ord.OrderNo equals lt.OrderNo
-                              where lt.IsActive && !lt.IsSuccess && lt.LotNo.Contains(lotNo)
+                              where lt.IsActive && lt.LotNo.Contains(lotNo)
                               select ord;
             }
 
@@ -62,13 +62,7 @@ namespace JPStockPacking.Services.Implement
                 .ToDictionaryAsync(x => x.OrderNo, x => x);
 
             var lotsQuery = _sPDbContext.Lot
-                .Where(l => l.IsActive && !l.IsSuccess && orderNos.Contains(l.OrderNo));
-
-            //if (!string.IsNullOrEmpty(lotNo))
-            //{
-            //    lotsQuery = lotsQuery.Where(l => l.LotNo.Contains(lotNo));
-            //    orders = orders.Where(o => lotsQuery.Any(l => l.OrderNo == o.OrderNo)).ToList();
-            //}
+                .Where(l => l.IsActive && orderNos.Contains(l.OrderNo));
 
             var lots = await lotsQuery
                 .GroupBy(l => l.OrderNo)
@@ -678,12 +672,19 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task ReturnReceivedAsync(string lotNo, int[] assignmentIDs, decimal returnQty)
+        public async Task<BaseResponseModel> ReturnReceivedAsync(string lotNo, int[] assignmentIDs, decimal returnQty)
         {
             using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
             try
             {
-                var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(o => o.LotNo == lotNo && o.IsActive) ?? throw new InvalidOperationException($"Lot '{lotNo}' not found or inactive.");
+                List<Assignment> Assignments = await _sPDbContext.Assignment.Where(a => assignmentIDs.Contains(a.AssignmentId) && !a.IsReturned && a.IsActive).ToListAsync();
+                if(Assignments.Count == 0) return new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = "ไม่มีรายการที่คืน"
+                };
+
+                var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(o => o.LotNo == lotNo && !o.IsSuccess && o.IsActive) ?? throw new InvalidOperationException($"Lot '{lotNo}' not found , inactive or succeed.");
 
                 var returned = new Returned
                 {
@@ -693,6 +694,7 @@ namespace JPStockPacking.Services.Implement
                     CreateDate = DateTime.Now,
                     UpdateDate = DateTime.Now
                 };
+
                 _sPDbContext.Returned.Add(returned);
                 await _sPDbContext.SaveChangesAsync();
 
@@ -702,13 +704,16 @@ namespace JPStockPacking.Services.Implement
                 {
                     var receivedList = await (
                         from a in _sPDbContext.AssignmentReceived
+                        join b in _sPDbContext.Assignment on a.AssignmentId equals b.AssignmentId
                         join r in _sPDbContext.Received on a.ReceivedId equals r.ReceivedId
-                        where assignmentIDs.Contains(a.AssignmentId) && a.IsActive && r.LotNo == lotNo
+                        where Assignments.Select(x => x.AssignmentId).Contains(a.AssignmentId) && a.IsActive && r.LotNo == lotNo
                         select new { a.AssignmentId, Received = r }
                     ).ToListAsync();
 
                     foreach (var item in receivedList)
                     {
+                        Assignments.Find(a => a.AssignmentId == item.AssignmentId)!.IsReturned = true;
+
                         item.Received.IsReturned = true;
                         item.Received.UpdateDate = DateTime.Now;
 
@@ -727,14 +732,25 @@ namespace JPStockPacking.Services.Implement
 
                 lot.ReturnedQty = (lot.ReturnedQty ?? 0) + returnQty;
                 lot.UpdateDate = DateTime.Now;
+                lot.IsSuccess = lot.TtQty > 0 && (lot.ReturnedQty ?? 0) >= lot.TtQty;
 
                 await _sPDbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                return new BaseResponseModel
+                {
+                    IsSuccess = true,
+                    Message = "คืนสินค้าสำเร็จ"
+                };
             }
             catch
             {
                 await transaction.RollbackAsync();
-                throw;
+                return new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = "คืนสินค้าไม่สำเร็จ"
+                };
             }
         }
 

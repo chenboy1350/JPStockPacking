@@ -26,13 +26,17 @@ $(document).ready(function () {
         const store_qty = getDraftQty($row, 'store');
         const melt_qty = getDraftQty($row, 'melt');
         const export_qty = getDraftQty($row, 'export');
+        const lost_qty = getDraftQty($row, 'lost');
 
         const store_wg = calcWgFromQty($row, store_qty);
         const melt_wg = parseFloat($row.attr('data-melt-wg')) || 0;
         const export_wg = calcWgFromQty($row, export_qty);
+        const lost_wg = calcWgFromQty($row, lost_qty);
 
         const melt_des = parseInt($row.attr('data-melt-des')) || 0;
         const force_send_by = parseInt($row.attr('data-force-user')) || 0;
+
+        const available = calculateAvailable($row);
 
         $(this).addClass('d-none');
         $row.find('.btn-edit').removeClass('d-none');
@@ -47,9 +51,12 @@ $(document).ready(function () {
             KmQty: melt_qty,
             KmWg: melt_wg,
             KmDes: melt_des,
+            KlQty: lost_qty,
+            KlWg: lost_wg,
             KxQty: export_qty,
             KxWg: export_wg,
             Approver: force_send_by,
+            Unallocated: available,
             UserId: String(uid)
         };
 
@@ -87,6 +94,7 @@ $(document).ready(function () {
             $('#modalStoreQty').val(currentQty);
             $('#modalStoreMaxQty').val(maxQty);
             $('#maxStoreQtyLabel').text(maxQty);
+
             $currentInput = $row.find('input.store_qty');
             $('#modal-edit-store').modal('show');
             return;
@@ -106,6 +114,19 @@ $(document).ready(function () {
 
             $currentInput = $row.find('input.melt_qty');
             $('#modal-edit-melt').modal('show');
+            return;
+        }
+
+        if (type === 'lost') {
+            currentForceRow = $row;
+
+            $('#modalLostLotNo').val(lotNo);
+            $('#modalLostQty').val(currentQty);
+            $('#modalLostMaxQty').val(maxQty);
+            $('#maxLostQtyLabel').text(maxQty);
+
+            $currentInput = $row.find('input.lost_qty');
+            $('#modal-edit-lost').modal('show');
             return;
         }
 
@@ -150,13 +171,9 @@ $(document).ready(function () {
         const $row = $currentInput.closest('tr');
         const fixed = getFixedQty($row, 'store');
 
-        // เก็บ draft ไว้ใน data attribute
         $row.data('store-draft-qty', draft);
-
-        // input = total = fixed + draft
         $row.find('input.store_qty').val(fixed + draft);
 
-        // อัปเดต weight
         const wg = calcWgFromQty($row, draft);
         $row.attr('data-store-wg', wg);
 
@@ -193,13 +210,9 @@ $(document).ready(function () {
         const $row = $currentInput.closest('tr');
         const fixed = getFixedQty($row, 'melt');
 
-        // เก็บ draft ไว้ใน data attribute
         $row.data('melt-draft-qty', draft);
-
-        // input = total = fixed + draft
         $row.find('input.melt_qty').val(fixed + draft);
 
-        // แนบข้อมูล melt
         $row.attr('data-melt-wg', wg);
         $row.attr('data-melt-des', reasonId);
 
@@ -221,6 +234,37 @@ $(document).ready(function () {
         }
     });
 
+    $(document).on('click', '#btnLostQtyConfirm', function () {
+        const draft = parseFloat($('#modalLostQty').val()) || 0;
+        const max = parseFloat($('#modalLostMaxQty').val()) || 0;
+
+        if (draft > max) {
+            showWarning(`เกินยอดที่สามารถหายได้ (${max})`);
+            return;
+        }
+
+        const $row = $currentInput.closest('tr');
+        const fixed = getFixedQty($row, 'lost');
+
+        $row.data('lost-draft-qty', draft);
+        $row.find('input.lost_qty').val(fixed + draft);
+
+        const wg = calcWgFromQty($row, draft);
+        $row.attr('data-lost-wg', wg);
+
+        $row.removeAttr('data-force-user');
+
+        updateAvailableQty($row);
+        $('#modal-edit-lost').modal('hide');
+    });
+
+    $(document).on('keydown', '#modalLostQty', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnLostQtyConfirm').click();
+        }
+    });
+
     $(document).on('click', '#btnExportQtyConfirm', function () {
         const draft = parseFloat($('#modalExportQty').val()) || 0;
         const max = parseFloat($('#modalExportMaxQty').val()) || 0;
@@ -233,17 +277,12 @@ $(document).ready(function () {
         const $row = $currentInput.closest('tr');
         const fixed = getFixedQty($row, 'export');
 
-        // เก็บ draft
         $row.data('export-draft-qty', draft);
-
-        // input = total = fixed + draft
         $row.find('input.export_qty').val(fixed + draft);
 
-        // เพิ่มคำนวณ WG เฉพาะ draft
         const wg = calcWgFromQty($row, draft);
         $row.attr('data-export-wg', wg);
 
-        // ล้าง force user
         $row.removeAttr('data-force-user');
 
         updateAvailableQty($row);
@@ -264,6 +303,7 @@ $(document).ready(function () {
         $row.data('old-store', getDraftQty($row, 'store'));
         $row.data('old-melt', getDraftQty($row, 'melt'));
         $row.data('old-export', getDraftQty($row, 'export'));
+        $row.data('old-lost', getDraftQty($row, 'lost'));
 
         $row.find('.btn-edit-qty').removeClass('d-none');
         $row.find('.btn-clear-qty').removeClass('d-none');
@@ -274,30 +314,28 @@ $(document).ready(function () {
 
 
     $(document).on('click', '.btn-cancel', function () {
-
         const $row = $(this).closest('tr');
 
-        // ดึง draft เดิม
         const sDraft = $row.data('old-store') || 0;
         const mDraft = $row.data('old-melt') || 0;
         const eDraft = $row.data('old-export') || 0;
+        const lDraft = $row.data('old-lost') || 0;
 
-        // ตั้ง draft กลับ
         $row.data('store-draft-qty', sDraft);
         $row.data('melt-draft-qty', mDraft);
         $row.data('export-draft-qty', eDraft);
+        $row.data('lost-draft-qty', lDraft);
 
-        // fixed
         const sFix = getFixedQty($row, 'store');
         const mFix = getFixedQty($row, 'melt');
         const eFix = getFixedQty($row, 'export');
+        const lFix = getFixedQty($row, 'lost');
 
-        // input = total = fixed + draft
         $row.find('input.store_qty').val(sFix + sDraft);
         $row.find('input.melt_qty').val(mFix + mDraft);
         $row.find('input.export_qty').val(eFix + eDraft);
+        $row.find('input.lost_qty').val(lFix + lDraft);
 
-        // restore UI
         $row.find('.btn-edit-qty').addClass('d-none');
         $row.find('.btn-clear-qty').addClass('d-none');
         $row.find('.btn-save, .btn-cancel').addClass('d-none');
@@ -305,7 +343,6 @@ $(document).ready(function () {
 
         updateAvailableQty($row);
     });
-
 
     $(document).on("change", ".chk-row", function () {
         toggleConfirmButton();
@@ -340,6 +377,11 @@ $(document).ready(function () {
             $row.find('.melt-reason-text').text('');
         }
 
+        if (type === 'lost') {
+            $row.attr('data-lost-wg', 0);
+            $row.removeAttr('data-force-user');
+        }
+
         if (type === 'export') {
             $row.attr('data-export-wg', 0);
             $row.removeAttr('data-force-user');
@@ -347,8 +389,6 @@ $(document).ready(function () {
 
         updateAvailableQty($row);
     });
-
-
 
     $(document).on('click', '#btnCheckAuthForceSendToExport', function () {
         const txtUsername = $('#txtUsername');
@@ -477,7 +517,7 @@ function FindOrderToStore() {
     $('#loadingIndicator').show();
     const txtOrderNo = $('#txtOrderNo').val();
     const tbody = $('#tbl-sendToStore-body');
-    tbody.empty().append('<tr><td colspan="13" class="text-center text-muted">กำลังโหลด...</td></tr>');
+    tbody.empty().append('<tr><td colspan="14" class="text-center text-muted">กำลังโหลด...</td></tr>');
 
     $('#modalMeltReasonId').select2({
         dropdownParent: $('#modal-edit-melt'),
@@ -495,7 +535,7 @@ function FindOrderToStore() {
         tbody.empty();
 
         if (!response || response.length === 0) {
-            tbody.append('<tr><td colspan="13" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+            tbody.append('<tr><td colspan="14" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
             return;
         }
 
@@ -506,18 +546,30 @@ function FindOrderToStore() {
                 <tr data-lot-no="${html(item.lotNo)}"
                     data-ttwg="${html(item.ttWg)}"
                     data-percentage="${html(item.percentage)}"
+                    data-sendtopack-qty="${html(item.sendToPack_Qty)}"
+
+                    data-store-fixed-qty="${html(item.store_FixedQty)}"
+                    data-store-fixed-wg="${html(item.store_FixedWg)}"
+                    data-store-draft-qty="${html(item.store_Qty)}"
                     data-store-wg="${html(item.store_Wg)}"
+
+                    data-melt-fixed-qty="${html(item.melt_FixedQty)}"
+                    data-melt-fixed-wg="${html(item.melt_FixedWg)}"
+                    data-melt-draft-qty="${html(item.melt_Qty)}"
                     data-melt-wg="${html(item.melt_Wg)}"
                     data-melt-des="${html(item.breakDescriptionId)}"
-                    data-export-wg="${html(item.export_Wg)}"
-                    data-sendtopack-qty="${html(item.sendToPack_Qty)}"
+
                     data-export-fixed-qty="${html(item.export_FixedQty)}"
                     data-export-fixed-wg="${html(item.export_FixedWg)}"
                     data-export-draft-qty="${html(item.export_Qty)}"
-                    data-is-storesended="${item.isStoreSended}"
-                    data-is-meltsended="${item.isMeltSended}"
-                    data-is-exportSended="${item.isExportSended}"
-                    data-has-export-draft="${item.hasDraftExport}"
+                    data-export-wg="${html(item.export_Wg)}"
+
+                    data-lost-fixed-qty="${html(item.lost_FixedQty)}"
+                    data-lost-fixed-wg="${html(item.lost_FixedWg)}"
+                    data-lost-draft-qty="${html(item.lost_Qty)}"
+                    data-lost-wg="${html(item.lost_Wg)}"
+
+                    data-available-qty="${html(item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty))}"
                     >
                     <td class="text-center">${i + 1}</td>
                     <td class="text-start"><strong>${html(item.article)}</strong></br><small>${html(item.custCode)}/${html(item.orderNo)}</small></td>
@@ -527,7 +579,7 @@ function FindOrderToStore() {
                     <td class="text-end">${numRaw(item.sendPack_Qty)}</td>
                     <td class="text-end">${numRaw(item.sendToPack_Qty)}</td>
                     <td class="text-end col-packed">${numRaw(item.packed_Qty)}</td>
-                    <td class="text-center col-available"><strong>${ numRaw(item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.export_FixedQty + item.export_Qty)) }</strong></td>
+                    <td class="text-center col-available"><strong>${ numRaw(item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty)) }</strong></td>
                     <td class="text-end">
                         <div class="d-flex flex-column align-items-end">
                             <div class="d-flex justify-content-between align-content-center gap-2 w-100">
@@ -541,9 +593,7 @@ function FindOrderToStore() {
                                 <button class="btn btn-default btn-edit-qty d-none" data-type="store">
                                     <i class="fas fa-plus"></i>
                                 </button>
-                                <button class="btn btn-default btn-clear-qty d-none" data-type="store">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+
                             </div>
                             <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.store_FixedQty)} / รอส่ง: ${numRaw(item.store_Qty)}</small>
                         </div>
@@ -562,11 +612,28 @@ function FindOrderToStore() {
                                 <button class="btn btn-default btn-edit-qty d-none" data-type="melt">
                                     <i class="fas fa-plus"></i>
                                 </button>
-                                <button class="btn btn-default btn-clear-qty d-none" data-type="melt">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+
                             </div>
                             <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.melt_FixedQty)} / รอส่ง: ${numRaw(item.melt_Qty)}</small>
+                        </div>
+                    </td>
+
+                    <td class="text-end">
+                        <div class="d-flex flex-column align-items-end">
+                            <div class="d-flex justify-content-between align-content-center gap-2 w-100">
+                                <input class="form-control text-center qty-input lost_qty"
+                                       type="number"
+                                       min="0"
+                                       step="any"
+                                       value="${numRaw(item.lost_Qty + item.lost_FixedQty)}"
+                                       readonly />
+
+                                <button class="btn btn-default btn-edit-qty d-none" data-type="lost">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+
+                            </div>
+                            <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.lost_FixedQty)} / รอส่ง: ${numRaw(item.lost_Qty)}</small>
                         </div>
                     </td>
 
@@ -583,14 +650,11 @@ function FindOrderToStore() {
                                 <button class="btn btn-default btn-edit-qty d-none" data-type="export">
                                     <i class="fas fa-plus"></i>
                                 </button>
-                                <button class="btn btn-default btn-clear-qty d-none" data-type="export">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+
                             </div>
                             <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.export_FixedQty)} / รอส่ง: ${numRaw(item.export_Qty)}</small>
                         </div>
                     </td>
-
 
                     <td class="text-center">
                         <div class="d-flex gap-1 justify-content-center">
@@ -613,7 +677,7 @@ function FindOrderToStore() {
     .fail(function (error) {
         $('#loadingIndicator').hide();
         console.error('Error fetching data:', error);
-        tbody.empty().append('<tr><td colspan="13" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>');
+        tbody.empty().append('<tr><td colspan="14" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>');
     });
 }
 
@@ -641,37 +705,6 @@ async function confirmSendToStore()
             $('#loadingIndicator').hide();
             await showSuccess(`${res.message}`);
             FindOrderToStore();
-        },
-        error: async (xhr) => {
-            $('#loadingIndicator').hide();
-            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
-        }
-    });
-}
-
-async function cancelSendToStore() {
-    const uid = $('#hddUserID').val();
-    const selectedLots = [];
-    $(".chk-row:checked").each(function () {
-        const lotNo = $(this).closest("tr").data("lot-no");
-        if (lotNo) selectedLots.push(lotNo);
-    });
-
-    const formData = new FormData();
-    selectedLots.forEach(no => formData.append("lotNos", no));
-    formData.append("userId", uid);
-
-    $.ajax({
-        url: urlCancelToSendStore,
-        type: 'POST',
-        processData: false,
-        contentType: false,
-        data: formData,
-        beforeSend: async () => $('#loadingIndicator').show(),
-        success: async () => {
-            $('#loadingIndicator').hide();
-            await showSuccess("ยกเลิกส่งแล้ว");
         },
         error: async (xhr) => {
             $('#loadingIndicator').hide();
@@ -775,10 +808,11 @@ function updateAvailableQty($row) {
     });
 
     $row.find('.col-available').text(formatted);
+    $row.attr('data-available-qty', available);
 
     if (available < 0) {
         $row.find('.col-available').addClass('text-danger fw-bold');
-    } else {
+    } else {$row
         $row.find('.col-available').removeClass('text-danger fw-bold');
     }
 }
@@ -831,8 +865,6 @@ function ClearSearch()
 }
 
 function getDraftQty($row, type) {
-
-    // 1) ถ้ามี draft ใน data attribute → ใช้ค่านั้นเสมอ
     const key = `${type}-draft-qty`;
     const storedDraft = $row.data(key);
 
@@ -840,7 +872,6 @@ function getDraftQty($row, type) {
         return parseFloat(storedDraft) || 0;
     }
 
-    // 2) ไม่มี draft data → รอบแรกหลังโหลดหน้า (total = fixed + draft)
     const total = parseFloat($row.find(`input.${type}_qty`).val()) || 0;
     const fixed = getFixedQty($row, type);
 
@@ -853,6 +884,7 @@ function getFixedQty($row, type) {
     if (type === 'store') return parseFloat($row.data('store-fixed-qty')) || 0;
     if (type === 'melt') return parseFloat($row.data('melt-fixed-qty')) || 0;
     if (type === 'export') return parseFloat($row.data('export-fixed-qty')) || 0;
+    if (type === 'lost') return parseFloat($row.data('lost-fixed-qty')) || 0;
     return 0;
 }
 
@@ -866,12 +898,14 @@ function calculateAvailable($row) {
     const sFix = getFixedQty($row, 'store');
     const mFix = getFixedQty($row, 'melt');
     const eFix = getFixedQty($row, 'export');
+    const lFix = getFixedQty($row, 'lost');
 
     const sDrf = getDraftQty($row, 'store');
     const mDrf = getDraftQty($row, 'melt');
     const eDrf = getDraftQty($row, 'export');
+    const lDrf = getDraftQty($row, 'lost');
 
-    const available = packed - (sFix + mFix + eFix + sDrf + mDrf + eDrf);
+    const available = packed - (sFix + mFix + eFix + lFix + sDrf + mDrf + eDrf + lDrf);
     return available;
 }
 
@@ -882,14 +916,16 @@ function calculateMaxQty($row, type) {
     const sFix = getFixedQty($row, 'store');
     const mFix = getFixedQty($row, 'melt');
     const eFix = getFixedQty($row, 'export');
+    const lFix = getFixedQty($row, 'lost');
 
     const sDrf = getDraftQty($row, 'store');
     const mDrf = getDraftQty($row, 'melt');
     const eDrf = getDraftQty($row, 'export');
+    const lDrf = getDraftQty($row, 'lost');
 
     const currentDraft = getDraftQty($row, type);
 
-    const available = packed - (sFix + mFix + eFix + sDrf + mDrf + eDrf) + currentDraft;
+    const available = packed - (sFix + mFix + eFix + lFix + sDrf + mDrf + eDrf + lDrf) + currentDraft;
 
     if (type === 'export') {
 

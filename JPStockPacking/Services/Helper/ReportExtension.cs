@@ -645,55 +645,60 @@ namespace JPStockPacking.Services.Helper
             {
                 foreach (var tempack in model)
                 {
-                    // ส่วนหัว
                     col.Item().PaddingTop(5).Element(c => c.SendToHeader(tempack));
 
-                    // ตาราง (ShowOnce เพื่อไม่ให้แตกข้ามหน้า)
                     col.Item().PaddingVertical(2).ShowOnce().Element(c =>
                     {
                         c.Table(table =>
                         {
-                            // คำนวณจำนวนคอลัมน์ตาม SendType
                             int columnCount = GetColumnCount(tempack.SendType);
 
-                            // กำหนดโครงสร้างคอลัมน์
                             table.ColumnsDefinition(columns =>
                             {
                                 columns.RelativeColumn(1);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
-                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") columns.RelativeColumn(2);
-                                if (tempack.SendType == "KX") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KX" || tempack.SendType == "KL") columns.RelativeColumn(2);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(3);
-                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") columns.RelativeColumn(2);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
                                 if (tempack.SendType == "KM") columns.RelativeColumn(2);
+                                if (tempack.TempPacks.Any(x => x.Unallocated > 0))
+                                {
+                                    if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
+                                    columnCount += 1;
+                                }
                             });
 
-                            // Header
                             table.Cell().Element(CellStyle).AlignCenter().Text("ListNo").FontSize(8);
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("เลขที่งานช่าง\nครั้งที่ส่ง").FontSize(8);
-                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
-                            if (tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text("FN").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
+                            if (tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text("FN").FontSize(8);
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("ชื่อช่าง").FontSize(8);
-                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("น้ำหนักรวม\n(กรัม)").FontSize(8);
                             if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("สาเหตุ").FontSize(8);
+                            if (tempack.TempPacks.Any(x => x.Unallocated > 0))
+                            {
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("ยังไม่เก็บ").FontSize(8);
+                            }
 
                             foreach (var item in tempack.TempPacks)
                             {
                                 table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.JobBarcode}\n{item.NumSend}").FontSize(8);
-                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
-                                if (tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.FinishingEN} / {item.FinishingTH}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
+                                if (tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.FinishingEN} / {item.FinishingTH}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"({item.EmpCode}) {item.Name}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OkTtl}").FontSize(8);
-                                if (tempack.SendType == "KX") table.Cell().Element(CellStyle).AlignCenter().Text($"{(int)item.OkTtl} {item.Unit}").FontSize(8);
+                                if (tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text($"{(int)item.OkTtl} {item.Unit}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OkWg}").FontSize(8);
                                 if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.BreakDescription}").FontSize(8);
-
+                                if (tempack.TempPacks.Any(x => x.Unallocated > 0))
+                                {
+                                    if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Unallocated}").FontSize(8);
+                                }
                             }
-
-                            // Footer: รวมยอด
 
                             table.Cell().ColumnSpan((uint)columnCount).Padding(2).Column(row =>
                             {
@@ -741,7 +746,6 @@ namespace JPStockPacking.Services.Helper
                                     });
                             });
 
-                            // Footer: ลายเซ็น
                             table.Cell().ColumnSpan((uint)columnCount).Padding(2).Column(row =>
                             {
                                 row.Item()
@@ -776,7 +780,6 @@ namespace JPStockPacking.Services.Helper
                 }
             });
 
-            // ฟังก์ชันตกแต่งเซลล์
             static IContainer CellStyle(IContainer container)
             {
                 return container
@@ -788,14 +791,14 @@ namespace JPStockPacking.Services.Helper
 
         private static int GetColumnCount(string sendType)
         {
-            int count = 1; // "ลำดับ"
-            if (sendType is "KS" or "KM") count += 1; // เลขที่งานช่าง/ครั้งที่ส่ง
-            if (sendType is "KS" or "KM" or "KX") count += 1; // รหัสสินค้า
-            if (sendType is "KX") count += 1; // FN
-            if (sendType is "KS" or "KM") count += 1; // ชื่อช่าง
-            if (sendType is "KS" or "KM" or "KX") count += 1; // จำนวน
-            if (sendType is "KS" or "KM") count += 1; // น้ำหนักรวม
-            if (sendType is "KM") count += 1; // สาเหตุ
+            int count = 1;
+            if (sendType is "KS" or "KM") count += 1;
+            if (sendType is "KS" or "KM" or "KX" or "KL") count += 1;
+            if (sendType is "KX" or "KL") count += 1;
+            if (sendType is "KS" or "KM") count += 1;
+            if (sendType is "KS" or "KM" or "KX" or "KL") count += 1;
+            if (sendType is "KS" or "KM") count += 1;
+            if (sendType is "KM") count += 1;
 
             return count;
         }

@@ -3,7 +3,7 @@ let currentPageSize = 10;
 let totalItems = 0;
 
 $(document).ready(function () {
-    $(document).on('keydown', '#txtOrderNo, #txtCustCode', function (e) {
+    $(document).on('keydown', '#txtOrderNo, #txtLotNo, #txtCustCode', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             fetchOrdersByDateRange();
@@ -70,7 +70,8 @@ $(document).ready(function () {
                 $("#chxHasPartTime").prop('disabled', false)
             },
             error: async function (xhr) {
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
+                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });
@@ -131,13 +132,16 @@ $(document).ready(function () {
             beforeSend: () => $('#loadingIndicator').show(),
             success: async () => {
                 $('#loadingIndicator').hide();
-                await showSuccess("มอบหมายงานสำเร็จ");
-                await updateLotRow(lotNo);
                 CloseModal();
+                await updateLotRow(lotNo);
+                await showSuccess("มอบหมายงานสำเร็จ");
+
             },
-            error: async (err) => {
+            error: async (xhr) => {
                 $('#loadingIndicator').hide();
-                await showWarning("เกิดข้อผิดพลาดในการมอบหมายงาน" + err);
+                fetchOrdersByDateRange();
+                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });
@@ -200,7 +204,8 @@ $(document).ready(function () {
                 });
             },
             error: function (xhr) {
-                tbody.html(`<tr><td colspan="9" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})</td></tr>`);
+                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                tbody.html(`<tr><td colspan="9" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status} ${msg})</td></tr>`);
             }
         });
 
@@ -259,13 +264,16 @@ $(document).ready(function () {
             beforeSend: async () => $('#loadingIndicator').show(),
             success: async () => {
                 $('#loadingIndicator').hide();
-                await showSuccess("คืนงานสำเร็จ");
-                await updateLotRow(lotNo);
                 CloseModal();
+                await updateLotRow(lotNo);
+                await showSuccess("คืนงานสำเร็จ");
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
-                await showWarning(`เกิดข้อผิดพลาดในการคืนงาน (${xhr.status} ${xhr.statusText})`);
+                fetchOrdersByDateRange();
+                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                CloseModal();
             }
         });
     });
@@ -405,11 +413,11 @@ $(document).ready(function () {
 
         if (lostQty == '' || lostQty == 0)
         {
-            await showWarning('กรุณากรอกจำนวน Lost');
+            await showWarning('กรุณากรอกจำนวนหาย');
             return;
         }
         await showSaveConfirm(
-            `ต้องการเพิ่ม Lost จำนวน ${lostQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม Lost", async () => {
+            `ต้องการเพิ่ม รายการหาย จำนวน ${lostQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม รายการหาย", async () => {
                 const formData = new FormData();
                 formData.append("lotNo", lotNo);
                 formData.append("lostQty", lostQty);
@@ -422,13 +430,14 @@ $(document).ready(function () {
                     beforeSend: () => $('#loadingIndicator').show(),
                     success: async () => {
                         $('#loadingIndicator').hide();
-                        await showSuccess("เพิ่ม Lost เรียบร้อย");
-                        await updateLotRow(lotNo);
                         CloseModal();
+                        await updateLotRow(lotNo);
+                        await showSuccess("เพิ่ม รายการหาย เรียบร้อย");
                     },
                     error: async (xhr) => {
                         $('#loadingIndicator').hide();
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.responseText})`);
+                        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -442,7 +451,7 @@ $(document).ready(function () {
         const lotNo = $('#hddLotNo').val();
 
         if (breakQty == '' || breakQty == 0) {
-            await showWarning('กรุณากรอกจำนวน break');
+            await showWarning('กรุณากรอกจำนวน งานชำรุด');
             return;
         }
 
@@ -452,7 +461,7 @@ $(document).ready(function () {
         }
 
         await showSaveConfirm(
-            `ต้องการเพิ่ม break จำนวน ${breakQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม break", async () => {
+            `ต้องการเพิ่ม รายการชำรุด จำนวน ${breakQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม รายการชำรุด", async () => {
                 const formData = new FormData();
                 formData.append("lotNo", lotNo);
                 formData.append("breakQty", breakQty);
@@ -466,13 +475,14 @@ $(document).ready(function () {
                     beforeSend: () => $('#loadingIndicator').show(),
                     success: async () => {
                         $('#loadingIndicator').hide();
-                        await showSuccess("เพิ่ม break เรียบร้อย");
-                        await updateLotRow(lotNo);
                         CloseModal();
+                        await updateLotRow(lotNo);
+                        await showSuccess("เพิ่ม รายการชำรุด เรียบร้อย");
                     },
                     error: async (xhr) => {
                         $('#loadingIndicator').hide();
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.responseText})`);
+                        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -523,9 +533,10 @@ async function fetchOrdersByDateRange() {
                 }
             }
         },
-        error: function (error) {
-            console.error('Error loading order data:', error);
+        error: async function (xhr) {
             $('#loadingIndicator').hide();
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -721,19 +732,14 @@ async function updateLotRow(lotNo) {
 
 function renderPagination() {
     const totalPages = Math.ceil(totalItems / currentPageSize);
-
-    // Update info text
     const startItem = (currentPage - 1) * currentPageSize + 1;
     const endItem = Math.min(currentPage * currentPageSize, totalItems);
     $('.dataTables_info').html(`แสดง ${startItem} ถึง ${endItem} จาก ${totalItems} รายการ`);
 
-    // Update page size dropdown
     $('#pageSize').val(currentPageSize);
 
-    // Build pagination HTML
     let paginationHtml = '';
 
-    // First page button
     paginationHtml += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="goToPage(1); return false;">
@@ -742,7 +748,6 @@ function renderPagination() {
         </li>
     `;
 
-    // Previous page button
     paginationHtml += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="goToPage(${currentPage - 1}); return false;">
@@ -751,9 +756,8 @@ function renderPagination() {
         </li>
     `;
 
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
+    const startPage = Math.max(1, currentPage - 5);
+    const endPage = Math.min(totalPages, currentPage + 5);
 
     if (startPage > 1) {
         paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
@@ -771,7 +775,6 @@ function renderPagination() {
         paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
     }
 
-    // Next page button
     paginationHtml += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="goToPage(${currentPage + 1}); return false;">
@@ -780,7 +783,6 @@ function renderPagination() {
         </li>
     `;
 
-    // Last page button
     paginationHtml += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="goToPage(${totalPages}); return false;">
@@ -791,7 +793,6 @@ function renderPagination() {
 
     $('.pagination').html(paginationHtml);
 
-    // Scroll to top after pagination
     $('html, body').animate({ scrollTop: 0 }, 300);
 }
 
@@ -810,7 +811,8 @@ async function showModalTableMember(assignedID) {
             console.log(res)
         },
         error: async function (xhr) {
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         },
     });
 }
@@ -1019,9 +1021,10 @@ async function showModalLost(lotNo) {
             }).join('');
             tbody.append(rows);
         },
-        error: function (xhr, status, error) {
-            console.error('Error loading order data:', error, xhr, status);
+        error: async function (xhr) {
             tbody.empty().append('<tr><td colspan="11" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1098,9 +1101,10 @@ async function showModalBreak(lotNo) {
             }).join('');
             tbody.append(rows);
         },
-        error: function (xhr, status, error) {
-            console.error('Error loading order data:', error, xhr, status);
+        error: async function (xhr) {
             tbody.empty().append('<tr><td colspan="12" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1163,12 +1167,13 @@ async function printBreakToPDF() {
                 pdfWindow.location = blobUrl;
             }
         },
-        error: function (xhr) {
+        error: async function (xhr) {
             if (pdfWindow) {
                 pdfWindow.close();
             }
 
-            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1220,12 +1225,13 @@ async function printLostToPDF() {
                 pdfWindow.location = blobUrl;
             }
         },
-        error: function (xhr) {
+        error: async function (xhr) {
             if (pdfWindow) {
                 pdfWindow.close();
             }
 
-            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }

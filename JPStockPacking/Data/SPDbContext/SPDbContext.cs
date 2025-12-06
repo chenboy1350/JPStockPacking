@@ -24,13 +24,19 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<BreakDescription> BreakDescription { get; set; }
 
+    public virtual DbSet<CustomerGroup> CustomerGroup { get; set; }
+
     public virtual DbSet<Export> Export { get; set; }
+
+    public virtual DbSet<Formula> Formula { get; set; }
 
     public virtual DbSet<Lost> Lost { get; set; }
 
     public virtual DbSet<Lot> Lot { get; set; }
 
     public virtual DbSet<LotNotify> LotNotify { get; set; }
+
+    public virtual DbSet<MappingCustomerGroup> MappingCustomerGroup { get; set; }
 
     public virtual DbSet<MappingPermission> MappingPermission { get; set; }
 
@@ -40,13 +46,19 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<OrderNotify> OrderNotify { get; set; }
 
+    public virtual DbSet<PackMethod> PackMethod { get; set; }
+
     public virtual DbSet<Permission> Permission { get; set; }
+
+    public virtual DbSet<ProductType> ProductType { get; set; }
 
     public virtual DbSet<Received> Received { get; set; }
 
     public virtual DbSet<Returned> Returned { get; set; }
 
     public virtual DbSet<ReturnedDetail> ReturnedDetail { get; set; }
+
+    public virtual DbSet<SendLost> SendLost { get; set; }
 
     public virtual DbSet<SendQtyToPack> SendQtyToPack { get; set; }
 

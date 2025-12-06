@@ -317,6 +317,7 @@ namespace JPStockPacking.Services.Implement
                                 "KS" => "ใบส่งสินค้าเก็บ stock",
                                 "KM" => "ใบส่งสินค้าหลอม 925",
                                 "KX" => "ใบส่งสินค้าส่งออก",
+                                "KL" => "รายการสินค้าสูญหาย",
                                 _ => "ไม่ทราบประเภท"
                             },
                             SendTo = g.First().SendType switch
@@ -324,6 +325,7 @@ namespace JPStockPacking.Services.Implement
                                 "KS" => "Stock Body",
                                 "KM" => "Spare Part Stock",
                                 "KX" => "Export",
+                                "KL" => "Center",
                                 _ => "Unknow"
                             },
                             SendType = g.First().SendType switch
@@ -331,6 +333,7 @@ namespace JPStockPacking.Services.Implement
                                 "KS" => "KS",
                                 "KM" => "KM",
                                 "KX" => "KX",
+                                "KL" => "KL",
                                 _ => "N/A"
                             },
                             OrderNoAndCusCode = $"{g.First().CustCode.Trim()}/{g.First().OrderNo}",
@@ -366,24 +369,24 @@ namespace JPStockPacking.Services.Implement
                 model = [.. model.Where(w => !w.IsMatched)];
             }
 
-            //DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;
-            //DateTime ToDate = comparedInvoiceFilterModel.ToDate ?? DateTime.Now;
+            DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;
+            DateTime ToDate = comparedInvoiceFilterModel.ToDate ?? DateTime.Now;
 
-            //if (comparedInvoiceFilterModel.OrderNo != null || comparedInvoiceFilterModel.InvoiceNo != null)
-            //{
-            //    FromDate = SqlDateTime.MinValue.Value;
-            //    ToDate = SqlDateTime.MaxValue.Value;
-            //}
+            if (comparedInvoiceFilterModel.OrderNo != null || comparedInvoiceFilterModel.InvoiceNo != null)
+            {
+                FromDate = SqlDateTime.MinValue.Value;
+                ToDate = SqlDateTime.MaxValue.Value;
+            }
 
-            //if (comparedInvoiceFilterModel.FromDate != null)
-            //{
-            //    FromDate = comparedInvoiceFilterModel.FromDate.Value;
-            //}
+            if (comparedInvoiceFilterModel.FromDate != null)
+            {
+                FromDate = comparedInvoiceFilterModel.FromDate.Value;
+            }
 
-            //if (comparedInvoiceFilterModel.ToDate != null)
-            //{
-            //    ToDate = comparedInvoiceFilterModel.ToDate.Value;
-            //}
+            if (comparedInvoiceFilterModel.ToDate != null)
+            {
+                ToDate = comparedInvoiceFilterModel.ToDate.Value;
+            }
 
             const int rowsPerPage = 46;
             int totalPages = (int)Math.Ceiling(model.Count / (double)rowsPerPage);

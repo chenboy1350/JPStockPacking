@@ -1,7 +1,12 @@
 ﻿<div class="container-fluid">
     <div class="card d-flex">
         <div class="card-header">
-            <h3 class="card-title">ค้นหารายการใบแจ้งหนี้</h3>
+            <h3 class="card-title">ตรวจสอบใบแจ้งหนี้</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div class="row">
@@ -22,19 +27,19 @@
                         <div class="icheck-primary d-inline">
                             <input type="radio" id="radioPrimary1" name="r1" value="1" checked>
                             <label for="radioPrimary1">
-                                All
+                                ทั้งหมด
                             </label>
                         </div>
                         <div class="icheck-primary d-inline">
                             <input type="radio" id="radioPrimary2" name="r1" value="2">
                             <label for="radioPrimary2">
-                                Incorrect
+                                รายการที่ผิด
                             </label>
                         </div>
                         <div class="icheck-primary d-inline">
                             <input type="radio" id="radioPrimary3" name="r1" value="3">
                             <label for="radioPrimary3">
-                                Correct
+                                รายการที่ถูก
                             </label>
                         </div>
                     </div>
@@ -58,6 +63,43 @@
             <button class="btn btn-primary" onclick="FindInvoice()">ค้นหา</button>
         </div>
     </div>
+
+    <div class="card d-flex">
+        <div class="card-header">
+            <h3 class="card-title">ตรวจสอบสถานะการเก็บ</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" id="dtLocFromDate" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" id="dtLocToDate" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>OrderNo</label>
+                        <input type="text" id="txtLocOrderNo" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="ClearInvoice()">Clear</button>
+            <button class="btn btn-primary" onclick="FindUnalocateLot()">ค้นหา</button>
+        </div>
+    </div>
 </div>
 
-<div id="page-title" data-title="ตรวจสอบใบส่งออก"></div>
+<div id="page-title" data-title="ตรวจสอบ"></div>

@@ -6,17 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Store
+public partial class SendLost
 {
     [Key]
-    [Column("StoreID")]
-    public int StoreId { get; set; }
+    [Column("SendLostID")]
+    public int SendLostId { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
     public string LotNo { get; set; } = null!;
-
-    public int BillNumber { get; set; }
 
     [StringLength(10)]
     [Unicode(false)]
@@ -27,18 +25,17 @@ public partial class Store
 
     public double TtWg { get; set; }
 
-    [Column(TypeName = "numeric(18, 1)")]
-    public decimal? Unallocated { get; set; }
-
     public bool IsSended { get; set; }
-
-    public bool IsStored { get; set; }
 
     public bool IsActive { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? CreateDate { get; set; }
 
+    public int? CreateBy { get; set; }
+
     [Column(TypeName = "datetime")]
     public DateTime? UpdateDate { get; set; }
+
+    public int? UpdateBy { get; set; }
 }

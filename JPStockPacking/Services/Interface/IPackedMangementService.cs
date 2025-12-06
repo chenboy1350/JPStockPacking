@@ -9,6 +9,7 @@ namespace JPStockPacking.Services.Interface
         Task<BaseResponseModel> SendStockAsync(SendStockInput input);
         Task<BaseResponseModel> ConfirmToSendStoreAsync(string[] lotNos, string userId);
         Task<BaseResponseModel> ConfirmToSendMeltAsync(string[] lotNos, string userId);
+        Task<BaseResponseModel> ConfirmToSendLostAsync(string[] lotNos, string userId);
         Task<BaseResponseModel> ConfirmToSendExportAsync(string[] lotNos, string userId);
         Task<List<TempPack>> GetAllDocToPrint(string[] lotNos, string userid);
     }

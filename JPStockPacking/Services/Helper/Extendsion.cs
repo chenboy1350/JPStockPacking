@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace JPStockPacking.Services.Helper
 {
@@ -104,10 +105,16 @@ namespace JPStockPacking.Services.Helper
             return null;
         }
 
-        public static decimal Trim2(this decimal value) => Math.Truncate(value * 100) / 100;
+        public static string NormalizeName(this string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
 
-        public static double Trim2(this double value) => Math.Truncate(value * 100) / 100;
+            name = name.Trim();
+            name = Regex.Replace(name, @"\s+", " ");
+            name = name.ToUpperInvariant();
 
-        public static double ToDouble(this decimal value) => Convert.ToDouble(value);
+            return name;
+        }
+
     }
 }

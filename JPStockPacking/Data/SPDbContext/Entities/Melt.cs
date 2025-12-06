@@ -27,6 +27,9 @@ public partial class Melt
 
     public double TtWg { get; set; }
 
+    [Column(TypeName = "numeric(18, 1)")]
+    public decimal? Unallocated { get; set; }
+
     [Column("BreakDescriptionID")]
     public int BreakDescriptionId { get; set; }
 

@@ -105,6 +105,7 @@ namespace JPStockPacking.Services.Implement
                     {
                         NumberWorkers = WorkerNumber + memberIds.Length,
                         HasPartTime = hasPartTime,
+                        IsReturned = false,
                         IsActive = true,
                         CreateDate = DateTime.Now,
                         UpdateDate = DateTime.Now

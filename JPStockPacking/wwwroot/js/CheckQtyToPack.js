@@ -497,23 +497,39 @@ async function FindOrderToSendQty() {
 
 }
 
-async function printToPDF(printTo) {
+function printToPDF(printTo) {
     const orderNo = $('#txtFindOrderNoToSendQty').val();
-    if (!orderNo || orderNo == '') {
-        await showWarning('กรุณาเลือก Order No');
+    if (!orderNo) {
+        showWarning('กรุณาเลือก Order No');
         return;
     }
 
-    const printUrl = urlSendQtyToPackReport + '?orderNo=' + encodeURIComponent(orderNo) + '&printTo=' + encodeURIComponent(printTo);
-    const printWindow = window.open(printUrl, '_blank');
+    const pdfWindow = window.open('', '_blank');
 
-    printWindow.onload = function () {
-        // setTimeout(function() {
-        //     printWindow.print();
-        //     //printWindow.close();
-        // }, 1000);
-    };
+    $.ajax({
+        url: urlSendQtyToPackReport + '?orderNo=' + encodeURIComponent(orderNo) + '&printTo=' + encodeURIComponent(printTo),
+        type: 'GET',
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (data) {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            if (pdfWindow) {
+                pdfWindow.location = blobUrl;
+            }
+        },
+        error: function (xhr) {
+            if (pdfWindow) {
+                pdfWindow.close();
+            }
+
+            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+        }
+    });
 }
+
 
 function resetPage() {
     $('#txtFindOrderNoToSendQty').val('');

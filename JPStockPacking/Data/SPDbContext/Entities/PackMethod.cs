@@ -6,16 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Assignment
+public partial class PackMethod
 {
     [Key]
-    public int AssignmentId { get; set; }
+    [Column("PackMethodID")]
+    public int PackMethodId { get; set; }
 
-    public int NumberWorkers { get; set; }
-
-    public bool HasPartTime { get; set; }
-
-    public bool IsReturned { get; set; }
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? Name { get; set; }
 
     public bool IsActive { get; set; }
 

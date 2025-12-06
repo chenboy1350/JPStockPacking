@@ -77,6 +77,8 @@
 
         public string BreakDescription { get; set; } = string.Empty;
         public bool IsOverQouta { get; set; } = false;
+
+        public decimal Unallocated { get; set; } = 0;
     }
 
     public class TempPackPage

@@ -74,12 +74,12 @@
                         </li>
                     }
 
-                    @if (User.HasClaim("Menu", "ValidateInvoice"))
+                    @if (User.HasClaim("Menu", "Validation"))
                     {
                         <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("ValidateInvoice", "Home")">
+                            <a href="#" class="nav-link" data-action="@Url.Action("Validation", "Home")">
                                 <i class="nav-icon fas fa-clipboard-check"></i>
-                                <p>ตรวจสอบใบส่งออก</p>
+                                <p>ตรวจสอบ</p>
                             </a>
                         </li>
                     }
@@ -187,10 +187,12 @@
         window.urlGetOrderToStore = '@Url.Action("GetOrderToStore", "Home")';
         window.urlSendToStore = '@Url.Action("SendToStore", "Home")';
         window.urlConfirmToSendStore = '@Url.Action("ConfirmToSendStore", "Home")';
-        window.urlCancelToSendStore = '@Url.Action("CancelToSendStore", "Home")';
         window.urlUpdateAppSettings = '@Url.Action("UpdateAppSettings", "Home")';
         window.urlPrintSendToAllReport = '@Url.Action("PrintSendToAllReport", "Home")';
         window.urlGetComparedInvoice = '@Url.Action("GetComparedInvoice", "Home")';
+        window.urlGetUnallocatedQuentityToStore = '@Url.Action("GetUnallocatedQuentityToStore", "Home")';
+        window.urlAddNewFormula = '@Url.Action("AddNewFormula", "Home")';
+        window.urlEditFormula = '@Url.Action("EditFormula", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -199,7 +201,8 @@
     <script src="~/js/UserManagement.js" asp-append-version="true"></script>
     <script src="~/js/PackedManagement.js" asp-append-version="true"></script>
     <script src="~/js/AppSettings.js" asp-append-version="true"></script>
-    <script src="~/js/ValidateInvoice.js" asp-append-version="true"></script>
+    <script src="~/js/Audit.js" asp-append-version="true"></script>
+    <script src="~/js/FormulaManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

@@ -8,11 +8,14 @@
             BillNumber = 0;
             SizeNoOrd = false;
             ItemSend = "01";
+            Unallocated = 0;
             KsQty = 0;
             KsWg = 0;
             KmQty = 0;
             KmWg = 0;
             KmDes = 0;
+            KlQty = 0;
+            KlWg = 0;
             KxQty = 0;
             KxWg = 0;
             ReturnFound = false;
@@ -24,12 +27,17 @@
         public bool SizeNoOrd { get; set; } = false;
         public string ItemSend { get; set; } = string.Empty;
 
+        public decimal Unallocated { get; set; } = 0;
+
         public decimal KsQty { get; set; } = 0;
         public decimal KsWg { get; set; } = 0;
 
         public decimal KmQty { get; set; } = 0;
         public decimal KmWg { get; set; } = 0;
         public int KmDes { get; set; } = 0;
+
+        public decimal KlQty { get; set; } = 0;
+        public decimal KlWg { get; set; } = 0;
 
         public decimal KxQty { get; set; } = 0;
         public decimal KxWg { get; set; } = 0;
@@ -68,6 +76,12 @@
         public bool IsMeltSended { get; set; } = false;
         public bool IsMelted { get; set; } = false;
 
+        public decimal Lost_Qty { get; set; } = 0;
+        public double Lost_Wg { get; set; } = 0;
+        public decimal Lost_FixedQty { get; set; } = 0;
+        public double Lost_FixedWg { get; set; } = 0;
+        public bool IsLostSended { get; set; } = false;
+        public bool IsLosted { get; set; } = false;
 
         public decimal Export_Qty { get; set; } = 0;
         public double Export_Wg { get; set; } = 0;

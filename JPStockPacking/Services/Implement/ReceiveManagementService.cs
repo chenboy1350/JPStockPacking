@@ -30,7 +30,7 @@ namespace JPStockPacking.Services.Implement
                 await UpdateAllReceivedItemsAsync(receiveId);
             }
 
-            //await UpdateReceiveHeaderStatusAsync(receiveNo);
+            await UpdateReceiveHeaderStatusAsync(receiveNo);
         }
 
         private async Task ImportOrderAsync(string orderNo)
@@ -359,6 +359,7 @@ namespace JPStockPacking.Services.Implement
                 query = query.Where(b => _jPDbContext.Spdreceive
                     .Join(_jPDbContext.OrdLotno, sr => sr.Lotno, ol => ol.LotNo, (sr, ol) => new { sr, ol })
                     .Any(joined => joined.ol.OrderNo.Contains(orderNo) && joined.sr.ReceiveNo == b.ReceiveNo));
+
             }
 
             if (!string.IsNullOrWhiteSpace(lotNo))

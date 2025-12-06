@@ -1,4 +1,4 @@
-using JPStockPacking.Data.JPDbContext.Entities;
+using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
@@ -23,8 +23,9 @@ namespace JPStockPacking.Controllers
         IBreakService breakService,
         ILostService lostService,
         IPackedMangementService packedMangementService,
-        IComparedInvoiceService comparedInvoiceService,
-        Serilog.ILogger logger) : Controller
+        IAuditService comparedInvoiceService,
+        Serilog.ILogger logger,
+        IProductionPlanningService productionPlanningService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -39,7 +40,8 @@ namespace JPStockPacking.Controllers
         private readonly IBreakService _breakService = breakService;
         private readonly ILostService _lostService = lostService;
         private readonly IPackedMangementService _packedMangementService = packedMangementService;
-        private readonly IComparedInvoiceService _comparedInvoiceService = comparedInvoiceService;
+        private readonly IAuditService _auditService = comparedInvoiceService;
+        private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
         private readonly Serilog.ILogger _logger = logger;
 
         [Authorize]
@@ -91,9 +93,9 @@ namespace JPStockPacking.Controllers
         }
 
         [Authorize]
-        public IActionResult ValidateInvoice()
+        public IActionResult Validation()
         {
-            return PartialView("~/Views/Partial/_ValidateInvoice.cshtml");
+            return PartialView("~/Views/Partial/_Validation.cshtml");
         }
 
         [Authorize]
@@ -107,6 +109,10 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> FormulaManagement()
         {
+            //await _productionPlanningService.RegroupCustomer();
+            ViewBag.CustomerGroups = await _productionPlanningService.GetCustomerGroupsAsync();
+            ViewBag.ProductionTypes = await _productionPlanningService.GetProductionTypeAsync();
+            ViewBag.PackMethods = await _productionPlanningService.GetPackMethodsAsync();
             return PartialView("~/Views/Partial/_FormulaManagement.cshtml");
         }
 
@@ -255,9 +261,8 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> ReturnAssignment([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal returnQty)
         {
-
-            await _orderManagementService.ReturnReceivedAsync(lotNo, assignmentIDs, returnQty);
-            return Ok();
+            var result = await _orderManagementService.ReturnReceivedAsync(lotNo, assignmentIDs, returnQty);
+            return Ok(result);
         }
 
         [HttpGet]
@@ -585,14 +590,16 @@ namespace JPStockPacking.Controllers
                 var a = await _packedMangementService.ConfirmToSendStoreAsync(lotNos, userId);
                 var b = await _packedMangementService.ConfirmToSendMeltAsync(lotNos, userId);
                 var c = await _packedMangementService.ConfirmToSendExportAsync(lotNos, userId);
+                var d = await _packedMangementService.ConfirmToSendLostAsync(lotNos, userId);
 
-                string message = $"Store: {(a.IsSuccess ? "สำเร็จ" : "ล้มเหลว")}\n" +
-                                 $"Melt: {(b.IsSuccess ? "สำเร็จ" : "ล้มเหลว")}\n" +
-                                 $"Export: {(c.IsSuccess ? "สำเร็จ" : "ล้มเหลว")}";
+                string message = $"Store: {(a.IsSuccess ? "O" : "X")}\n" +
+                                 $"Melt: {(b.IsSuccess ? "O" : "X")}\n" +
+                                 $"Export: {(c.IsSuccess ? "O" : "X")}\n" +
+                                 $"Lost: {(d.IsSuccess ? "O" : "X")}";
 
                 BaseResponseModel responseModel = new()
                 {
-                    IsSuccess = a.IsSuccess || b.IsSuccess || c.IsSuccess,
+                    IsSuccess = a.IsSuccess || b.IsSuccess || c.IsSuccess || d.IsSuccess,
                     Message = message
                 };
 
@@ -634,7 +641,7 @@ namespace JPStockPacking.Controllers
         {
             try
             {
-                List<ComparedInvoiceModel> result = await _comparedInvoiceService.GetFilteredInvoice(comparedInvoiceFilterModel);
+                List<ComparedInvoiceModel> result = await _auditService.GetFilteredInvoice(comparedInvoiceFilterModel);
                 byte[] pdfBytes = _reportService.GenerateComparedInvoiceReport(comparedInvoiceFilterModel, result, comparedInvoiceFilterModel.InvoiceType);
 
                 string contentDisposition = $"inline; filename=ComINV{DateTime.Now:yyyyMMdd}.pdf";
@@ -646,6 +653,56 @@ namespace JPStockPacking.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetUnallocatedQuentityToStore([FromBody] ComparedInvoiceFilterModel comparedInvoiceFilterModel)
+        {
+            try
+            {
+                var a = await _auditService.GetUnallocatedQuentityToStore(comparedInvoiceFilterModel);
+                //byte[] pdfBytes = _reportService.GenerateComparedInvoiceReport(comparedInvoiceFilterModel, result, comparedInvoiceFilterModel.InvoiceType);
+
+                //string contentDisposition = $"inline; filename=ComINV{DateTime.Now:yyyyMMdd}.pdf";
+                //Response.Headers.Append("Content-Disposition", contentDisposition);
+
+                //return File(pdfBytes, "application/pdf");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddNewFormula([FromBody] Formula formula)
+        {
+            try
+            {
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> EditFormula([FromBody] Formula formula)
+        {
+            try
+            {
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
         }
 
         [HttpPost]
