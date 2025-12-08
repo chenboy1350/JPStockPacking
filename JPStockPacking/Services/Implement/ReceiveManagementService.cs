@@ -394,7 +394,7 @@ namespace JPStockPacking.Services.Implement
                 from a in _jPDbContext.Spdreceive
                 join c in _jPDbContext.OrdLotno on a.Lotno equals c.LotNo
                 join d in _jPDbContext.OrdHorder on c.OrderNo equals d.OrderNo
-                where a.ReceiveNo == receiveNo
+                where a.ReceiveNo == receiveNo && !string.IsNullOrEmpty(a.Lotno)
                 select new
                 {
                     a.Id,

@@ -5,6 +5,31 @@
     ViewData["PageTitle"] = "หน้าแรก";
 }
 
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+    }
+
+    .info-box {
+        min-height: 150px;
+    }
+
+    .info-box-text {
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .info-box-number {
+        font-size: 0.9rem;
+    }
+</style>
+
 <div class="wrapper">
     <nav class="main-header navbar navbar-expand navbar-white navbar-light">
         <ul class="navbar-nav">
@@ -132,9 +157,130 @@
     </aside>
 
     <div class="content-wrapper">
-        <section class="content mt-2">
+        <section class="content">
             <div id="content-container">
-                <h1 class="text-center">Welcome to JP StockPacking System</h1>
+                <h5 class="mb-2 text-center">MENU</h5>
+                <div class="row justify-content-center">
+                    @if (User.HasClaim("Menu", "ReceiveManagement"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <a href="#" class="menu-box-link" data-action="@Url.Action("ReceiveManagement", "Home")" style="text-decoration: none;">
+                                <div class="info-box bg-info cursor-pointer hover-shadow">
+                                    <span class="info-box-icon"><i class="fas fa-receipt"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text" style="font-size:30px">ใบรับสินค้า (ลงบิล)</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (User.HasClaim("Menu", "OrderManagement"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <a href="#" class="menu-box-link" data-action="@Url.Action("OrderManagement", "Home")" style="text-decoration: none;">
+                                <div class="info-box bg-success cursor-pointer hover-shadow">
+                                    <span class="info-box-icon"><i class="fas fa-boxes"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text" style="font-size:30px">สต็อกแพ็คกิ้ง</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (User.HasClaim("Menu", "PackedManagement"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <a href="#" class="menu-box-link" data-action="@Url.Action("PackedManagement", "Home")" style="text-decoration: none;">
+                                <div class="info-box bg-warning cursor-pointer hover-shadow">
+                                    <span class="info-box-icon"><i class="fas fa-truck-loading"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text" style="font-size:30px">รายการส่งออก</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
+                    @if (User.HasClaim("Menu", "CheckQtyToPack"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <a href="#" class="menu-box-link" data-action="@Url.Action("CheckQtyToPack", "Home")" style="text-decoration: none;">
+                                <div class="info-box bg-danger cursor-pointer hover-shadow">
+                                    <span class="info-box-icon"><i class="fas fa-clipboard-check"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text" style="font-size:30px">แจ้งยอดบรรจุ</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+
+                @if (User.HasClaim("Menu", "Validation"))
+                {
+                    <div class="row justify-content-center mt-3">
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <a href="#" class="menu-box-link" data-action="@Url.Action("Validation", "Home")" style="text-decoration: none;">
+                                <div class="info-box bg-primary cursor-pointer hover-shadow">
+                                    <span class="info-box-icon"><i class="fas fa-clipboard-check"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text" style="font-size:30px">ตรวจสอบ</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                @if (User.HasClaim("Menu", "UserManagement") || User.HasClaim("Menu", "FormulaManagement") || User.HasClaim("Menu", "AppSettings"))
+                {
+                    <h5 class="mt-5 mb-2 text-center">ADMINISTRATION</h5>
+                    <div class="row justify-content-center">
+                        @if (User.HasClaim("Menu", "UserManagement"))
+                        {
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a href="#" class="menu-box-link" data-action="@Url.Action("UserManagement", "Home")" style="text-decoration: none;">
+                                    <div class="info-box bg-secondary cursor-pointer hover-shadow">
+                                        <span class="info-box-icon"><i class="fas fa-user-edit"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text" style="font-size:30px">จัดการผู้ใช้</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+
+                        @if (User.HasClaim("Menu", "FormulaManagement"))
+                        {
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a href="#" class="menu-box-link" data-action="@Url.Action("FormulaManagement", "Home")" style="text-decoration: none;">
+                                    <div class="info-box bg-dark cursor-pointer hover-shadow">
+                                        <span class="info-box-icon"><i class="fas fa-book-open"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text" style="font-size:30px">สูตรคำนวน</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+
+                        @if (User.HasClaim("Menu", "AppSettings"))
+                        {
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a href="#" class="menu-box-link" data-action="@Url.Action("AppSettings", "Home")" style="text-decoration: none;">
+                                    <div class="info-box bg-info cursor-pointer hover-shadow">
+                                        <span class="info-box-icon"><i class="fas fa-cog"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text" style="font-size:30px">ตั้งค่าทั่วไป</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </section>
     </div>
@@ -214,7 +360,7 @@
                     $('.nav-sidebar .nav-link').removeClass('active');
                     $(this).addClass('active');
 
-                    $('#content-container').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+                    $('#content-container').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-3">Loading...</p></div>');
 
                     $.get(actionUrl, function(data) {
                         $('#content-container').html(data);
@@ -224,6 +370,43 @@
                         }
                     }).fail(function() {
                         $('#content-container').html('<div class="alert alert-danger">Error loading content. Please try again.</div>');
+                    });
+                }
+            });
+
+            $('.menu-box-link').on('click', function(e) {
+                e.preventDefault();
+                var actionUrl = $(this).data('action');
+
+                if (actionUrl) {
+                    // ลบ active class จาก sidebar
+                    $('.nav-sidebar .nav-link').removeClass('active');
+
+                    // หา sidebar link ที่ตรงกับ actionUrl และเพิ่ม active class
+                    $('.nav-sidebar .nav-link').each(function() {
+                        if ($(this).data('action') === actionUrl) {
+                            $(this).addClass('active');
+                            return false;
+                        }
+                    });
+
+                    // แสดง loading
+                    $('#content-container').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-3">Loading...</p></div>');
+
+                    // โหลดเนื้อหาแบบ AJAX
+                    $.get(actionUrl, function(data) {
+                        $('#content-container').html(data);
+
+                        // อัปเดตชื่อหน้าใน navbar
+                        var title = $('#content-container').find('#page-title').data('title');
+                        if (title) {
+                            $('.navbar-nav h3').text(title);
+                        }
+
+                        // เลื่อนขึ้นด้านบน
+                        window.scrollTo(0, 0);
+                    }).fail(function() {
+                        $('#content-container').html('<div class="alert alert-danger m-3">เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง</div>');
                     });
                 }
             });
