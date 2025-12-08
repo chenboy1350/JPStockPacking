@@ -7,7 +7,6 @@ using JPStockPacking.Services.Interface;
 using JPStockPacking.Services.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +42,7 @@ builder.Services.AddScoped<IBreakService, BreakService>();
 builder.Services.AddScoped<ILostService, LostService>();
 builder.Services.AddScoped<IPackedMangementService, PackedMangementService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IFormulaManagementService, FormulaManagementService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>
@@ -53,37 +53,6 @@ builder.Services.AddAuthentication("AppCookieAuth")
         options.SlidingExpiration = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     });
-
-//builder.WebHost.ConfigureKestrel(serverOptions =>
-//{
-//    serverOptions.ConfigureHttpsDefaults(httpsOptions =>
-//    {
-//        httpsOptions.OnAuthenticate = (context, authOptions) =>
-//        {
-//            var cert = authOptions.ServerCertificate;
-
-//            if (cert != null)
-//            {
-//                Console.WriteLine($"Certificate Subject: {cert.Subject}");
-
-//                if (cert is X509Certificate2 cert2)
-//                {
-//                    Console.WriteLine($"Certificate Thumbprint: {cert2.Thumbprint}");
-//                    Console.WriteLine($"Certificate Expiry: {cert2.NotAfter}");
-//                }
-//                else
-//                {
-//                    Console.WriteLine("Certificate does not support thumbprint or expiry information.");
-//                }
-//            }
-//            else
-//            {
-//                Console.WriteLine("No certificate loaded.");
-//            }
-//        };
-//    });
-//});
-
 
 var app = builder.Build();
 

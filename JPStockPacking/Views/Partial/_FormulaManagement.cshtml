@@ -1,4 +1,7 @@
-﻿
+﻿@model List<JPStockPacking.Models.FormulaModel>
+@{
+
+}
 
 <div class="container-fluid">
     <div class="row">
@@ -37,7 +40,7 @@
                 <div class="justify-content-center">
                     <h3 class="card-title">Formula List</h3>
                     <div class="d-flex justify-content-end">
-                        <button class="btn btn-primary" onclick="showEditFormulaModal()"><i class="fas fa-user-plus"></i> add new formula</button>
+                        <button class="btn btn-primary" onclick="showAddFormulaModal()"><i class="fas fa-user-plus"></i> add new formula</button>
                     </div>
                 </div>
             </div>
@@ -63,52 +66,48 @@
                         </tr>
                     </thead>
                     <tbody id="tbl-body-formula">
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td class="text-left">ccj82-card</td>
-                            <td class="text-center">Group 1</td>
-                            <td class="text-center">card</td>
-                            <td class="text-center">earring</td>
-                            <td class="text-right">10</td>
-                            <td class="text-right">5.72</td>
-                            <td class="text-right">5.71</td>
-                            <td class="text-right">5.72</td>
-                            <td class="text-right">0.98</td>
-                            <td class="text-center">
-                                <span class="badge badge-success">Active</span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-info btn-sm" onclick="">
-                                    <i class="fas fa-pen-square"></i> Edit
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="">
-                                    <i class="fas fa-window-close"></i> Disable
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td class="text-left">ccj82-box</td>
-                            <td class="text-center">Group 1</td>
-                            <td class="text-center">box</td>
-                            <td class="text-center">earring</td>
-                            <td class="text-right">10</td>
-                            <td class="text-right">8.97</td>
-                            <td class="text-right">10.61</td>
-                            <td class="text-right">9.79</td>
-                            <td class="text-right">0.98</td>
-                            <td class="text-center">
-                                <span class="badge badge-success">Active</span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-info btn-sm" onclick="">
-                                    <i class="fas fa-pen-square"></i> Edit
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="">
-                                    <i class="fas fa-window-close"></i> Disable
-                                </button>
-                            </td>
-                        </tr>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center">#</td>
+                                <td class="text-left">@item.Name</td>
+                                <td class="text-center">@item.CustomerGroup</td>
+                                <td class="text-center">@item.PackMethod</td>
+                                <td class="text-center">@item.ProductType</td>
+                                <td class="text-right">@item.Items</td>
+                                <td class="text-right">@item.P1</td>
+                                <td class="text-right">@item.P2</td>
+                                <td class="text-right">@item.Avg</td>
+                                <td class="text-right">@item.ItemPerSec</td>
+                                <td class="text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Disabled</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-info btn-sm" onclick="showEditFormulaModal(@item.FormulaID)">
+                                        <i class="fas fa-pen-square"></i> Edit
+                                    </button>
+                                    @if (item.IsActive)
+                                    {
+                                        <button class="btn btn-danger btn-sm" onclick="toggleFormulaStatus(@item.FormulaID)">
+                                            <i class="fas fa-window-close"></i> Disabled
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-success btn-sm" onclick="toggleFormulaStatus(@item.FormulaID)">
+                                            <i class="fas fa-check-square"></i> Active
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -200,77 +199,79 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Add New Formula</h4>
+                <h4 class="modal-title">Edit Formula</h4>
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="editFormulaId" />
+
                 <div class="card card-default">
-                    <div class="card-header">
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body" style="display: block;">
+                    <div class="card-body">
                         <div class="row">
-                            <div class="form-group">
-                                <div class="col-4 mt-2">
-                                    <label>Formula Name</label>
-                                    <input type="text" id="txtFormulaName" class="form-control" placeholder="Enter Name">
-                                </div>
-                                <div class="col-4 mt-2">
-                                    <label>Customer Group</label>
-                                    <select id="ddlCustomerGroup" name="ddlCustomerGroup" class="form-control" style="width: 100%">
-                                        <option value="" selected>-- Select Group --</option>
-                                        @foreach (var group in ViewBag.CustomerGroups)
-                                        {
-                                            <option value="@group.CustomerGroupId">(@group.CustomerGroupId) @group.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-4 mt-2">
-                                    <label>Product Type</label>
-                                    <select id="ddlProductType" name="ddlProductType" class="form-control" style="width: 100%">
-                                        <option value="" selected>-- Selcet Product --</option>
-                                        @foreach (var group in ViewBag.ProductionTypes)
-                                        {
-                                            <option value="@group.ProductTypeId">(@group.ProductTypeId) @group.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-4 mt-2">
-                                    <label>Pack Method</label>
-                                    <select id="ddlPackMethod" name="ddlPackMethod" class="form-control" style="width: 100%">
-                                        <option value="" selected>-- Select Method --</option>
-                                        @foreach (var group in ViewBag.PackMethods)
-                                        {
-                                            <option value="@group.PackMethodId">(@group.PackMethodId) @group.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-4 mt-2">
-                                    <label>Item Count</label>
-                                    <input type="number" id="txtAddUsername" class="form-control">
-                                </div>
-                                <div class="col-4 mt-2">
-                                    <label>P1</label>
-                                    <input type="number" id="txtAddPassword" class="form-control">
-                                </div>
-                                <div class="col-4 mt-2">
-                                    <label>P2</label>
-                                    <input type="number" id="txtAddPassword" class="form-control">
-                                </div>
+
+                            <div class="col-4 mt-2">
+                                <label>Formula Name</label>
+                                <input type="text" id="txtEditFormulaName" class="form-control">
                             </div>
+
+                            <div class="col-4 mt-2">
+                                <label>Customer Group</label>
+                                <select id="ddlEditCustomerGroup" class="form-control" style="width: 100%">
+                                    <option value="">-- Select Group --</option>
+                                    @foreach (var group in ViewBag.CustomerGroups)
+                                    {
+                                        <option value="@group.CustomerGroupId">(@group.CustomerGroupId) @group.Name</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-4 mt-2">
+                                <label>Product Type</label>
+                                <select id="ddlEditProductType" class="form-control" style="width: 100%">
+                                    <option value="">-- Select Product --</option>
+                                    @foreach (var group in ViewBag.ProductionTypes)
+                                    {
+                                        <option value="@group.ProductTypeId">(@group.ProductTypeId) @group.Name</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-4 mt-2">
+                                <label>Pack Method</label>
+                                <select id="ddlEditPackMethod" class="form-control" style="width: 100%">
+                                    <option value="">-- Select Method --</option>
+                                    @foreach (var group in ViewBag.PackMethods)
+                                    {
+                                        <option value="@group.PackMethodId">(@group.PackMethodId) @group.Name</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-4 mt-2">
+                                <label>Item Count</label>
+                                <input type="number" id="txtEditItemCount" class="form-control">
+                            </div>
+
+                            <div class="col-4 mt-2">
+                                <label>P1</label>
+                                <input type="number" id="txtEditP1" class="form-control">
+                            </div>
+
+                            <div class="col-4 mt-2">
+                                <label>P2</label>
+                                <input type="number" id="txtEditP2" class="form-control">
+                            </div>
+
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
-                <button type="button" id="btnConfirmAddUser" class="btn btn-info">Save</button>
+                <button type="button" id="btnConfirmEditFormula" class="btn btn-info">Save</button>
             </div>
         </div>
     </div>

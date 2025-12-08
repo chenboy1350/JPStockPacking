@@ -68,8 +68,8 @@ $(document).ready(function () {
             success: async function (res) {
 
                 if (res.isSuccess) {
-                    await showSuccess(`บันทึกสำเร็จ`);
                     FindOrderToStore();
+                    await showSuccess(`บันทึกสำเร็จ`);
                 } else {
                     await showWarning(`เกิดข้อผิดพลาด (${res.code}) ${res.message})`);
                 }
@@ -703,8 +703,8 @@ async function confirmSendToStore()
         beforeSend: async () => $('#loadingIndicator').show(),
         success: async (res) => {
             $('#loadingIndicator').hide();
-            await showSuccess(`${res.message}`);
             FindOrderToStore();
+            await showSuccess(`${res.message}`);
         },
         error: async (xhr) => {
             $('#loadingIndicator').hide();

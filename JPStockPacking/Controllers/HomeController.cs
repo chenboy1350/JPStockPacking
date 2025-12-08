@@ -25,7 +25,8 @@ namespace JPStockPacking.Controllers
         IPackedMangementService packedMangementService,
         IAuditService comparedInvoiceService,
         Serilog.ILogger logger,
-        IProductionPlanningService productionPlanningService) : Controller
+        IProductionPlanningService productionPlanningService,
+        IFormulaManagementService formulaManagementService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -43,6 +44,7 @@ namespace JPStockPacking.Controllers
         private readonly IAuditService _auditService = comparedInvoiceService;
         private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
         private readonly Serilog.ILogger _logger = logger;
+        private readonly IFormulaManagementService _formulaManagementService = formulaManagementService;
 
         [Authorize]
         public IActionResult Index()
@@ -113,7 +115,8 @@ namespace JPStockPacking.Controllers
             ViewBag.CustomerGroups = await _productionPlanningService.GetCustomerGroupsAsync();
             ViewBag.ProductionTypes = await _productionPlanningService.GetProductionTypeAsync();
             ViewBag.PackMethods = await _productionPlanningService.GetPackMethodsAsync();
-            return PartialView("~/Views/Partial/_FormulaManagement.cshtml");
+            var result = await _formulaManagementService.GetFormula(new Formula());
+            return PartialView("~/Views/Partial/_FormulaManagement.cshtml", result);
         }
 
         [Authorize]
@@ -678,11 +681,20 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
+        public async Task<IActionResult> GetFormula([FromBody] Formula formula)
+        {
+            var result = await _formulaManagementService.GetFormula(formula);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
         public async Task<IActionResult> AddNewFormula([FromBody] Formula formula)
         {
             try
             {
-                return Ok();
+                var res = await _formulaManagementService.AddNewFormula(formula);
+                return Ok(res);
             }
             catch (Exception ex)
             {
@@ -696,7 +708,24 @@ namespace JPStockPacking.Controllers
         {
             try
             {
-                return Ok();
+                var res = await _formulaManagementService.UpdateFormula(formula);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> ToggleFormulaStatus([FromBody] Formula formula)
+        {
+            try
+            {
+                var res = await _formulaManagementService.ToggleFormulaStatus(formula.FormulaId);
+                return Ok(res);
             }
             catch (Exception ex)
             {

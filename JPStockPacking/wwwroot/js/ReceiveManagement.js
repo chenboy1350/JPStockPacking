@@ -47,13 +47,14 @@
             data: formData,
             success: async function (lot) {
                 $('#loadingIndicator').hide();
-                await showSuccess(`นำเข้าแล้ว ${receiveIds.length} รายการ`);
                 $('#modal-update').modal('hide');
-                refreshReceiveRow(hddReceiveNo); 
+                refreshReceiveRow(hddReceiveNo);
+                await showSuccess(`นำเข้าแล้ว ${receiveIds.length} รายการ`);
             },
             error: async function (xhr) {
                 $('#loadingIndicator').hide();
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
+                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });
@@ -267,7 +268,6 @@ function refreshReceiveRow(receiveNo) {
         type: 'GET',
         data: { receiveNo: receiveNo },
         success: function (row) {
-            console.log(row)
             if (!row) return;
             const tr = $(`#tbl-main tr[data-receive-no="${row.receiveNo}"]`);
             if (tr.length) {

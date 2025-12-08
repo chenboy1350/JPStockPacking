@@ -24,13 +24,13 @@
                     await showWarning("pls fill all numeric fields");
                     return;
                 }
-
+                
                 let model = {
                     Name: txtFormulaName,
                     CustomerGroupId: parseInt(ddlCustomerGroup) || 0,
                     PackMethodId: parseInt(ddlPackMethod) || 0,
                     ProductTypeId: parseInt(ddlProductType) || 0,
-                    ItemCount: parseInt(txtItemCount) || 0,
+                    Items: parseInt(txtItemCount) || 0,
                     P1: parseFloat(txtP1) || 0,
                     P2: parseFloat(txtP2) || 0
                 };
@@ -42,13 +42,15 @@
                     contentType: "application/json; charset=utf-8",
                     success: async function (res) {
                         if (res.isSuccess) {
-                            await showSuccess(`ลงทะเบียนผู้ใช้ใหม่เรียบร้อยแล้ว (${res.code})`);
-                            $('#modal-add-user').modal('hide');
+                            $('#modal-add-formula').modal('hide');
+                            await showSuccess(`ลงทะเบียนสูตรคำนวณใหม่เรียบร้อยแล้ว`);
                         } else {
+                            $('#modal-add-formula').modal('hide');
                             await showWarning(`เกิดข้อผิดพลาดในการลงทะเบียน (${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
+                        $('#modal-add-formula').modal('hide');
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
                         await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
@@ -56,9 +58,72 @@
             }
         );
     });
+
+    $(document).on("click", "#btnConfirmEditFormula", async function () {
+        await showSaveConfirm(
+            "Confirm to save?", "Save Formula", async () => {
+                let editFormulaId = $("#editFormulaId").val();
+                let txtFormulaName = $("#txtEditFormulaName").val();
+                let ddlCustomerGroup = $("#ddlEditCustomerGroup").val();
+                let ddlProductType = $("#ddlEditProductType").val();
+                let ddlPackMethod = $("#ddlEditPackMethod").val();
+                let txtItemCount = $("#txtEditItemCount").val();
+                let txtP1 = $("#txtEditP1").val();
+                let txtP2 = $("#txtEditP2").val();
+
+                if (!txtFormulaName) {
+                    await showWarning("pls fill name");
+                    return;
+                }
+
+                if (!ddlCustomerGroup || !ddlProductType || !ddlPackMethod) {
+                    await showWarning("pls select required dropdowns");
+                    return;
+                }
+
+                if (!txtItemCount || !txtP1 || !txtP2) {
+                    await showWarning("pls fill all numeric fields");
+                    return;
+                }
+
+                let model = {
+                    FormulaId: parseInt(editFormulaId) || 0,
+                    Name: txtFormulaName,
+                    CustomerGroupId: parseInt(ddlCustomerGroup) || 0,
+                    PackMethodId: parseInt(ddlPackMethod) || 0,
+                    ProductTypeId: parseInt(ddlProductType) || 0,
+                    Items: parseInt(txtItemCount) || 0,
+                    P1: parseFloat(txtP1) || 0,
+                    P2: parseFloat(txtP2) || 0
+                };
+
+                $.ajax({
+                    url: urlEditFormula,
+                    type: "POST",
+                    data: JSON.stringify(model),
+                    contentType: "application/json; charset=utf-8",
+                    success: async function (res) {
+                        if (res.isSuccess) {
+                            $('#modal-edit-formula').modal('hide');
+                            await showSuccess(`แก้ไขสูตรคำนวณเรียบร้อยแล้ว`);
+                        } else {
+                            $('#modal-edit-formula').modal('hide');
+                            await showWarning(`เกิดข้อผิดพลาดในการแก้ไข(${res.code}) ${res.message})`);
+                        }
+                    },
+                    error: async function (xhr) {
+                        $('#modal-edit-formula').modal('hide');
+                        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                    }
+                });
+            }
+        );
+    });
+
 });
 
-function showEditFormulaModal() {
+function showAddFormulaModal() {
     $('#modal-add-formula').modal('show');
 
     $('#ddlCustomerGroup').select2({
@@ -71,5 +136,78 @@ function showEditFormulaModal() {
 
     $('#ddlPackMethod').select2({
         dropdownParent: $('#modal-add-formula'),
+    });
+}
+
+function showEditFormulaModal(formulaId) {
+    $('#ddlCustomerGroup').select2({
+        dropdownParent: $('#modal-add-formula'),
+    });
+
+    $('#ddlProductType').select2({
+        dropdownParent: $('#modal-add-formula'),
+    });
+
+    $('#ddlPackMethod').select2({
+        dropdownParent: $('#modal-add-formula'),
+    });
+
+    let model = {
+        FormulaId: formulaId,
+    };
+
+    $.ajax({
+        url: urlGetFormula,
+        type: "POST",
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        success: async function (res) {
+            if (!res || res.length === 0) {
+                await showWarning("ไม่พบข้อมูลสูตรคำนวณ");
+                return;
+            }
+
+            let f = res[0];
+
+            $("#editFormulaId").val(f.formulaID);
+            $("#txtEditFormulaName").val(f.name);
+
+            $("#ddlEditCustomerGroup").val(f.customerGroupID).trigger("change");
+            $("#ddlEditProductType").val(f.productTypeID).trigger("change");
+            $("#ddlEditPackMethod").val(f.packMethodID).trigger("change");
+
+            $("#txtEditItemCount").val(f.items);
+            $("#txtEditP1").val(f.p1);
+            $("#txtEditP2").val(f.p2);
+
+            $("#modal-edit-formula").modal("show");
+        },
+        error: async function () {
+            await showWarning("โหลดข้อมูลสูตรล้มเหลว");
+        }
+    });
+}
+
+async function toggleFormulaStatus(formulaId) {
+    let model = {
+        FormulaId: formulaId,
+    };
+
+    $.ajax({
+        url: urlToggleFormulaStatus,
+        type: "PATCH",
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        success: async function (res) {
+            if (res.isSuccess) {
+                await showSuccess(res.message);
+            } else {
+                await showWarning(res.message);
+            }
+        },
+        error: async function (xhr) {
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        }
     });
 }

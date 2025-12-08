@@ -73,15 +73,18 @@
                     contentType: "application/json; charset=utf-8",
                     success: async function (res) {
                         if (res.isSuccess) {
-                            await showSuccess(`ลงทะเบียนผู้ใช้ใหม่เรียบร้อยแล้ว (${res.code})`);
                             $('#modal-add-user').modal('hide');
                             reloadUserList();
+                            await showSuccess(`ลงทะเบียนผู้ใช้ใหม่เรียบร้อยแล้ว (${res.code})`);
                         } else {
+                            $('#modal-add-user').modal('hide');
                             await showWarning(`เกิดข้อผิดพลาดในการลงทะเบียน (${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
-                        await showWarning(`เกิดข้อผิดพลาดในการลงทะเบียน (${xhr.status})`);
+                        $('#modal-add-user').modal('hide');
+                        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -119,15 +122,18 @@
                     contentType: "application/json; charset=utf-8",
                     success: async function (res) {
                         if (res.isSuccess) {
-                            await showSuccess(`แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว (${res.code})`);
                             $('#modal-add-user').modal('hide');
                             reloadUserList();
+                            await showSuccess(`แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว (${res.code})`);
                         } else {
+                            $('#modal-add-user').modal('hide');
                             await showWarning(`เกิดข้อผิดพลาดในการแก้ไข(${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
-                        await showWarning(`เกิดข้อผิดพลาดในการแก้ไข (${xhr.status})`);
+                        $('#modal-add-user').modal('hide');
+                        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -224,9 +230,9 @@ async function reloadUserList() {
 
         $("#userTableBody").html(rows);
 
-    } catch (err) {
-        await showWarning("โหลดข้อมูลผู้ใช้ล้มเหลว");
-        console.error(err);
+    } catch (xhr) {
+        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
     }
 }
 
@@ -242,14 +248,14 @@ async function toggleUserStatus(userId, isActive) {
                     contentType: "application/json; charset=utf-8"
                 });
                 if (res.isSuccess) {
-                    await showSuccess(`เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว (${res.code})`);
                     reloadUserList();
+                    await showSuccess(`เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว (${res.code})`);
                 } else {
                     await showWarning(`เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้ (${res.code}) ${res.message})`);
                 }
-            } catch (err) {
-                await showWarning(`เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้ (${err.status})`);
-                console.error(err);
+            } catch (xhr) {
+                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         }
     );
