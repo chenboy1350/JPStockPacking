@@ -26,7 +26,8 @@ namespace JPStockPacking.Controllers
         IAuditService comparedInvoiceService,
         Serilog.ILogger logger,
         IProductionPlanningService productionPlanningService,
-        IFormulaManagementService formulaManagementService) : Controller
+        IFormulaManagementService formulaManagementService,
+        IPermissionManagement permissionManagement) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -45,6 +46,7 @@ namespace JPStockPacking.Controllers
         private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
         private readonly Serilog.ILogger _logger = logger;
         private readonly IFormulaManagementService _formulaManagementService = formulaManagementService;
+        private readonly IPermissionManagement _permissionManagement = permissionManagement;
 
         [Authorize]
         public IActionResult Index()
@@ -106,6 +108,19 @@ namespace JPStockPacking.Controllers
             ViewBag.Employees = await _pISService.GetAvailableEmployeeAsync();
             List<UserModel> res = await _pISService.GetUser(new ReqUserModel());
             return PartialView("~/Views/Partial/_UserManagement.cshtml", res);
+        }
+
+        //[Authorize]
+        //public async Task<IActionResult> EmployeeManagement()
+        //{
+        //    return PartialView("~/Views/Partial/_EmployeeManagement.cshtml");
+        //}
+
+        [Authorize]
+        public async Task<IActionResult> PermissionManagement()
+        {
+            var res = await _permissionManagement.GetUserAsync();
+            return PartialView("~/Views/Partial/_PermissionManagement.cshtml", res);
         }
 
         [Authorize]
@@ -715,7 +730,6 @@ namespace JPStockPacking.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
-
         }
 
         [HttpPatch]
@@ -731,7 +745,31 @@ namespace JPStockPacking.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetUserPermission(int userId)
+        {
+            var permissions = await _permissionManagement.GetPermissionAsync();
+            var mapping = await _permissionManagement.GetMappingPermissionAsync(userId);
+
+            var result = permissions.Select(p => new
+            {
+                p.PermissionId,
+                p.Name,
+                Enabled = mapping.Any(m => m.PermissionId == p.PermissionId)
+            }).ToList();
+
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> UpdateUserPermission([FromBody] UpdatePermissionModel model)
+        {
+            var result = await _permissionManagement.UpdatePermissionAsync(model);
+            return Ok(result);
         }
 
         [HttpPost]

@@ -43,6 +43,7 @@
                     success: async function (res) {
                         if (res.isSuccess) {
                             $('#modal-add-formula').modal('hide');
+                            loadFormulaTable();
                             await showSuccess(`ลงทะเบียนสูตรคำนวณใหม่เรียบร้อยแล้ว`);
                         } else {
                             $('#modal-add-formula').modal('hide');
@@ -105,6 +106,7 @@
                     success: async function (res) {
                         if (res.isSuccess) {
                             $('#modal-edit-formula').modal('hide');
+                            loadFormulaTable();
                             await showSuccess(`แก้ไขสูตรคำนวณเรียบร้อยแล้ว`);
                         } else {
                             $('#modal-edit-formula').modal('hide');
@@ -122,6 +124,78 @@
     });
 
 });
+
+async function loadFormulaTable() {
+
+    let model = {};
+
+    $.ajax({
+        url: urlGetFormula,
+        type: "POST",
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+
+        success: function (res) {
+
+            let tbody = $("#tbl-body-formula");
+            tbody.empty();
+
+            if (!res || res.length === 0) {
+                tbody.append(`<tr><td colspan="13" class="text-center">ไม่พบข้อมูล</td></tr>`);
+                return;
+            }
+
+            let rows = "";
+            let index = 1;
+
+            res.forEach(item => {
+
+                let statusBadge = item.isActive
+                    ? `<span class="badge badge-success">Active</span>`
+                    : `<span class="badge badge-danger">Disabled</span>`;
+
+                let toggleButton = item.isActive
+                    ? `<button class="btn btn-danger btn-sm" onclick="toggleFormulaStatus(${item.formulaID})"><i class="fas fa-window-close"></i> Disable</button>`
+                    : `<button class="btn btn-success btn-sm" onclick="toggleFormulaStatus(${item.formulaID})"><i class="fas fa-check-square"></i> Active</button>`;
+
+                rows += `
+                    <tr>
+                        <td class="text-center">${index}</td>
+                        <td class="text-left">${item.name}</td>
+                        <td class="text-center">${item.customerGroup}</td>
+                        <td class="text-center">${item.packMethod}</td>
+                        <td class="text-center">${item.productType}</td>
+
+                        <td class="text-right">${item.items}</td>
+                        <td class="text-right">${item.p1}</td>
+                        <td class="text-right">${item.p2}</td>
+                        <td class="text-right">${item.avg}</td>
+                        <td class="text-right">${item.itemPerSec}</td>
+
+                        <td class="text-center">${statusBadge}</td>
+
+                        <td class="text-center">
+                            <button class="btn btn-info btn-sm" onclick="showEditFormulaModal(${item.formulaID})">
+                                <i class="fas fa-pen-square"></i> Edit
+                            </button>
+
+                            ${toggleButton}
+                        </td>
+                    </tr>
+                `;
+
+                index++;
+            });
+
+            tbody.append(rows);
+        },
+
+        error: function () {
+            showWarning("โหลดข้อมูลล้มเหลว");
+        }
+    });
+}
+
 
 function showAddFormulaModal() {
     $('#modal-add-formula').modal('show');
@@ -200,7 +274,7 @@ async function toggleFormulaStatus(formulaId) {
         contentType: "application/json; charset=utf-8",
         success: async function (res) {
             if (res.isSuccess) {
-                await showSuccess(res.message);
+                loadFormulaTable()
             } else {
                 await showWarning(res.message);
             }

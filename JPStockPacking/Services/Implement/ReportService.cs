@@ -325,7 +325,7 @@ namespace JPStockPacking.Services.Implement
                                 "KS" => "Stock Body",
                                 "KM" => "Spare Part Stock",
                                 "KX" => "Export",
-                                "KL" => "Center",
+                                "KL" => "Audit",
                                 _ => "Unknow"
                             },
                             SendType = g.First().SendType switch

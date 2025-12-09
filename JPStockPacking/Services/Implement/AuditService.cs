@@ -112,7 +112,7 @@ namespace JPStockPacking.Services.Implement
                             JPComparedInvoiceList.Add(new ComparedInvoiceModel
                             {
                                 CustCode = jpItem.OrderCust ?? string.Empty,
-                                MakeUnit = jpItem.MakeUnit ?? string.Empty,
+                                MakeUnit = jpItem.MakeUnit!.Trim() ?? string.Empty,
 
                                 JPInvoiceNo = jpItem.InvNo,
                                 JPOrderNo = jpItem.OrderNo,
@@ -163,7 +163,7 @@ namespace JPStockPacking.Services.Implement
                                 JPComparedInvoiceList.Add(new ComparedInvoiceModel
                                 {
                                     CustCode = jpItem.OrderCust ?? string.Empty,
-                                    MakeUnit = jpItem.MakeUnit ?? string.Empty,
+                                    MakeUnit = jpItem.MakeUnit!.Trim() ?? string.Empty,
 
                                     JPInvoiceNo = jpItem.InvNo,
                                     JPOrderNo = jpItem.OrderNo,

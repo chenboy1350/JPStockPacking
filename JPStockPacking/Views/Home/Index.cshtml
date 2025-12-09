@@ -124,6 +124,26 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "PermissionManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("PermissionManagement", "Home")">
+                                <i class="nav-icon fas fa-user-shield"></i>
+                                <p>จัดการสิทธิการเข้าถึง</p>
+                            </a>
+                        </li>
+                    }
+
+@*                     @if (User.HasClaim("Menu", "EmployeeManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("EmployeeManagement", "Home")">
+                                <i class="nav-icon fas fa-user-edit"></i>
+                                <p>จัดการพนักงาน</p>
+                            </a>
+                        </li>
+                    } *@
+
                     @if (User.HasClaim("Menu", "FormulaManagement"))
                     {
                         <li class="nav-item">
@@ -159,7 +179,7 @@
     <div class="content-wrapper">
         <section class="content">
             <div id="content-container">
-                <h5 class="mb-2 text-center">MENU</h5>
+                <h3 class="mb-2 text-center">MENU</h3>
                 <div class="row justify-content-center">
                     @if (User.HasClaim("Menu", "ReceiveManagement"))
                     {
@@ -179,7 +199,7 @@
                     {
                         <div class="col-md-3 col-sm-6 col-12">
                             <a href="#" class="menu-box-link" data-action="@Url.Action("OrderManagement", "Home")" style="text-decoration: none;">
-                                <div class="info-box bg-success cursor-pointer hover-shadow">
+                                <div class="info-box bg-info cursor-pointer hover-shadow">
                                     <span class="info-box-icon"><i class="fas fa-boxes"></i></span>
                                     <div class="info-box-content">
                                         <span class="info-box-text" style="font-size:30px">สต็อกแพ็คกิ้ง</span>
@@ -193,7 +213,7 @@
                     {
                         <div class="col-md-3 col-sm-6 col-12">
                             <a href="#" class="menu-box-link" data-action="@Url.Action("PackedManagement", "Home")" style="text-decoration: none;">
-                                <div class="info-box bg-warning cursor-pointer hover-shadow">
+                                <div class="info-box bg-info cursor-pointer hover-shadow">
                                     <span class="info-box-icon"><i class="fas fa-truck-loading"></i></span>
                                     <div class="info-box-content">
                                         <span class="info-box-text" style="font-size:30px">รายการส่งออก</span>
@@ -207,7 +227,7 @@
                     {
                         <div class="col-md-3 col-sm-6 col-12">
                             <a href="#" class="menu-box-link" data-action="@Url.Action("CheckQtyToPack", "Home")" style="text-decoration: none;">
-                                <div class="info-box bg-danger cursor-pointer hover-shadow">
+                                <div class="info-box bg-info cursor-pointer hover-shadow">
                                     <span class="info-box-icon"><i class="fas fa-clipboard-check"></i></span>
                                     <div class="info-box-content">
                                         <span class="info-box-text" style="font-size:30px">แจ้งยอดบรรจุ</span>
@@ -223,7 +243,7 @@
                     <div class="row justify-content-center mt-3">
                         <div class="col-md-3 col-sm-6 col-12">
                             <a href="#" class="menu-box-link" data-action="@Url.Action("Validation", "Home")" style="text-decoration: none;">
-                                <div class="info-box bg-primary cursor-pointer hover-shadow">
+                                <div class="info-box bg-info cursor-pointer hover-shadow">
                                     <span class="info-box-icon"><i class="fas fa-clipboard-check"></i></span>
                                     <div class="info-box-content">
                                         <span class="info-box-text" style="font-size:30px">ตรวจสอบ</span>
@@ -236,16 +256,30 @@
 
                 @if (User.HasClaim("Menu", "UserManagement") || User.HasClaim("Menu", "FormulaManagement") || User.HasClaim("Menu", "AppSettings"))
                 {
-                    <h5 class="mt-5 mb-2 text-center">ADMINISTRATION</h5>
+                    <h3 class="mt-5 mb-2 text-center">ADMINISTRATION</h3>
                     <div class="row justify-content-center">
                         @if (User.HasClaim("Menu", "UserManagement"))
                         {
                             <div class="col-md-3 col-sm-6 col-12">
                                 <a href="#" class="menu-box-link" data-action="@Url.Action("UserManagement", "Home")" style="text-decoration: none;">
-                                    <div class="info-box bg-secondary cursor-pointer hover-shadow">
+                                    <div class="info-box bg-dark cursor-pointer hover-shadow">
                                         <span class="info-box-icon"><i class="fas fa-user-edit"></i></span>
                                         <div class="info-box-content">
                                             <span class="info-box-text" style="font-size:30px">จัดการผู้ใช้</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+
+                        @if (User.HasClaim("Menu", "PermissionManagement"))
+                        {
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a href="#" class="menu-box-link" data-action="@Url.Action("PermissionManagement", "Home")" style="text-decoration: none;">
+                                    <div class="info-box bg-dark cursor-pointer hover-shadow">
+                                        <span class="info-box-icon"><i class="fas fa-user-shield"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text" style="font-size:30px">จัดการสิทธิการเข้าถึง</span>
                                         </div>
                                     </div>
                                 </a>
@@ -270,7 +304,7 @@
                         {
                             <div class="col-md-3 col-sm-6 col-12">
                                 <a href="#" class="menu-box-link" data-action="@Url.Action("AppSettings", "Home")" style="text-decoration: none;">
-                                    <div class="info-box bg-info cursor-pointer hover-shadow">
+                                    <div class="info-box bg-dark cursor-pointer hover-shadow">
                                         <span class="info-box-icon"><i class="fas fa-cog"></i></span>
                                         <div class="info-box-content">
                                             <span class="info-box-text" style="font-size:30px">ตั้งค่าทั่วไป</span>
@@ -341,6 +375,8 @@
         window.urlAddNewFormula = '@Url.Action("AddNewFormula", "Home")';
         window.urlEditFormula = '@Url.Action("EditFormula", "Home")';
         window.urlToggleFormulaStatus = '@Url.Action("ToggleFormulaStatus", "Home")';
+        window.urlGetUserPermission = '@Url.Action("GetUserPermission", "Home")';
+        window.urlUpdateUserPermission = '@Url.Action("UpdateUserPermission", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -351,6 +387,7 @@
     <script src="~/js/AppSettings.js" asp-append-version="true"></script>
     <script src="~/js/Audit.js" asp-append-version="true"></script>
     <script src="~/js/FormulaManagement.js" asp-append-version="true"></script>
+    <script src="~/js/PermissionManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

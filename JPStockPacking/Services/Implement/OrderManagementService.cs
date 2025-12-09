@@ -141,7 +141,7 @@ namespace JPStockPacking.Services.Implement
                     lotNotifies.TryGetValue(l.LotNo, out var lotNotify);
 
                     bool isLotUpdate = lotNotify?.IsUpdate ?? false;
-                    bool isAllReturned = l.TtQty > 0 && l.ReturnedQty >= l.TtQty;
+                    bool isAllReturned = l.TtQty > 0 && l.ReturnedQty >= (l.TtQty + l.Si);
                     bool isAllReceived = l.TtQty > 0 && l.ReceivedQty >= l.TtQty;
                     bool isPacking = l.TtQty > 0 && l.AssignedQty > 0;
                     bool isAllAssigned = !notAllAssignedLots.Contains(l.LotNo);

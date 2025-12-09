@@ -1,0 +1,134 @@
+﻿@model List<JPStockPacking.Models.UserModel>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="accordion" id="accordionFilter">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFilter">
+                            <button class="accordion-button collapsed show" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
+                                <strong>ค้นหา</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>ชื่อผู้ใช้</label>
+                                            <input type="text" id="txt" class="form-control" placeholder="กรอก Username">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="">Clear</button>
+                                <button class="btn btn-primary" onclick="">ค้นหา</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="card d-flex">
+            <div class="card-header justify-content-between align-content-center">
+                <div class="justify-content-center">
+                    <h3 class="card-title">รายชื่อผู้ใช้</h3>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0" style="height:87vh">
+                <table id="tbl-main" class="table table-head-fixed table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="text-start">#</th>
+                            <th class="text-start">Username</th>
+                            <th class="text-start">พนักงาน</th>
+                            <th class="text-start">แผนก</th>
+                            <th class="text-start">สถานะ</th>
+                            <th class="text-start">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-start">#</td>
+                                <td class="text-start">@item.Username</td>
+                                <td class="text-start">@item.FirstName @item.LastName (@item.NickName)</td>
+                                <td class="text-start">@item.DepartmentName</td>
+                                <td class="col-status">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge badge-success">เปิดใช้งาน</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">ปิดใช้งาน</span>
+                                    }
+                                </td>
+                                <td class="col-action">
+                                    <button class="btn btn-info btn-sm" onclick="showEditPermissionModal(@item.UserID, '@item.Username')">
+                                        <i class="fas fa-pen-square"></i> แก้ไข
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-edit-user-permission">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">แก้ไขสิทธิการเข้าถึง</h4>
+                <input type="hidden" id="hddUserId" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-default">
+                    <div class="card-header">
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display: block;">
+                        <div class="form-group">
+                            <div class="col-4 mt-2">
+                                <label>ชื่อผู้ใช้</label>
+                                <input type="text" id="txtperUsername" class="form-control" disabled>
+                            </div>
+                        </div>
+                        <table id="tbl-permission" class="table table-head-fixed text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">#</th>
+                                    <th class="text-start">Name</th>
+                                    <th class="text-center">Enable</th>
+                                    <th class="text-center">Disable</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-user-permission">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
+                <button type="button" id="btnConfirmEditPermission" class="btn btn-info">ยืนยันการแก้ไข</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="จัดการสิทธิการเข้าถึง"></div>
