@@ -1136,7 +1136,7 @@ namespace JPStockPacking.Services.Implement
                     ListNo = a.ListNo,
                     BillDate = a.BillDate,
                     CheckBill = a.CheckBill,
-                    Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                    Username = Reporter != null && Reporter.Count > 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
                     Mdate = a.MDate,
                     SendPack = a.SendPack,
                     PackDoc = a.PackDoc,
