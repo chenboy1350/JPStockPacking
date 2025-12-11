@@ -47,10 +47,10 @@ namespace JPStockPacking.Services.Implement
                 .ToListAsync();
 
             var result = from member in tableMembers
-                         join employee in employees on member.EmpId equals employee.Id
+                         join employee in employees on member.EmpId equals employee.EmployeeID
                          select new TableMemberModel
                          {
-                             Id = employee.Id,
+                             Id = employee.EmployeeID,
                              FirstName = employee.FirstName,
                              LastName = employee.LastName,
                              NickName = employee.NickName

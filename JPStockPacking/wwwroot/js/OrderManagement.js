@@ -671,9 +671,9 @@ function renderLotRow(order, lot, index = "#") {
         actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showModalLost("${lot.lotNo}")'><i class='far fa-eye-slash'></i> หาย</button> `;
     if (lot.isPacking || lot.isAllReturned)
         actionsHtml += ` <button class='btn btn-warning btn-sm' onclick='showModalBreak("${lot.lotNo}")'><i class='fas fa-hammer'></i> ซ่อม</button> `;
-    if (!lot.isAllReturned && lot.ttQty !== 0 && !lot.isAllReturned)
+    if ((!lot.isAllReturned && lot.ttQty !== 0) || lot.isRemainNotAssign)
         actionsHtml += ` <button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button> `;
-    if (lot.isPacking && !lot.isAllReturned)
+    if ((lot.isPacking && !lot.isAllReturned) || lot.isRemainNotReturn)
         actionsHtml += ` <button class='btn btn-danger btn-sm' onclick='showModalReturn("${lot.lotNo}")'><i class='fas fa-folder'></i> รับคืน</button> `;
 
     // Assigned tables
@@ -1000,25 +1000,24 @@ async function showModalLost(lotNo) {
             }
             const rows = data.map(function (x, i) {
                 return `
-            <tr data-lost-id="${html(x.lostID)}">
-                <td>#</td>
-                <td><strong>${html(x.custCode)}</strong></td>
-                <td>${html(x.orderNo)}</td>
-                <td>${html(x.lotNo)}</td>
-                <td>${html(x.listNo)}</td>
-                <td class="text-center">${html(x.article)}</td>
-                <td>${html(x.ttQty)}</td>
-                <td>${html(x.lostQty)}</td>
-                <td>${html(x.createDate)}</td>
-                <td>${x.isReported ? '✔️ รายงานแล้ว' : '❌ ยังไม่รายงาน'}</td>
-                <td class="text-center">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="${x.lostID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
-                        <label for="${x.lostID}_as${i}"></label>
-                    </div>
-                </td>
-            </tr>`;
-            }).join('');
+                <tr data-lost-id="${html(x.lostID)}">
+                    <td>#</td>
+                    <td><strong>${html(x.custCode)}</strong></td>
+                    <td>${html(x.orderNo)}</td>
+                    <td>${html(x.lotNo)}</td>
+                    <td class="text-center">${html(x.listNo)}</td>
+                    <td class="text-center">${html(x.article)}</td>
+                    <td class="text-center">${html(x.lostQty)}</td>
+                    <td>${html(x.createDateTH)}</td>
+                    <td class="text-center">${x.isReported ? '✔️' : '❌'}</td>
+                    <td class="text-center">
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="${x.lostID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
+                            <label for="${x.lostID}_as${i}"></label>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('');
             tbody.append(rows);
         },
         error: async function (xhr) {
@@ -1079,26 +1078,25 @@ async function showModalBreak(lotNo) {
             }
             const rows = data.map(function (x, i) {
                 return `
-            <tr data-break-id="${html(x.breakID)}">
-                <td>#</td>
-                <td><strong>${html(x.receiveNo)}</strong></td>
-                <td>${html(x.custCode)}</td>
-                <td>${html(x.orderNo)}</td>
-                <td>${html(x.lotNo)}</td>
-                <td>${html(x.listNo)}</td>
-                <td>${html(x.previousQty)}</td>
-                <td>${html(x.breakQty)}</td>
-                <td>${html(x.breakDescription)}</td>
-                <td>${html(x.createDate)}</td>
-                <td>${x.isReported ? '✔️ รายงานแล้ว' : '❌ ยังไม่รายงาน'}</td>
-                <td class="text-center">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="${x.breakID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
-                        <label for="${x.breakID}_as${i}"></label>
-                    </div>
-                </td>
-            </tr>`;
-            }).join('');
+                <tr data-break-id="${html(x.breakID)}">
+                    <td>#</td>
+                    <td><strong>${html(x.receiveNo)}</strong></td>
+                    <td>${html(x.custCode)}</td>
+                    <td>${html(x.orderNo)}</td>
+                    <td>${html(x.lotNo)}</td>
+                    <td class="text-center">${html(x.listNo)}</td>
+                    <td class="text-center">${html(x.breakQty)}</td>
+                    <td>${html(x.breakDescription)}</td>
+                    <td>${html(x.createDateTH)}</td>
+                    <td class="text-center">${x.isReported ? '✔️' : '❌'}</td>
+                    <td class="text-center">
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="${x.breakID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
+                            <label for="${x.breakID}_as${i}"></label>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('');
             tbody.append(rows);
         },
         error: async function (xhr) {

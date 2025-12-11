@@ -171,6 +171,17 @@ namespace JPStockPacking.Services.Implement
             await using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
             try
             {
+                var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(x => x.LotNo == input.LotNo);
+                if (lot == null)
+                {
+                    await transaction.RollbackAsync();
+                    return new BaseResponseModel
+                    {
+                        IsSuccess = false,
+                        Message = "ไม่พบ LotNo ที่ระบุ"
+                    };
+                }
+
                 // ดึง Received ทั้งหมดที่ LotNo ตรง
                 var receivedList = await _sPDbContext.Received
                     .Where(x => x.LotNo == input.LotNo)
@@ -342,6 +353,11 @@ namespace JPStockPacking.Services.Implement
                     export.UpdateDate = DateTime.Now;
                     export.UpdateBy = int.TryParse(input.UserId, out int updateBy) ? updateBy : null;
                 }
+
+                lot.Unallocated = input.Unallocated;
+                lot.UpdateDate = DateTime.UtcNow;
+
+                if(input.Unallocated <= 0) lot.IsSuccess = true;
 
                 await _sPDbContext.SaveChangesAsync();
 
@@ -1201,7 +1217,6 @@ namespace JPStockPacking.Services.Implement
                 {
                     s.LotNo,
                     s.BillNumber,
-                    s.Unallocated
                 }
             ).ToList();
 
@@ -1214,23 +1229,26 @@ namespace JPStockPacking.Services.Implement
                     s.LotNo,
                     s.BillNumber,
                     BreakDes = b.Name,
-                    s.Unallocated
                 }
             ).ToList();
 
             foreach (var item in filteredResult)
             {
-                var storeMatched = storeInfo.FirstOrDefault(s => s.LotNo == item.LotNo && s.BillNumber == item.BillNumber);
-                if (storeMatched != null)
+                var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(l => l.LotNo == item.LotNo);
+                if (lot != null)
                 {
-                    item.Unallocated = storeMatched.Unallocated ?? 0;
-                }
+                    var storeMatched = storeInfo.FirstOrDefault(s => s.LotNo == item.LotNo && s.BillNumber == item.BillNumber);
+                    if (storeMatched != null)
+                    {
+                        item.Unallocated = lot.Unallocated ?? 0;
+                    }
 
-                var meltMatched = meltInfo.FirstOrDefault(m => m.LotNo == item.LotNo && m.BillNumber == item.BillNumber);
-                if (meltMatched != null)
-                {
-                    item.BreakDescription = meltMatched.BreakDes;
-                    item.Unallocated = meltMatched.Unallocated ?? 0;
+                    var meltMatched = meltInfo.FirstOrDefault(m => m.LotNo == item.LotNo && m.BillNumber == item.BillNumber);
+                    if (meltMatched != null)
+                    {
+                        item.BreakDescription = meltMatched.BreakDes;
+                        item.Unallocated = lot.Unallocated ?? 0;
+                    }
                 }
             }
 

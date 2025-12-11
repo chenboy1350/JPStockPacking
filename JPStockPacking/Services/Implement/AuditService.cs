@@ -54,7 +54,7 @@ namespace JPStockPacking.Services.Implement
                 if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.InvoiceNo))
                 {
                     var invoiceNo = comparedInvoiceFilterModel.InvoiceNo.Insert(2, "I").ToUpper();
-                    JPInvoiceList = JPInvoiceList.Where(x => x.hinv.InvNo == invoiceNo);
+                    JPInvoiceList = JPInvoiceList.Where(x => x.hinv.InvNo.ToLower() == invoiceNo.ToLower());
                 }
 
                 if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.OrderNo))
@@ -253,31 +253,7 @@ namespace JPStockPacking.Services.Implement
                         var unallocatedQty = lot.ReturnedQty - sumExTtQty;
                         if (sumExTtQty > lot.ReturnedQty)
                         {
-                            var spstlot = await _sPDbContext.Store.Where(x => x.LotNo == lot.LotNo && x.Unallocated > 0 && x.CreateDate.HasValue && x.CreateDate.Value <= cutoffDate).ToListAsync();
-                            if (spstlot.Count > 0)
-                            {
-                                unallocatedQty -= spstlot.Sum(x => x.Unallocated);
-                            }
 
-                            var spmllot = await _sPDbContext.Melt.Where(x => x.LotNo == lot.LotNo && x.Unallocated > 0 && x.CreateDate.HasValue && x.CreateDate.Value <= cutoffDate).ToListAsync();
-                            if (spmllot.Count > 0)
-                            {
-                                unallocatedQty -= spmllot.Sum(x => x.Unallocated);
-                            }
-
-                            if ((spstlot.Count > 0 || spmllot.Count > 0) && unallocatedQty <= 0)
-                            {
-                                UnallocatedQuantityModel unallocatedQuantityModel = new()
-                                {
-                                    LotNo = lot.LotNo,
-                                    ExportedQty = sumExTtQty,
-                                    StoredQty = spstlot.Sum(x => x.TtQty),
-                                    MeltedQty = spmllot.Sum(x => x.TtQty),
-                                    UnallocatedQty = unallocatedQty ?? 0
-                                };
-
-                                unallocatedQuantityModels.Add(unallocatedQuantityModel);
-                            }
                         }
                     }
                 }

@@ -31,7 +31,8 @@ namespace JPStockPacking.Services.Implement
                     TtQty = lot.TtQty ?? 0,
                     TtWg = (double)(lot.TtWg ?? 0),
                     IsReported = los.IsReported,
-                    CreateDate = los.CreateDate.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                    CreateDateTH = los.CreateDate.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                    CreateDate = los.CreateDate.GetValueOrDefault()
                 }
             ).ToListAsync();
 

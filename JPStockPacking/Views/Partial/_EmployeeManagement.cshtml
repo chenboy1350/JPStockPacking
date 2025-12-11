@@ -1,5 +1,164 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@model List<JPStockPacking.Models.ResEmployeeModel>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="accordion" id="accordionFilter">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFilter">
+                            <button class="accordion-button collapsed show" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
+                                <strong>ค้นหา</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseFilter" class="accordion-collapse collapse" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>ชื่อพนักงาน</label>
+                                            <input type="text" id="txt" class="form-control" placeholder="กรอก ชื่อพนักงาน">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="">Clear</button>
+                                <button class="btn btn-primary" onclick="">ค้นหา</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="card d-flex">
+            <div class="card-header justify-content-between align-content-center">
+                <div class="justify-content-center">
+                    <h3 class="card-title">รายชื่อผู้ใช้</h3>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" onclick="showAddEmployeeModal()"><i class="fas fa-user-plus"></i> เพิ่มพนักงานใหม่</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0" style="height:87vh">
+                <table id="tbl-main" class="table table-head-fixed table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="text-start">#</th>
+                            <th class="text-start">ชื่อ</th>
+                            <th class="text-start">นามสกุล</th>
+                            <th class="text-start">ชื่อเล่น</th>
+                            <th class="text-start">แผนก</th>
+                            <th class="text-start">วันที่สร้าง</th>
+                            <th class="text-start">แก้ไขล่าสุด</th>
+                            <th class="text-start">สถานะ</th>
+                            <th class="text-start">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-start">#</td>
+                                <td class="text-start">@item.FirstName</td>
+                                <td class="text-start">@item.LastName</td>
+                                <td class="text-start">@item.NickName</td>
+                                <td class="text-start">@item.DepartmentName</td>
+                                <td class="text-start">@item.CreateDate</td>
+                                <td class="text-start">@item.UpdateDate</td>
+                                <td class="col-status">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge badge-success">เปิดใช้งาน</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">ปิดใช้งาน</span>
+                                    }
+                                </td>
+                                <td class="col-action">
+                                    <button class="btn btn-info btn-sm" onclick="showEditEmployeeModal(@item.EmployeeID)">
+                                        <i class="fas fa-pen-square"></i> แก้ไข
+                                    </button>
+                                    @if (item.IsActive)
+                                    {
+                                        <button class="btn btn-danger btn-sm" onclick="toggleEmployeeStatus(@item.EmployeeID, false)">
+                                            <i class="fas fa-window-close"></i> ปิดใช้งาน
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-success btn-sm" onclick="toggleEmployeeStatus(@item.EmployeeID, true)">
+                                            <i class="fas fa-check-square"></i> เปิดใช้งาน
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-edit-employee">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">แก้ไขข้อมูลพนักงาน</h4>
+                <input type="hidden" id="hddEmpID" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card card-default">
+                    <div class="card-header">
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display: block;">
+                        <div class="row">
+                            <div class="form-group">
+                                <div class="col-4 mt-2">
+                                    <label>ชื่อ</label>
+                                    <input type="text" id="txtEditFirstName" class="form-control">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>นามสกุล</label>
+                                    <input type="text" id="txtEditLastName" class="form-control">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>ชื่อเล่น</label>
+                                    <input type="text" id="txtEditNickName" class="form-control">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label>แผนก</label>
+                                    <select id="ddlEditDept" name="ddlEditDept" class="form-control" style="width: 100%">
+                                        <option value="" selected>-- เลือกแผนก --</option>
+                                        @foreach (var emp in ViewBag.Departments)
+                                        {
+                                            <option value="@emp.DepartmentID">@emp.DepartmentName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" onclick="CloseModal()">Close</button>
+                <button type="button" id="btnConfirmEditEmployee" class="btn btn-info">ยืนยันการแก้ไข</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="page-title" data-title="จัดการข้อมูลพนักงาน"></div>

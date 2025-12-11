@@ -130,7 +130,7 @@
                                         <option value="" selected>-- เลือกพนักงาน --</option>
                                         @foreach (var emp in ViewBag.Employees)
                                         {
-                                            <option value="@emp.Id">@emp.FirstName @emp.LastName (@emp.NickName)</option>
+                                            <option value="@emp.EmployeeID">@emp.FirstName @emp.LastName (@emp.NickName)</option>
                                         }
                                     </select>
                                 </div>
@@ -189,7 +189,7 @@
                                         <option value="" selected>-- เลือกพนักงาน --</option>
                                         @foreach (var emp in ViewBag.Employees)
                                         {
-                                            <option value="@emp.Id">@emp.FirstName @emp.LastName (@emp.NickName)</option>
+                                            <option value="@emp.EmployeeID">@emp.FirstName @emp.LastName (@emp.NickName)</option>
                                         }
                                     </select>
                                 </div>

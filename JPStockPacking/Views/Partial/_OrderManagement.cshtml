@@ -137,7 +137,7 @@
                                                             @foreach (var asnt in lot.AssignTo)
                                                             {
                                                                 <a>
-                                                                    <span class="badge badge-secondary" style="cursor: pointer;" onclick="showModalTableMember(@asnt.AssignmentId)">@asnt.TableName</span>
+                                                                    <span class="badge badge-secondary" onclick="showModalTableMember(@asnt.AssignmentId)">@asnt.TableName</span>
                                                                 </a>
                                                             }
                                                         </td>
@@ -232,8 +232,8 @@
                                                             @Html.Raw((lot.IsPacking || lot.IsAllReturned) ? string.Format("<button class='btn btn-warning btn-sm' onclick='showModalLost({0})'><i class='far fa-eye-slash'></i> หาย</button>", lot.LotNo) : "")
                                                             @Html.Raw((lot.IsPacking || lot.IsAllReturned) ? string.Format("<button class='btn btn-warning btn-sm' onclick='showModalBreak({0})'><i class='fas fa-hammer'></i> ซ่อม</button>", lot.LotNo) : "")
 
-                                                            @Html.Raw((lot.ReceivedQty > 0 && !lot.IsAllReturned) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
-                                                            @Html.Raw((lot.IsPacking && !lot.IsAllReturned) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
+                                                            @Html.Raw(((lot.ReceivedQty > 0 && !lot.IsAllReturned) || lot.IsRemainNotAssign) ? string.Format("<button class='btn btn-primary btn-sm' onclick='showModalAssign({0})'><i class='fas fa-folder'></i> จ่ายงาน</button>", lot.LotNo) : "")
+                                                            @Html.Raw(((lot.IsPacking && !lot.IsAllReturned) || lot.IsRemainNotReturn) ? string.Format("<button class='btn btn-danger btn-sm' onclick='showModalReturn({0})'><i class='fas fa-folder'></i> รับคืน</button>", lot.LotNo) : "")
                                                         </td>
                                                     </tr>
                                                 }
@@ -575,10 +575,9 @@
                                     <th>LotNo</th>
                                     <th>ลำดับ</th>
                                     <th>รหัสสินค้า</th>
-                                    <th>จำนวนสั่ง</th>
                                     <th>จำนวนสูญหาย</th>
                                     <th>วันที่ทำรายการ</th>
-                                    <th>สถานะ</th>
+                                    <th>พิมพ์</th>
                                     <th>
                                         <div class="icheck-primary d-inline">
                                             <input type="checkbox" id="chkSelectAllLost">
@@ -631,11 +630,10 @@
                                     <th>OrderNo</th>
                                     <th>LotNo</th>
                                     <th>ลำดับ</th>
-                                    <th>จำนวนรับ</th>
                                     <th>ชำรุด</th>
                                     <th>สาเหตุ</th>
                                     <th>วันที่ทำรายการ</th>
-                                    <th>สถานะ</th>
+                                    <th>พิมพ์</th>
                                     <th>
                                         <div class="icheck-primary d-inline">
                                             <input type="checkbox" id="chkSelectAllBreak">

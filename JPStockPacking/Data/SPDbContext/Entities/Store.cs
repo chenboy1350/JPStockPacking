@@ -27,9 +27,6 @@ public partial class Store
 
     public double TtWg { get; set; }
 
-    [Column(TypeName = "numeric(18, 1)")]
-    public decimal? Unallocated { get; set; }
-
     public bool IsSended { get; set; }
 
     public bool IsStored { get; set; }

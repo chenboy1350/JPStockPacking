@@ -110,17 +110,19 @@ namespace JPStockPacking.Controllers
             return PartialView("~/Views/Partial/_UserManagement.cshtml", res);
         }
 
-        //[Authorize]
-        //public async Task<IActionResult> EmployeeManagement()
-        //{
-        //    return PartialView("~/Views/Partial/_EmployeeManagement.cshtml");
-        //}
-
         [Authorize]
         public async Task<IActionResult> PermissionManagement()
         {
             var res = await _permissionManagement.GetUserAsync();
             return PartialView("~/Views/Partial/_PermissionManagement.cshtml", res);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> EmployeeManagement()
+        {
+            ViewBag.Departments = await _pISService.GetDepartmentAsync();
+            var res = await _pISService.GetEmployeeAsync();
+            return PartialView("~/Views/Partial/_EmployeeManagement.cshtml", res);
         }
 
         [Authorize]
@@ -717,7 +719,7 @@ namespace JPStockPacking.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPatch]
         [Authorize]
         public async Task<IActionResult> EditFormula([FromBody] Formula formula)
         {
@@ -770,6 +772,49 @@ namespace JPStockPacking.Controllers
         {
             var result = await _permissionManagement.UpdatePermissionAsync(model);
             return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetEmployeeByID([FromBody] ResEmployeeModel resEmployeeModel)
+        {
+            try
+            {
+                var emplist = await _pISService.GetEmployeeAsync();
+                if (emplist == null)
+                {
+                    return Ok(new BaseResponseModel
+                    {
+                        IsSuccess = false,
+                        Message = "ไม่พบข้อมูลพนักงาน"
+                    });
+                }
+
+                var emp = emplist.FirstOrDefault(e => e.EmployeeID == resEmployeeModel.EmployeeID);
+                return Ok(emp);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> EditEmployee([FromBody] ResEmployeeModel resEmployeeModel)
+        {
+            try
+            {
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpPost]

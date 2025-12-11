@@ -81,6 +81,9 @@ public partial class Lot
     [Column(TypeName = "numeric(18, 1)")]
     public decimal? ReturnedQty { get; set; }
 
+    [Column(TypeName = "numeric(18, 1)")]
+    public decimal? Unallocated { get; set; }
+
     public bool IsSuccess { get; set; }
 
     public bool IsActive { get; set; }

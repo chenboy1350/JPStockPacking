@@ -100,7 +100,7 @@
 
                 $.ajax({
                     url: urlEditFormula,
-                    type: "POST",
+                    type: "PATCH",
                     data: JSON.stringify(model),
                     contentType: "application/json; charset=utf-8",
                     success: async function (res) {

@@ -499,18 +499,34 @@ namespace JPStockPacking.Services.Implement
                                 {
                                     table.Cell().ColumnSpan(7).Padding(2).Column(col =>
                                     {
-                                        col.Item().AlignRight().Padding(2).Text($"EXPORT TOTAL :     {model.Where(w => w.MakeUnit == "PC").Sum(s => s.JPTtQty):N0}    PC").FontSize(10).Bold();
-                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "PR").Sum(s => s.JPTtQty):N0}    PR").FontSize(10).Bold();
-                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "SET").Sum(s => s.JPTtQty):N0}  SET").FontSize(10).Bold();
-                                        col.Item().AlignRight().Padding(2).Text($"{(decimal)model.Sum(s => s.JPTotalPrice):N0}    US").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"EXPORT TOTAL :     {FormatNumber(model.Where(w => w.MakeUnit == "PC").Sum(s => s.JPTtQty))}    PC").FontSize(10).Bold();
+
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"{FormatNumber(model.Where(w => w.MakeUnit == "PR").Sum(s => s.JPTtQty))}    PR").FontSize(10).Bold();
+
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"{FormatNumber(model.Where(w => w.MakeUnit == "SET").Sum(s => s.JPTtQty))}  SET").FontSize(10).Bold();
+
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"{FormatNumber(model.Sum(s => s.JPTotalPrice))}    US").FontSize(10).Bold();
                                     });
+
                                     table.Cell().ColumnSpan(4).Padding(2).Column(col =>
                                     {
-                                        col.Item().AlignRight().Padding(2).Text($"PACKING TOTAL :     {model.Where(w => w.MakeUnit == "PC").Sum(s => s.SPTtQty):N0}    PC").FontSize(10).Bold();
-                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "PR").Sum(s => s.SPTtQty):N0}    PR").FontSize(10).Bold();
-                                        col.Item().AlignRight().Padding(2).Text($"{model.Where(w => w.MakeUnit == "SET").Sum(s => s.SPTtQty):N0}  SET").FontSize(10).Bold();
-                                        col.Item().AlignRight().Padding(2).Text($"{(decimal)model.Sum(s => s.SPTotalPrice):N0}    US").FontSize(10).Bold();
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"PACKING TOTAL :     {FormatNumber(model.Where(w => w.MakeUnit == "PC").Sum(s => s.SPTtQty))}    PC").FontSize(10).Bold();
+
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"{FormatNumber(model.Where(w => w.MakeUnit == "PR").Sum(s => s.SPTtQty))}    PR").FontSize(10).Bold();
+
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"{FormatNumber(model.Where(w => w.MakeUnit == "SET").Sum(s => s.SPTtQty))}  SET").FontSize(10).Bold();
+
+                                        col.Item().AlignRight().Padding(2)
+                                            .Text($"{FormatNumber(model.Sum(s => s.SPTotalPrice))}    US").FontSize(10).Bold();
                                     });
+
                                 }
                             });
 
@@ -530,6 +546,13 @@ namespace JPStockPacking.Services.Implement
             });
 
             return document.GeneratePdf();
+
+            static string FormatNumber(double value)
+            {
+                if (value == 0) return "-";
+                if (value % 1 == 0) return value.ToString("N0");
+                return value.ToString("N2").TrimEnd('0').TrimEnd('.');
+            }
         }
     }
 }

@@ -71,6 +71,8 @@ namespace JPStockPacking.Models
         public bool HasLost { get; set; } = false;
         public bool IsAllReturned { get; set; } = false;
         public bool IsAllAssigned { get; set; } = false;
+        public bool IsRemainNotAssign { get; set; } = false;
+        public bool IsRemainNotReturn { get; set; } = false;
         public List<TableMemberModel> TableMembers { get; set; } = [];
     }
 

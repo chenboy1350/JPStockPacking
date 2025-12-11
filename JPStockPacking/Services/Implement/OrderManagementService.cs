@@ -84,11 +84,14 @@ namespace JPStockPacking.Services.Implement
                 .GroupBy(a => a.LotNo)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Select(x => new AssignedWorkTableModel
-                    {
-                        AssignmentId = x.AssignmentId,
-                        TableName = x.Name!
-                    }).Distinct().ToList()
+                    g => g
+                        .Select(x => new AssignedWorkTableModel
+                        {
+                            AssignmentId = x.AssignmentId,
+                            TableName = x.Name!
+                        })
+                        .DistinctBy(m => m.TableName)
+                        .ToList()
                 );
 
             var lotNotifies = await _sPDbContext.LotNotify
@@ -117,6 +120,22 @@ namespace JPStockPacking.Services.Implement
                 .Distinct()
                 .ToListAsync();
 
+            var revs = await _sPDbContext.Received
+                .Where(r => lotNos.Contains(r.LotNo))
+                .Select(r => new { r.LotNo, r.IsAssigned, r.IsReturned })
+                .ToListAsync();
+
+            var pendingSet = revs
+                .Where(r => !r.IsAssigned)
+                .Select(r => r.LotNo)
+                .Distinct()
+                .ToHashSet();
+
+            var pendingGet = revs
+                .Where(r => !r.IsReturned)
+                .Select(r => r.LotNo)
+                .Distinct()
+                .ToHashSet();
 
             // 5) Compose result
             var result = new List<CustomOrder>();
@@ -147,6 +166,8 @@ namespace JPStockPacking.Services.Implement
                     bool isAllAssigned = !notAllAssignedLots.Contains(l.LotNo);
                     bool hasRepair = repairs.Contains(l.LotNo);
                     bool hasLost = losts.Contains(l.LotNo);
+                    bool hasPendingRev = pendingSet.Contains(l.LotNo);
+                    bool hasPendingRet = pendingGet.Contains(l.LotNo);
 
                     return new CustomLot
                     {
@@ -172,7 +193,9 @@ namespace JPStockPacking.Services.Implement
                         IsAllReceived = isAllReceived,
                         HasRepair = hasRepair,
                         HasLost = hasLost,
-                        IsAllReturned = isAllReturned
+                        IsAllReturned = isAllReturned,
+                        IsRemainNotAssign = hasPendingRev,
+                        IsRemainNotReturn = hasPendingRet
                     };
                 }).ToList();
 
@@ -257,219 +280,6 @@ namespace JPStockPacking.Services.Implement
             };
         }
 
-        public async Task<ScheduleListModel> GetOrderAndLotByRangeAsync2(GroupMode groupMode, string orderNo, string custCode, DateTime fromDate, DateTime toDate)
-        {
-            var today = DateTime.Now.Date;
-
-            // 1) Base query: filter ตั้งแต่แรก
-            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSuccess);
-
-            if (!string.IsNullOrEmpty(orderNo))
-                ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));
-
-            if (!string.IsNullOrEmpty(custCode))
-                ordersQuery = ordersQuery.Where(o => o.CustCode!.Contains(custCode));
-
-            if (fromDate != DateTime.MinValue)
-                ordersQuery = ordersQuery.Where(o => o.PackStartDate >= fromDate);
-
-            if (toDate != DateTime.MinValue)
-                ordersQuery = ordersQuery.Where(o => o.PackStartDate <= toDate);
-
-            var orders = await ordersQuery.ToListAsync();
-
-            // 2) Preload dictionaries
-            var orderNos = orders.Select(o => o.OrderNo).ToList();
-
-            var orderNotifies = await _sPDbContext.OrderNotify
-                .Where(x => x.IsActive && orderNos.Contains(x.OrderNo))
-                .ToDictionaryAsync(x => x.OrderNo, x => x);
-
-            var lots = await _sPDbContext.Lot
-                .Where(l => l.IsActive && !l.IsSuccess && orderNos.Contains(l.OrderNo))
-                .GroupBy(l => l.OrderNo)
-                .ToDictionaryAsync(g => g.Key, g => g.ToList());
-
-            var lotNos = lots.SelectMany(g => g.Value.Select(l => l.LotNo)).ToList();
-
-            // Assigned table preload
-            var assignedTables = await (
-                from ass in _sPDbContext.Assignment
-                join asmr in _sPDbContext.AssignmentReceived on ass.AssignmentId equals asmr.AssignmentId
-                join asnt in _sPDbContext.AssignmentTable on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
-                join wt in _sPDbContext.WorkTable on asnt.WorkTableId equals wt.Id
-                join rev in _sPDbContext.Received on asmr.ReceivedId equals rev.ReceivedId
-                where lotNos.Contains(rev.LotNo) && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
-                select new { rev.LotNo, ass.AssignmentId, wt.Name }
-            ).ToListAsync();
-
-            var assignedTableDict = assignedTables
-                .GroupBy(a => a.LotNo)
-                .ToDictionary(g => g.Key,
-                    g => g.Select(x => new AssignedWorkTableModel
-                    {
-                        AssignmentId = x.AssignmentId,
-                        TableName = x.Name!
-                    }).Distinct().ToList());
-
-            // LotNotify preload
-            var lotNotifies = await _sPDbContext.LotNotify
-                .Where(l => lotNos.Contains(l.LotNo) && l.IsActive)
-                .ToDictionaryAsync(l => l.LotNo, l => l);
-
-            var repairs = await (
-                from bek in _sPDbContext.Break
-                join rev in _sPDbContext.Received on bek.ReceivedId equals rev.ReceivedId
-                join lot in _sPDbContext.Lot on rev.LotNo equals lot.LotNo
-                where lotNos.Contains(lot.LotNo)
-                select lot.LotNo
-            ).Distinct().ToListAsync();
-
-            var losts = await (
-                from los in _sPDbContext.Lost
-                join lot in _sPDbContext.Lot on los.LotNo equals lot.LotNo
-                join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo
-                where lotNos.Contains(lot.LotNo)
-                select lot.LotNo
-            ).Distinct().ToListAsync();
-
-            var notAllAssignedLots = await _sPDbContext.Received
-                .Where(r => lotNos.Contains(r.LotNo) && !r.IsAssigned)
-                .Select(r => r.LotNo)
-                .Distinct()
-                .ToListAsync();
-
-            // 3) Compose result
-            var result = new List<CustomOrder>();
-
-            foreach (var order in orders)
-            {
-                orderNotifies.TryGetValue(order.OrderNo, out var notify);
-                lots.TryGetValue(order.OrderNo, out var relatedLots);
-                relatedLots ??= [];
-
-                var operateDays = relatedLots.Sum(l => l.OperateDays ?? 0);
-
-                var packDate = order.OrderDate?.Date ?? DateTime.MinValue;
-                var exportDate = order.SeldDate1?.Date ?? DateTime.MinValue;
-
-                var packDaysRemain = (packDate - today).Days;
-                var exportDaysRemain = (exportDate - today).Days;
-
-                var customLots = relatedLots.Select(l =>
-                {
-                    assignedTableDict.TryGetValue(l.LotNo, out var atables);
-                    lotNotifies.TryGetValue(l.LotNo, out var lotNotify);
-
-                    bool isLotUpdate = lotNotify?.IsUpdate ?? false;
-                    bool isAllReturned = l.TtQty > 0 && l.ReturnedQty >= l.TtQty;
-                    bool isAllReceived = l.TtQty > 0 && l.ReceivedQty >= l.TtQty;
-                    bool isPacking = l.TtQty > 0 && l.AssignedQty > 0;
-                    bool isAllAssigned = !notAllAssignedLots.Contains(l.LotNo);
-                    bool hasRepair = repairs.Contains(l.LotNo);
-                    bool hasLost = losts.Contains(l.LotNo);
-
-                    return new CustomLot
-                    {
-                        LotNo = l.LotNo,
-                        OrderNo = l.OrderNo,
-                        ListNo = l.ListNo!,
-                        CustPcode = l.CustPcode!,
-                        TtQty = l.TtQty ?? 0,
-                        Article = l.Article!,
-                        Barcode = l.Barcode!,
-                        TdesArt = l.TdesArt!,
-                        MarkCenter = l.MarkCenter!,
-                        SaleRem = l.SaleRem!,
-                        IsSuccess = l.IsSuccess,
-                        IsActive = l.IsActive,
-                        IsUpdate = isLotUpdate,
-                        UpdateDate = l.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                        AssignTo = atables ?? [],
-                        IsPacking = isPacking,
-                        IsAllAssigned = isAllAssigned,
-                        ReceivedQty = l.ReceivedQty ?? 0,
-                        ReturnedQty = l.ReturnedQty ?? 0,
-                        IsAllReceived = isAllReceived,
-                        HasRepair = hasRepair,
-                        HasLost = hasLost,
-                        IsAllReturned = isAllReturned
-                    };
-                }).ToList();
-
-                result.Add(new CustomOrder
-                {
-                    OrderNo = order.OrderNo,
-                    CustCode = order.CustCode ?? "",
-                    FactoryDate = order.FactoryDate ?? DateTime.MinValue,
-                    FactoryDateTH = order.FactoryDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                    OrderDate = order.OrderDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                    SeldDate1 = order.SeldDate1?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                    OrdDate = order.OrdDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                    TotalLot = relatedLots.Count,
-                    SumTtQty = (int)relatedLots.Sum(l => l.TtQty ?? 0),
-                    CompleteLot = relatedLots.Count(l => l.IsSuccess),
-                    OperateDays = operateDays,
-                    StartDate = order.PackStartDate ?? DateTime.MinValue,
-                    StartDateTH = order.PackStartDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                    PackDaysRemain = packDaysRemain,
-                    ExportDaysRemain = exportDaysRemain,
-                    IsUpdate = notify?.IsUpdate ?? false,
-                    IsNew = notify?.IsNew ?? false,
-                    IsActive = order.IsActive,
-                    IsSuccess = order.IsSuccess,
-                    IsReceivedLate = packDaysRemain <= 1 && !order.IsSuccess,
-                    IsPackingLate = exportDaysRemain <= 1 && !order.IsSuccess,
-                    CustomLot = customLots
-                });
-            }
-
-            // 4) Grouping
-            var schedule = new ScheduleListModel();
-            if (groupMode == GroupMode.Day)
-            {
-                schedule.Days = [.. result
-                    .GroupBy(o => o.FactoryDate.Date)
-                    .OrderBy(g => g.Key)
-                    .Select(g => new Day
-                    {
-                        Title = g.Key == today ? "Today" : g.Key.ToString("ddd dd MMM yyyy"),
-                        Orders = g.ToList()
-                    })];
-            }
-            else
-            {
-                schedule.Weeks = [.. result
-                    .GroupBy(o => o.FactoryDate.StartOfWeek())
-                    .OrderBy(g => g.Key)
-                    .Select(g =>
-                    {
-                        var start = g.Key;
-                        var end = start.AddDays(6);
-                        var title = (start <= today && today <= end)
-                            ? "This Week"
-                            : $"{start:dd MMM} – {end:dd MMM yyyy}";
-
-                        var days = g
-                            .GroupBy(x => x.FactoryDate.Date)
-                            .OrderBy(d => d.Key)
-                            .Select(d => new Day
-                            {
-                                Title = d.Key == today ? "Today" : d.Key.ToString("ddd dd MMM"),
-                                Orders = d.ToList()
-                            }).ToList();
-
-                        return new Week
-                        {
-                            Title = title,
-                            Orders = days
-                        };
-                    })];
-            }
-
-            return schedule;
-        }
-
         public async Task<CustomLot?> GetCustomLotAsync(string lotNo)
         {
             var lot = await _sPDbContext.Lot
@@ -480,18 +290,29 @@ namespace JPStockPacking.Services.Implement
                 return null;
 
             // Assigned tables
-            var assignedTable = await (
-                from rec in _sPDbContext.Received
-                join ass in _sPDbContext.AssignmentReceived on rec.ReceivedId equals ass.ReceivedId
-                join at in _sPDbContext.AssignmentTable on ass.AssignmentReceivedId equals at.AssignmentReceivedId
-                join wt in _sPDbContext.WorkTable on at.WorkTableId equals wt.Id
-                where rec.LotNo == lot.LotNo && rec.IsActive && ass.IsActive && at.IsActive && wt.IsActive
-                select new AssignedWorkTableModel
-                {
-                    AssignmentId = ass.AssignmentId,
-                    TableName = wt.Name!
-                }
-            ).Distinct().ToListAsync();
+            var assignedTables = await (
+                from ass in _sPDbContext.Assignment
+                join asmr in _sPDbContext.AssignmentReceived on ass.AssignmentId equals asmr.AssignmentId
+                join asnt in _sPDbContext.AssignmentTable on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
+                join wt in _sPDbContext.WorkTable on asnt.WorkTableId equals wt.Id
+                join rev in _sPDbContext.Received on asmr.ReceivedId equals rev.ReceivedId
+                where lot.LotNo.Contains(rev.LotNo) && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
+                select new { rev.LotNo, ass.AssignmentId, wt.Name }
+            ).ToListAsync();
+
+            var assignedTableDict = assignedTables
+                .GroupBy(a => a.LotNo)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .Select(x => new AssignedWorkTableModel
+                        {
+                            AssignmentId = x.AssignmentId,
+                            TableName = x.Name!
+                        })
+                        .DistinctBy(m => m.TableName)
+                        .ToList()
+                );
 
             // LotNotify
             var isLotUpdate = await _sPDbContext.LotNotify
@@ -507,25 +328,21 @@ namespace JPStockPacking.Services.Implement
                 .AnyAsync();
             var isAllAssigned = !hasNotAllAssigned;
 
-            // HasRepair
-            //var hasRepair = await (
-            //    from rec in _sPDbContext.Received
-            //    join ass in _sPDbContext.AssignmentReceived on rec.ReceivedId equals ass.ReceivedId
-            //    join retd in _sPDbContext.ReturnedDetail on ass.AssignmentId equals retd.AssignmentId
-            //    join ret in _sPDbContext.Returned on retd.ReturnId equals ret.ReturnId
-            //    where rec.LotNo == lot.LotNo && rec.IsSendRepair && ret.HasRepair
-            //    select 1
-            //).AnyAsync();
+            var repairs = await (
+                from bek in _sPDbContext.Break
+                join rev in _sPDbContext.Received on bek.ReceivedId equals rev.ReceivedId
+                join lots in _sPDbContext.Lot on rev.LotNo equals lot.LotNo
+                where lot.LotNo.Contains(lot.LotNo)
+                select lot.LotNo
+            ).Distinct().ToListAsync();
 
-            //// HasLost
-            //var hasLost = await (
-            //    from rec in _sPDbContext.Received
-            //    join ass in _sPDbContext.AssignmentReceived on rec.ReceivedId equals ass.ReceivedId
-            //    join retd in _sPDbContext.ReturnedDetail on ass.AssignmentId equals retd.AssignmentId
-            //    join ret in _sPDbContext.Returned on retd.ReturnId equals ret.ReturnId
-            //    where rec.LotNo == lot.LotNo && ret.HasLost
-            //    select 1
-            //).AnyAsync();
+            var losts = await (
+                from los in _sPDbContext.Lost
+                join lots in _sPDbContext.Lot on los.LotNo equals lot.LotNo
+                join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo
+                where lot.LotNo.Contains(lot.LotNo)
+                select lot.LotNo
+            ).Distinct().ToListAsync();
 
             var notAllAssignedLots = await _sPDbContext.Received
                 .Where(r => lotNo.Contains(r.LotNo) && !r.IsAssigned)
@@ -533,7 +350,26 @@ namespace JPStockPacking.Services.Implement
                 .Distinct()
                 .ToListAsync();
 
+            var revs = await _sPDbContext.Received
+                .Where(r => lot.LotNo.Contains(r.LotNo))
+                .Select(r => new { r.LotNo, r.IsAssigned, r.IsReturned })
+                .ToListAsync();
+
+            var pendingSet = revs
+                .Where(r => !r.IsAssigned)
+                .Select(r => r.LotNo)
+                .Distinct()
+                .ToHashSet();
+
+            var pendingGet = revs
+                .Where(r => !r.IsReturned)
+                .Select(r => r.LotNo)
+                .Distinct()
+                .ToHashSet();
+
             // คำนวณสถานะ
+            assignedTableDict.TryGetValue(lot.LotNo, out var atables);
+
             var ttQty = lot.TtQty.GetValueOrDefault();
             var returnedQty = lot.ReturnedQty.GetValueOrDefault();
             var receivedQty = lot.ReceivedQty.GetValueOrDefault();
@@ -542,6 +378,10 @@ namespace JPStockPacking.Services.Implement
             bool isAllReturned = ttQty > 0 && returnedQty >= ttQty;
             bool isAllReceived = ttQty > 0 && receivedQty >= ttQty;
             bool isPacking = ttQty > 0 && assignedQty > 0;
+            bool hasRepair = repairs.Contains(lot.LotNo);
+            bool hasLost = losts.Contains(lot.LotNo);
+            bool hasPendingRev = pendingSet.Contains(lot.LotNo);
+            bool hasPendingRet = pendingGet.Contains(lot.LotNo);
 
             return new CustomLot
             {
@@ -559,18 +399,17 @@ namespace JPStockPacking.Services.Implement
                 IsActive = lot.IsActive,
                 IsUpdate = isLotUpdate,
                 UpdateDate = lot.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                AssignTo = assignedTable,
-
+                AssignTo = atables ?? [],
                 IsPacking = isPacking,
                 IsAllAssigned = isAllAssigned,
-
                 ReceivedQty = receivedQty,
                 ReturnedQty = returnedQty,
-
                 IsAllReceived = isAllReceived,
-                HasRepair = false,
-                HasLost = false,
+                HasRepair = hasRepair,
+                HasLost = hasLost,
                 IsAllReturned = isAllReturned,
+                IsRemainNotAssign = hasPendingRev,
+                IsRemainNotReturn = hasPendingRet
             };
         }
 
@@ -731,8 +570,8 @@ namespace JPStockPacking.Services.Implement
                 }
 
                 lot.ReturnedQty = (lot.ReturnedQty ?? 0) + returnQty;
+                lot.Unallocated = (lot.Unallocated ?? 0) + returnQty;
                 lot.UpdateDate = DateTime.Now;
-                lot.IsSuccess = lot.TtQty > 0 && (lot.ReturnedQty ?? 0) >= lot.TtQty;
 
                 await _sPDbContext.SaveChangesAsync();
                 await transaction.CommitAsync();

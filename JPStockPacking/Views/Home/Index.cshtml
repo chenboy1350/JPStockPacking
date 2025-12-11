@@ -124,6 +124,16 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "EmployeeManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("EmployeeManagement", "Home")">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>จัดการข้อมูลพนักงาน</p>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.HasClaim("Menu", "PermissionManagement"))
                     {
                         <li class="nav-item">
@@ -133,16 +143,6 @@
                             </a>
                         </li>
                     }
-
-@*                     @if (User.HasClaim("Menu", "EmployeeManagement"))
-                    {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("EmployeeManagement", "Home")">
-                                <i class="nav-icon fas fa-user-edit"></i>
-                                <p>จัดการพนักงาน</p>
-                            </a>
-                        </li>
-                    } *@
 
                     @if (User.HasClaim("Menu", "FormulaManagement"))
                     {
@@ -272,6 +272,20 @@
                             </div>
                         }
 
+                        @if (User.HasClaim("Menu", "EmployeeManagement"))
+                        {
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a href="#" class="menu-box-link" data-action="@Url.Action("EmployeeManagement", "Home")" style="text-decoration: none;">
+                                    <div class="info-box bg-dark cursor-pointer hover-shadow">
+                                        <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text" style="font-size:30px">จัดการข้อมูลพนักงาน</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+
                         @if (User.HasClaim("Menu", "PermissionManagement"))
                         {
                             <div class="col-md-3 col-sm-6 col-12">
@@ -377,6 +391,7 @@
         window.urlToggleFormulaStatus = '@Url.Action("ToggleFormulaStatus", "Home")';
         window.urlGetUserPermission = '@Url.Action("GetUserPermission", "Home")';
         window.urlUpdateUserPermission = '@Url.Action("UpdateUserPermission", "Home")';
+        window.urlGetEmployeeByID = '@Url.Action("GetEmployeeByID", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -388,6 +403,7 @@
     <script src="~/js/Audit.js" asp-append-version="true"></script>
     <script src="~/js/FormulaManagement.js" asp-append-version="true"></script>
     <script src="~/js/PermissionManagement.js" asp-append-version="true"></script>
+    <script src="~/js/EmploeeManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

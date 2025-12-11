@@ -41,7 +41,8 @@ namespace JPStockPacking.Services.Implement
                     IsReported = bek.IsReported,
                     BreakDescription = desc.Name ?? string.Empty,
                     SeldDate1 = ord.SeldDate1.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
-                    CreateDate = bek.CreateDate.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                    CreateDateTH = bek.CreateDate.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                    CreateDate = bek.CreateDate.GetValueOrDefault()
                 }
             ).ToListAsync();
 
