@@ -205,10 +205,6 @@ namespace JPStockPacking.Controllers
                 await _receiveManagementService.UpdateLotItemsAsync(receiveNo, orderNos, receiveIds);
                 return Ok();
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
@@ -225,10 +221,6 @@ namespace JPStockPacking.Controllers
             {
                 await _orderManagementService.UpdateAllReceivedItemsAsync(receiveNo);
                 return Ok();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -304,10 +296,6 @@ namespace JPStockPacking.Controllers
             {
                 await _checkQtyToSendService.DefineToPackAsync(request.OrderNo, request.Lots, User.GetUserId());
                 return Ok("บันทึกข้อมูลเรียบร้อย");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -398,10 +386,6 @@ namespace JPStockPacking.Controllers
                 UserModel res = await _pISService.ValidateApproverAsync(username, password);
                 return Ok(res);
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
@@ -480,10 +464,6 @@ namespace JPStockPacking.Controllers
             {
                 List<UserModel> res = await _pISService.GetUser(reqUserModel);
                 return Ok(res);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -774,6 +754,21 @@ namespace JPStockPacking.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetEmployee()
+        {
+            try
+            {
+                var res = await _pISService.GetEmployeeAsync();
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> GetEmployeeByID([FromBody] ResEmployeeModel resEmployeeModel)
@@ -793,9 +788,20 @@ namespace JPStockPacking.Controllers
                 var emp = emplist.FirstOrDefault(e => e.EmployeeID == resEmployeeModel.EmployeeID);
                 return Ok(emp);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddNewEmployee([FromBody] ResEmployeeModel resEmployeeModel)
+        {
+            try
+            {
+                var res = await _pISService.AddNewEmployee(resEmployeeModel);
+                return Ok(res);
             }
             catch (Exception ex)
             {
@@ -809,7 +815,23 @@ namespace JPStockPacking.Controllers
         {
             try
             {
-                return Ok();
+                var res = await _pISService.EditEmployee(resEmployeeModel);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> ToggleEmployeelaStatus([FromBody] ResEmployeeModel resEmployeeModel)
+        {
+            try
+            {
+                var res = await _pISService.ToggleEmployeeStatus(resEmployeeModel);
+                return Ok(res);
             }
             catch (Exception ex)
             {

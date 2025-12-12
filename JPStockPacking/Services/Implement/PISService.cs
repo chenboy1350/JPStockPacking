@@ -1,7 +1,6 @@
 ﻿using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
-using static JPStockPacking.Services.Implement.AuthService;
 
 namespace JPStockPacking.Services.Implement
 {
@@ -95,7 +94,7 @@ namespace JPStockPacking.Services.Implement
 
             if (response.IsSuccess && response.Content != null)
             {
-                if (_sPDbContext.MappingPermission.Any(x => x.UserId == response.Content.Content!.UserID && x.IsActive && x.PermissionId == 3)) 
+                if (_sPDbContext.MappingPermission.Any(x => x.UserId == response.Content.Content!.UserID && x.IsActive && x.PermissionId == 3))
                 {
                     _logger.Information("ValidateApproverAsync Response : {@response}", response.Content.Content);
                     return response.Content.Content!;
@@ -185,7 +184,6 @@ namespace JPStockPacking.Services.Implement
                     Message = "Failed to add user."
                 };
             }
-
         }
 
         public async Task<BaseResponseModel> EditUser(UserModel payload)
@@ -217,7 +215,6 @@ namespace JPStockPacking.Services.Implement
                     Message = "Failed to edit user."
                 };
             }
-
         }
 
         public async Task<BaseResponseModel> ToggleUserStatus(UserModel payload)
@@ -249,7 +246,102 @@ namespace JPStockPacking.Services.Implement
                     Message = "Failed to edit user."
                 };
             }
+        }
 
+        public async Task<BaseResponseModel> AddNewEmployee(ResEmployeeModel payload)
+        {
+            var apiSettings = _configuration.GetSection("ApiSettings");
+            var url = apiSettings["AddNewEmployee"];
+
+            _logger.Information("AddNewEmployee Request : {@payload}", payload);
+
+            var response = await _apiClientService.PostAsync(url!, payload);
+
+            if (response.IsSuccess)
+            {
+                _cacheService.Remove("EmployeeList");
+                _logger.Information("AddNewEmployee Successfully");
+                return new BaseResponseModel
+                {
+                    Code = 200,
+                    IsSuccess = true,
+                    Message = "Employee added successfully."
+                };
+            }
+            else
+            {
+                _logger.Information("AddNewEmployee Failed");
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = "Failed to add Employee."
+                };
+            }
+        }
+
+        public async Task<BaseResponseModel> EditEmployee(ResEmployeeModel payload)
+        {
+            var apiSettings = _configuration.GetSection("ApiSettings");
+            var url = apiSettings["EditEmployee"];
+
+            _logger.Information("EditEmployee Request : {@payload}", payload);
+
+            var response = await _apiClientService.PatchAsync(url!, payload);
+
+            if (response.IsSuccess)
+            {
+                _cacheService.Remove("EmployeeList");
+                _logger.Information("EditEmployee Successfully");
+                return new BaseResponseModel
+                {
+                    Code = 200,
+                    IsSuccess = true,
+                    Message = "Employee edit successfully."
+                };
+            }
+            else
+            {
+                _logger.Information("EditEmployee Failed");
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = "Failed to edit user."
+                };
+            }
+        }
+
+        public async Task<BaseResponseModel> ToggleEmployeeStatus(ResEmployeeModel payload)
+        {
+            var apiSettings = _configuration.GetSection("ApiSettings");
+            var url = apiSettings["ToggleEmployeeStatus"];
+
+            _logger.Information("ToggleEmployeeStatus Request : {@payload}", payload);
+
+            var response = await _apiClientService.PatchAsync(url!, payload);
+
+            if (response.IsSuccess)
+            {
+                _cacheService.Remove("EmployeeList");
+                _logger.Information("ToggleEmployeeStatus Successfully");
+                return new BaseResponseModel
+                {
+                    Code = 200,
+                    IsSuccess = true,
+                    Message = "Employee edit successfully."
+                };
+            }
+            else
+            {
+                _logger.Information("ToggleEmployeeStatus Failed");
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = "Failed to edit Employee."
+                };
+            }
         }
     }
 }

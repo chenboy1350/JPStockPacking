@@ -33,7 +33,7 @@ namespace JPStockPacking.Services.Implement
 
             if (result != null)
             {
-                _cache.Set(cacheKey, result, absoluteExpiration ?? TimeSpan.FromHours(12));
+                _cache.Set(cacheKey, result, absoluteExpiration ?? TimeSpan.FromHours(4));
 
                 lock (_keys)
                 {

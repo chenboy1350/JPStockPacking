@@ -706,21 +706,18 @@ function renderLotRow(order, lot, index = "#") {
 async function updateLotRow(lotNo) {
     try {
         const res = await $.ajax({
-            url: urlGetCustomLot, // สร้างตัวแปร url นี้ mapping ไปที่ Home/GetCustomLot
+            url: urlGetCustomLot,
             type: 'GET',
             data: { lotNo: lotNo }
         });
 
         if (!res) return;
 
-        // res คือข้อมูล lot เดี่ยว → ต้องหา order ที่ lot นี้อยู่
         const $row = $(`tr[data-lot-no="${lotNo}"]`);
         if ($row.length > 0) {
             const $accordionItem = $row.closest(".accordion-item");
             const orderNo = $accordionItem.data("order-no");
-
-            // หา order object จาก DOM (เก็บ orderNo ไว้ใน data-order-no)
-            const orderData = { orderNo: orderNo }; // dummy object
+            const orderData = { orderNo: orderNo };
             const newRowHtml = renderLotRow(orderData, res);
 
             $row.replaceWith(newRowHtml);

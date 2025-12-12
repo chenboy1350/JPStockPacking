@@ -13,5 +13,8 @@ namespace JPStockPacking.Services.Interface
         Task<BaseResponseModel> AddNewUser(UserModel payload);
         Task<BaseResponseModel> EditUser(UserModel payload);
         Task<BaseResponseModel> ToggleUserStatus(UserModel payload);
+        Task<BaseResponseModel> AddNewEmployee(ResEmployeeModel payload);
+        Task<BaseResponseModel> EditEmployee(ResEmployeeModel payload);
+        Task<BaseResponseModel> ToggleEmployeeStatus(ResEmployeeModel payload);
     }
 }

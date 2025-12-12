@@ -51,7 +51,7 @@ namespace JPStockPacking.Services.Implement
                 result = result.Where(r => breakAndLostFilterModel.LostIDs.Contains(r.LostID)).ToList();
             }
 
-            return [.. result.OrderByDescending(x => x.CreateDate)];
+            return [.. result.Take(100).OrderByDescending(x => x.CreateDate)];
         }
 
         public async Task AddLostAsync(string lotNo, double lostQty)
