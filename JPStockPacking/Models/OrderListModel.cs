@@ -1,25 +1,5 @@
-﻿using JPStockPacking.Data.SPDbContext.Entities;
-
-namespace JPStockPacking.Models
+﻿namespace JPStockPacking.Models
 {
-    public class ScheduleListModel
-    {
-        public List<Day> Days { get; set; } = [];
-        public List<Week> Weeks { get; set; } = [];
-    }
-
-    public class Day
-    {
-        public string Title { get; set; } = string.Empty;
-        public List<CustomOrder> Orders { get; set; } = [];
-    }
-
-    public class Week
-    {
-        public string Title { get; set; } = string.Empty;
-        public List<Day> Orders { get; set; } = [];
-    }
-
     public class CustomOrder
     {
         public string OrderNo { get; set; } = string.Empty;
@@ -82,6 +62,6 @@ namespace JPStockPacking.Models
         public int PageSize { get; set; }
         public int TotalItems { get; set; }
 
-        public ScheduleListModel Data { get; set; } = new();
+        public List<CustomOrder> Data { get; set; } = [];
     }
 }

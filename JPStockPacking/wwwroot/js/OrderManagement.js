@@ -6,7 +6,7 @@ $(document).ready(function () {
     $(document).on('keydown', '#txtOrderNo, #txtLotNo, #txtCustCode', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            fetchOrdersByDateRange();
+            FindOrderBy();
         }
     });
 
@@ -500,6 +500,11 @@ $(document).ready(function () {
     });
 });
 
+function FindOrderBy() {
+    currentPage = 1;
+    fetchOrdersByDateRange();
+}
+
 async function fetchOrdersByDateRange() {
     const orderNo = $('#txtOrderNo').val();
     const lotNo = $('#txtLotNo').val();
@@ -545,76 +550,74 @@ function renderOrderList(data) {
     const container = $('#accordionOrder');
     container.empty();
 
-    if (!data || !data.days) {
+    if (!data) {
         $('#loadingIndicator').hide();
         return;
     };
 
-    data.days.forEach(day => {
-        day.orders.forEach(order => {
-            const lotsHtml = order.customLot.map((lot, index) => renderLotRow(order, lot, index + 1)).join('');
+    data.forEach(order => {
+        const lotsHtml = order.customLot.map((lot, index) => renderLotRow(order, lot, index + 1)).join('');
 
-            const itemHtml = `
-                <div class="accordion-item mt-2" data-order-no="${order.orderNo}">
-                    <h2 class="accordion-header" id="heading${order.orderNo}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapse${order.orderNo}" aria-expanded="false"
-                            aria-controls="collapse${order.orderNo}">
-                            <div class="d-flex justify-content-between w-100">
-                                <div class="col-md-3">
-                                    <strong>
-                                        ${order.custCode}/${order.orderNo}
-                                        ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
-                                        ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
-                                        ${order.isNew ? "<span class='badge bg-danger new'>ใหม่</span>" : ""}
-                                    </strong>
-                                </div>
-                                <div class="col-md-3">
-                                    <i class="fas fa-clipboard-check"></i> ${order.orderDate}
-                                    <i class="fas fa-box-open"></i> ${order.seldDate1}
-                                </div>
-                                <div class="col-md-2">
-                                    <i class="fas fa-business-time"></i> ${order.startDateTH}
-                                </div>
-                                <div class="col-md-1">
-                                    <i class="fas fa-boxes"></i> ${order.completeLot}/${order.totalLot}
-                                </div>
-                                <div class="col-md-1">
-                                    <i class="far fa-gem"></i> ${order.sumTtQty}
-                                </div>
-                                <div class="col-md-1">
-                                    <i class="fas fa-clipboard-check"></i> ${order.packDaysRemain} วัน
-                                </div>
-                                <div class="col-md-1">
-                                    <i class="fas fa-box-open"></i> ${order.exportDaysRemain} วัน
-                                </div>
+        const itemHtml = `
+            <div class="accordion-item mt-2" data-order-no="${order.orderNo}">
+                <h2 class="accordion-header" id="heading${order.orderNo}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapse${order.orderNo}" aria-expanded="false"
+                        aria-controls="collapse${order.orderNo}">
+                        <div class="d-flex justify-content-between w-100">
+                            <div class="col-md-3">
+                                <strong>
+                                    ${order.custCode}/${order.orderNo}
+                                    ${order.isReceivedLate ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
+                                    ${order.isPackingLate ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
+                                    ${order.isNew ? "<span class='badge bg-danger new'>ใหม่</span>" : ""}
+                                </strong>
                             </div>
-                        </button>
-                    </h2>
-                    <div id="collapse${order.orderNo}" class="accordion-collapse collapse"
-                        aria-labelledby="heading${order.orderNo}" data-bs-parent="#accordionOrder">
-                        <div class="accordion-body table-responsive" style="overflow: auto;">
-                            <table class="table table-striped projects">
-                                <thead>
-                                    <tr>
-                                       <th style="width: 1%">#</th>
-                                       <th style="width: 20%">หมายเลขล็อต</th>
-                                       <th style="width: 10%">ลำดับที่</th>
-                                       <th style="width: 15%">การมอบหมาย</th>
-                                       <th>ความคืบหน้า</th>
-                                       <th style="width: 8%" class="text-center">สถานะ</th>
-                                       <th style="width: 30%"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>${lotsHtml}</tbody>
-                            </table>
+                            <div class="col-md-3">
+                                <i class="fas fa-clipboard-check"></i> ${order.orderDate}
+                                <i class="fas fa-box-open"></i> ${order.seldDate1}
+                            </div>
+                            <div class="col-md-2">
+                                <i class="fas fa-business-time"></i> ${order.startDateTH}
+                            </div>
+                            <div class="col-md-1">
+                                <i class="fas fa-boxes"></i> ${order.completeLot}/${order.totalLot}
+                            </div>
+                            <div class="col-md-1">
+                                <i class="far fa-gem"></i> ${order.sumTtQty}
+                            </div>
+                            <div class="col-md-1">
+                                <i class="fas fa-clipboard-check"></i> ${order.packDaysRemain} วัน
+                            </div>
+                            <div class="col-md-1">
+                                <i class="fas fa-box-open"></i> ${order.exportDaysRemain} วัน
+                            </div>
                         </div>
+                    </button>
+                </h2>
+                <div id="collapse${order.orderNo}" class="accordion-collapse collapse"
+                    aria-labelledby="heading${order.orderNo}" data-bs-parent="#accordionOrder">
+                    <div class="accordion-body table-responsive" style="overflow: auto;">
+                        <table class="table table-striped projects">
+                            <thead>
+                                <tr>
+                                    <th style="width: 1%">#</th>
+                                    <th style="width: 20%">หมายเลขล็อต</th>
+                                    <th style="width: 10%">ลำดับที่</th>
+                                    <th style="width: 15%">การมอบหมาย</th>
+                                    <th>ความคืบหน้า</th>
+                                    <th style="width: 8%" class="text-center">สถานะ</th>
+                                    <th style="width: 30%"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${lotsHtml}</tbody>
+                        </table>
                     </div>
                 </div>
-            `;
+            </div>
+        `;
 
-            container.append(itemHtml);
-        });
+        container.append(itemHtml);
     });
 
     $('#loadingIndicator').hide();

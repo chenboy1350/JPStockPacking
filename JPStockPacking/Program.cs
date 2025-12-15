@@ -44,6 +44,7 @@ builder.Services.AddScoped<IPackedMangementService, PackedMangementService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IFormulaManagementService, FormulaManagementService>();
 builder.Services.AddScoped<IPermissionManagement, PermissionManagement>();
+builder.Services.AddScoped<IReturnService, ReturnService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

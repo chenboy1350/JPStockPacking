@@ -27,7 +27,8 @@ namespace JPStockPacking.Controllers
         Serilog.ILogger logger,
         IProductionPlanningService productionPlanningService,
         IFormulaManagementService formulaManagementService,
-        IPermissionManagement permissionManagement) : Controller
+        IPermissionManagement permissionManagement,
+        IReturnService returnService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -47,6 +48,7 @@ namespace JPStockPacking.Controllers
         private readonly Serilog.ILogger _logger = logger;
         private readonly IFormulaManagementService _formulaManagementService = formulaManagementService;
         private readonly IPermissionManagement _permissionManagement = permissionManagement;
+        private readonly IReturnService _returnService = returnService;
 
         [Authorize]
         public IActionResult Index()
@@ -257,7 +259,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> GetTableToReturn(string LotNo)
         {
-            var result = await _orderManagementService.GetTableToReturnAsync(LotNo);
+            var result = await _returnService.GetTableToReturnAsync(LotNo);
             return Ok(result);
         }
 
@@ -265,7 +267,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> GetRecievedToReturn(string LotNo, int TableID)
         {
-            var result = await _orderManagementService.GetRecievedToReturnAsync(LotNo, TableID);
+            var result = await _returnService.GetRecievedToReturnAsync(LotNo, TableID);
             return Ok(result);
         }
 
@@ -273,7 +275,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> ReturnAssignment([FromForm] string lotNo, [FromForm] int[] assignmentIDs, [FromForm] decimal returnQty)
         {
-            var result = await _orderManagementService.ReturnReceivedAsync(lotNo, assignmentIDs, returnQty);
+            var result = await _returnService.ReturnReceivedAsync(lotNo, assignmentIDs, returnQty);
             return Ok(result);
         }
 
