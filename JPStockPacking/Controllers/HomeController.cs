@@ -63,7 +63,7 @@ namespace JPStockPacking.Controllers
             await _orderManagementService.ImportOrderAsync();
             ViewBag.Tables = await _orderManagementService.GetTableAsync();
             ViewBag.BreakDescriptions = await _breakService.GetBreakDescriptionsAsync();
-            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(GroupMode.Day, string.Empty, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue, 1, 10);
+            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(string.Empty, string.Empty, string.Empty, DateTime.MinValue, DateTime.MinValue, 1, 10);
             return PartialView("~/Views/Partial/_OrderManagement.cshtml", result);
         }
 
@@ -164,9 +164,18 @@ namespace JPStockPacking.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetOrder(string orderNo, string lotNo, string custCode, DateTime fdate, DateTime edate, GroupMode groupMode, int page, int pageSize)
+        public async Task<IActionResult> CancelImportReceiveNo(string receiveNo, string orderNo, string lotNo)
         {
-            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(groupMode, orderNo, lotNo, custCode, fdate, edate, page, pageSize);
+            if (receiveNo == string.Empty && receiveNo == null) return BadRequest();
+            var res = await _receiveManagementService.GetJPReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(res);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetOrder(string orderNo, string lotNo, string custCode, DateTime fdate, DateTime edate, int page, int pageSize)
+        {
+            var result = await _orderManagementService.GetOrderAndLotByRangeAsync(orderNo, lotNo, custCode, fdate, edate, page, pageSize);
             return Ok(result);
         }
 
@@ -234,9 +243,8 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds, [FromForm] bool hasPartTime, [FromForm] int workerNumber)
         {
-            if (string.IsNullOrWhiteSpace(lotNo) || receivedIDs == null || receivedIDs.Length == 0 || string.IsNullOrWhiteSpace(tableId) || memberIds == null || memberIds.Length == 0)
-                return BadRequest("ข้อมูลไม่ครบถ้วน");
-            await _assignmentService.AssignReceivedAsync(lotNo, receivedIDs, tableId, memberIds, hasPartTime, workerNumber);
+            if (string.IsNullOrWhiteSpace(lotNo)) return BadRequest("ข้อมูลไม่ครบถ้วน");
+            await _assignmentService.SyncAssignmentsForTableAsync(lotNo, int.Parse(tableId), receivedIDs, memberIds, hasPartTime, workerNumber);
             return Ok();
         }
 

@@ -53,15 +53,15 @@ namespace JPStockPacking.Services.Implement
 
             if (!string.IsNullOrWhiteSpace(breakAndLostFilterModel.LotNo))
             {
-                result = result.Where(r => r.LotNo == breakAndLostFilterModel.LotNo).ToList();
+                result = [.. result.Where(r => r.LotNo == breakAndLostFilterModel.LotNo)];
             }
 
             if (breakAndLostFilterModel.BreakIDs != null && breakAndLostFilterModel.BreakIDs.Length > 0)
             {
-                result = result.Where(r => breakAndLostFilterModel.BreakIDs.Contains(r.BreakID)).ToList();
+                result = [.. result.Where(r => breakAndLostFilterModel.BreakIDs.Contains(r.BreakID))];
             }
 
-            return [.. result.Take(100).OrderByDescending(x => x.CreateDate)];
+            return [.. result.OrderByDescending(x => x.CreateDate).Take(100)];
         }
 
         public async Task AddBreakAsync(string lotNo, double breakQty, int breakDes)

@@ -2,11 +2,9 @@
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
-using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
-using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
 {
@@ -17,14 +15,14 @@ namespace JPStockPacking.Services.Implement
         private readonly IPISService _pISService = pISService;
         private readonly IReceiveManagementService _receiveManagementService = receiveManagementService;
 
-        public async Task<PagedScheduleListModel> GetOrderAndLotByRangeAsync(GroupMode groupMode, string orderNo, string lotNo, string custCode, DateTime fromDate, DateTime toDate, int page, int pageSize)
+        public async Task<PagedScheduleListModel> GetOrderAndLotByRangeAsync(string orderNo, string lotNo, string custCode, DateTime fromDate, DateTime toDate, int page, int pageSize)
         {
             var today = DateTime.Now.Date;
 
             var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSuccess);
 
             if (!string.IsNullOrEmpty(orderNo))
-            ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));
+                ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));
 
             if (!string.IsNullOrEmpty(lotNo))
             {

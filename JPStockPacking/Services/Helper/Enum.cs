@@ -2,12 +2,6 @@
 {
     public class Enum
     {
-        public enum GroupMode
-        {
-            Day = 0,
-            Week= 1
-        }
-
         public enum PrintTo
         {
             Packing = 1,

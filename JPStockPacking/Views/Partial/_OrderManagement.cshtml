@@ -381,7 +381,7 @@
                     <div class="card-body" style="display: block;">
                         <div class="row">
                             <select class="custom-select rounded-0" id="cbxTables">
-                                <option value="" selected>- เลือกโต๊ะ -</option>
+                                <option value="0" selected>- เลือกโต๊ะ -</option>
                                 @foreach (var table in ViewBag.Tables)
                                 {
                                     <option value="@table.Id">@table.Name</option>
@@ -461,7 +461,7 @@
                         <div class="row">
                             <label for="cbxTableToReturn">เลือกโต๊ะที่มีการมอบหมาย</label>
                             <select class="custom-select rounded-0" id="cbxTableToReturn">
-                                <option value="" selected>- เลือกโต๊ะ -</option>
+                                <option value="0" selected>- เลือกโต๊ะ -</option>
                             </select>
                             <table class="table table-head-fixed text-nowrap">
                                 <thead>

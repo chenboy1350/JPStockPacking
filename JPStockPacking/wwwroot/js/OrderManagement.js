@@ -78,7 +78,7 @@ $(document).ready(function () {
 
     $(document).on("click", "#btnConfirmAssign", async function () {
         const lotNo = $('#hddAssignLotNo').val();
-        const tableId = $("#cbxTables").val();
+        const tableId = $("#cbxTables").val() || 0;
 
         const txtWorkerNumber = $("#txtWorkerNumber").val();
         const chxHasPartTime = $("#chxHasPartTime").is(":checked");
@@ -94,10 +94,10 @@ $(document).ready(function () {
             }
         });
 
-        if (receivedIDs.length === 0) {
-            await showWarning('กรุณาเลือกใบนำเข้าที่จะมอบหมาย');
-            return;
-        }
+        //if (receivedIDs.length === 0) {
+        //    await showWarning('กรุณาเลือกใบนำเข้าที่จะมอบหมาย');
+        //    return;
+        //}
 
         const tmembody = $('#tblMembers');
         const memberIds = [];
@@ -110,10 +110,10 @@ $(document).ready(function () {
             }
         });
 
-        if (memberIds.length === 0) {
-            await showWarning('กรุณาเลือกสมาชิกที่จะมอบหมาย');
-            return;
-        }
+        //if (memberIds.length === 0) {
+        //    await showWarning('กรุณาเลือกสมาชิกที่จะมอบหมาย');
+        //    return;
+        //}
 
         const formData = new FormData();
         formData.append("lotNo", lotNo);
@@ -522,7 +522,6 @@ async function fetchOrdersByDateRange() {
             custCode: custCode,
             fdate: fdate,
             edate: edate,
-            groupMode: groupMode,
             page: currentPage,
             pageSize: currentPageSize
         },

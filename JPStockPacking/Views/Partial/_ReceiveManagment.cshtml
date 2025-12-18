@@ -88,6 +88,9 @@
                                         <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
+                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
+                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                        </button>
                                     </td>
                                 }
                                 else
@@ -97,6 +100,9 @@
                                     </td>
                                     <td class="col-action">
                                         <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
+                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
                                     </td>
@@ -149,6 +155,51 @@
             </div>
             <div class="modal-footer justify-content-end">
                 <button type="button" class="btn btn-warning" id="btnUpdateLot">รับเข้า</button>
+                <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-cancel-update">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ :</h4>
+                <input type="hidden" id="hddReceiveNo" value="" />
+                <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-head-fixed table-striped table-hover text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>เลขที่ใบรับ</th>
+                                <th>หมายเลขล็อต</th>
+                                <th>เลขที่คำสั่งซื้อ</th>
+                                <th>ลำดับที่</th>
+                                <th>เลขที่งาน</th>
+                                <th>รหัสสินค้า</th>
+                                <th>จำนวน</th>
+                                <th>น้ำหนักรวม(g)</th>
+                                <th class="text-center">
+                                    <div class="icheck-primary d-inline">
+                                        <input type="checkbox" id="chkSelectAll" checked>
+                                        <label for="chkSelectAll">เลือก</label>
+                                    </div>
+                                </th>
+
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-cancel-received-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-danger" id="btnCancelUpdateLot">ยกเลิก</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>

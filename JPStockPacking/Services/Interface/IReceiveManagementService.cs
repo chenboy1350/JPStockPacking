@@ -9,6 +9,5 @@ namespace JPStockPacking.Services.Interface
         Task<List<ReceivedListModel>> GetJPReceivedByReceiveNoAsync(string receiveNo, string? orderNo, string? lotNo);
         Task UpdateLotItemsAsync(string receiveNo, string[] orderNos, int[] receiveIds);
         Task<List<Lot>> GetJPLotAsync(List<Order> newOrders);
-        Task RecalculateScheduleAsync();
     }
 }

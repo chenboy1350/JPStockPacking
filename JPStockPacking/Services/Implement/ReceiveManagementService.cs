@@ -104,8 +104,6 @@ namespace JPStockPacking.Services.Implement
                 await transaction.RollbackAsync();
                 throw;
             }
-
-            await RecalculateScheduleAsync();
         }
 
         private async Task UpdateAllReceivedItemsAsync(int receiveId)
@@ -441,82 +439,6 @@ namespace JPStockPacking.Services.Implement
             }).ToList();
 
             return result;
-        }
-
-        public async Task RecalculateScheduleAsync()
-        {
-            const int tables = 6;
-            const double hoursPerTablePerDay = 8.5;
-            const double dailyCapacity = tables * hoursPerTablePerDay; // 6 * 8.5 = 51.0 hours/day
-
-            var lots = await _sPDbContext.Lot
-                .Where(l => l.IsActive && !l.IsSuccess)
-                .OrderBy(l => l.OrderNo)
-                .ToListAsync();
-
-            var usedPerDay = new Dictionary<DateTime, double>();
-
-            // Group by Order
-            var lotGroups = lots.GroupBy(l => l.OrderNo);
-
-            foreach (var group in lotGroups)
-            {
-                var relatedLots = group.ToList();
-                var totalHours = relatedLots.Sum(l => (l.OperateDays ?? 0) * hoursPerTablePerDay); // แปลงวันเป็นชั่วโมง
-
-
-                var deadline = _sPDbContext.Order
-                    .Where(o => o.OrderNo == group.Key)
-                    .Select(o => o.OrderDate)
-                    .FirstOrDefault() ?? DateTime.Today;
-
-                var scheduledStart = _productionPlanningService.FindAvailableStartDate(
-                    totalHours,
-                    deadline,
-                    usedPerDay,
-                    dailyCapacity
-                );
-
-                // Adjust if scheduledStart falls on weekend
-                while (scheduledStart.DayOfWeek == DayOfWeek.Saturday || scheduledStart.DayOfWeek == DayOfWeek.Sunday)
-                {
-                    scheduledStart = scheduledStart.AddDays(-1);
-                }
-
-                // Update lots with same start date (shared)
-                //foreach (var lot in relatedLots)
-                //{
-                //    lot.PackStartDate = scheduledStart;
-                //    lot.PackEndDate = deadline;
-                //}
-
-                var order = await _sPDbContext.Order.FirstOrDefaultAsync(o => o.OrderNo == group.Key);
-                if (order != null)
-                {
-                    order.PackStartDate = scheduledStart;
-                    order.PackEndDate = deadline;
-                }
-
-                // Update usedPerDay tracking in hourly chunks
-                double remainingHours = totalHours;
-                var day = scheduledStart;
-                while (remainingHours > 0)
-                {
-                    if (day.DayOfWeek != DayOfWeek.Saturday && day.DayOfWeek != DayOfWeek.Sunday)
-                    {
-                        if (!usedPerDay.ContainsKey(day))
-                            usedPerDay[day] = 0;
-
-                        var available = dailyCapacity - usedPerDay[day];
-                        var hoursToUse = Math.Min(available, remainingHours);
-                        usedPerDay[day] += hoursToUse;
-                        remainingHours -= hoursToUse;
-                    }
-                    day = day.AddDays(1);
-                }
-            }
-
-            await _sPDbContext.SaveChangesAsync();
         }
     }
 }

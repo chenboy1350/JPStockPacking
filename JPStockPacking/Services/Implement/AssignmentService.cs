@@ -59,119 +59,310 @@ namespace JPStockPacking.Services.Implement
             return [.. result];
         }
 
-
-        public async Task AssignReceivedAsync(string lotNo, int[] receivedIDs, string tableId, string[] memberIds, bool hasPartTime, int WorkerNumber)
+        public async Task SyncAssignmentsForTableAsync(string lotNo, int tableId, int[] receivedIds, string[] memberIds, bool hasPartTime, int workerNumber)
         {
-            using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
+            if (tableId <= 0) return;
 
+            var now = DateTime.UtcNow;
+
+            using var tx = await _sPDbContext.Database.BeginTransactionAsync();
             try
             {
-                foreach (var revID in receivedIDs)
+                // =========================================================
+                // 1) received ที่ currently อยู่โต๊ะนี้
+                // =========================================================
+                var currentAtTable = await
+                (
+                    from table in _sPDbContext.AssignmentTable
+                    join assignmentReceived in _sPDbContext.AssignmentReceived
+                        on table.AssignmentReceivedId equals assignmentReceived.AssignmentReceivedId
+                    join received in _sPDbContext.Received
+                        on assignmentReceived.ReceivedId equals received.ReceivedId
+                    where table.WorkTableId == tableId
+                          && table.IsActive
+                          && assignmentReceived.IsActive
+                          && received.LotNo == lotNo
+                    select received.ReceivedId
+                )
+                .Distinct()
+                .ToListAsync();
+
+                // =========================================================
+                // 2) diff
+                // =========================================================
+                var toAssign = receivedIds.Except(currentAtTable).ToList();
+                var toUnassign = currentAtTable.Except(receivedIds).ToList();
+
+                // =========================================================
+                // 3) UNASSIGN
+                // =========================================================
+                if (toUnassign.Any())
                 {
-                    var receiveds = await _sPDbContext.Received
-                        .FirstOrDefaultAsync(x => x.ReceivedId == revID && x.LotNo == lotNo);
+                    var assignmentReceivedList = await
+                    (
+                        from assignmentReceived in _sPDbContext.AssignmentReceived
+                        where assignmentReceived.IsActive
+                              && toUnassign.Contains(assignmentReceived.ReceivedId)
+                        select assignmentReceived
+                    )
+                    .ToListAsync();
 
-                    if (receiveds == null) continue;
+                    var assignmentReceivedIds = assignmentReceivedList
+                        .Select(x => x.AssignmentReceivedId)
+                        .ToList();
 
-                    var existingAssignments = await _sPDbContext.AssignmentReceived
-                        .Where(a => a.ReceivedId == receiveds.ReceivedId && a.IsActive)
-                        .ToListAsync();
+                    var assignmentIds = assignmentReceivedList
+                        .Select(x => x.AssignmentId)
+                        .ToList();
 
-                    foreach (var assign in existingAssignments)
+                    var tablesToDisable = await
+                    (
+                        from table in _sPDbContext.AssignmentTable
+                        where table.IsActive
+                              && assignmentReceivedIds.Contains(table.AssignmentReceivedId)
+                        select table
+                    )
+                    .ToListAsync();
+
+                    foreach (var table in tablesToDisable)
                     {
-                        assign.IsActive = false;
-                        assign.UpdateDate = DateTime.Now;
-
-                        var assignTables = await _sPDbContext.AssignmentTable
-                            .Where(at => at.AssignmentReceivedId == assign.AssignmentReceivedId && at.IsActive)
-                            .ToListAsync();
-                        foreach (var t in assignTables)
-                        {
-                            t.IsActive = false;
-                            t.UpdateDate = DateTime.Now;
-                        }
-
-                        var assignMembers = await _sPDbContext.AssignmentMember
-                            .Where(am => am.AssignmentReceivedId == assign.AssignmentId && am.IsActive)
-                            .ToListAsync();
-                        foreach (var m in assignMembers)
-                        {
-                            m.IsActive = false;
-                            m.UpdateDate = DateTime.Now;
-                        }
+                        table.IsActive = false;
+                        table.UpdateDate = now;
                     }
 
-                    var newAssignment = new Assignment
-                    {
-                        NumberWorkers = WorkerNumber + memberIds.Length,
-                        HasPartTime = hasPartTime,
-                        IsReturned = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    };
-                    _sPDbContext.Assignment.Add(newAssignment);
-                    await _sPDbContext.SaveChangesAsync();
+                    var membersToDisable = await
+                    (
+                        from member in _sPDbContext.AssignmentMember
+                        where member.IsActive
+                              && assignmentReceivedIds.Contains(member.AssignmentReceivedId)
+                        select member
+                    )
+                    .ToListAsync();
 
-                    var assignReceived = new AssignmentReceived
+                    foreach (var member in membersToDisable)
                     {
-                        AssignmentId = newAssignment.AssignmentId,
-                        ReceivedId = receiveds.ReceivedId,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    };
-                    _sPDbContext.AssignmentReceived.Add(assignReceived);
-                    await _sPDbContext.SaveChangesAsync();
-
-                    var assignTable = new AssignmentTable
-                    {
-                        AssignmentReceivedId = assignReceived.AssignmentReceivedId,
-                        WorkTableId = Convert.ToInt32(tableId),
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    };
-                    _sPDbContext.AssignmentTable.Add(assignTable);
-
-                    foreach (var memberId in memberIds)
-                    {
-                        var assignMember = new AssignmentMember
-                        {
-                            AssignmentReceivedId = assignReceived.AssignmentReceivedId,
-                            WorkTableMemberId = Convert.ToInt32(memberId),
-                            IsActive = true,
-                            CreateDate = DateTime.Now,
-                            UpdateDate = DateTime.Now
-                        };
-                        _sPDbContext.AssignmentMember.Add(assignMember);
+                        member.IsActive = false;
+                        member.UpdateDate = now;
                     }
 
-                    receiveds.IsAssigned = true;
-                    receiveds.UpdateDate = DateTime.Now;
-                    await _sPDbContext.SaveChangesAsync();
+                    foreach (var assignmentReceived in assignmentReceivedList)
+                    {
+                        assignmentReceived.IsActive = false;
+                        assignmentReceived.UpdateDate = now;
+                    }
+
+                    var assignmentsToDisable = await
+                    (
+                        from assignment in _sPDbContext.Assignment
+                        where assignment.IsActive
+                              && assignmentIds.Contains(assignment.AssignmentId)
+                        select assignment
+                    )
+                    .ToListAsync();
+
+                    foreach (var assignment in assignmentsToDisable)
+                    {
+                        assignment.IsActive = false;
+                        assignment.UpdateDate = now;
+                    }
+
+                    var receivedToUnassign = await
+                    (
+                        from received in _sPDbContext.Received
+                        where toUnassign.Contains(received.ReceivedId)
+                        select received
+                    )
+                    .ToListAsync();
+
+                    foreach (var received in receivedToUnassign)
+                    {
+                        received.IsAssigned = false;
+                        received.UpdateDate = now;
+                    }
                 }
 
-                var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(x => x.LotNo == lotNo);
+                // =========================================================
+                // 4) ASSIGN / UPDATE
+                // =========================================================
+                foreach (var receivedId in toAssign)
+                {
+                    var assignmentData = await
+                    (
+                        from tbar in _sPDbContext.AssignmentReceived
+                        join tbas in _sPDbContext.Assignment
+                            on tbar.AssignmentId equals tbas.AssignmentId
+                        where tbar.ReceivedId == receivedId
+                              && tbar.IsActive
+                              && tbas.IsActive
+                        select new
+                        {
+                            AssignmentReceived = tbar,
+                            Assignment = tbas
+                        }
+                    )
+                    .FirstOrDefaultAsync();
+
+                    AssignmentReceived assignmentReceived;
+                    Assignment assignment;
+
+                    if (assignmentData != null)
+                    {
+                        // -------- UPDATE EXISTING --------
+                        assignmentReceived = assignmentData.AssignmentReceived;
+                        assignment = assignmentData.Assignment;
+
+                        assignment.NumberWorkers = workerNumber + memberIds.Length;
+                        assignment.HasPartTime = hasPartTime;
+                        assignment.UpdateDate = now;
+
+                        var oldTables = await
+                        (
+                            from table in _sPDbContext.AssignmentTable
+                            where table.AssignmentReceivedId == assignmentReceived.AssignmentReceivedId
+                                  && table.IsActive
+                            select table
+                        )
+                        .ToListAsync();
+
+                        foreach (var table in oldTables)
+                        {
+                            table.IsActive = false;
+                            table.UpdateDate = now;
+                        }
+
+                        _sPDbContext.AssignmentTable.Add(new AssignmentTable
+                        {
+                            AssignmentReceivedId = assignmentReceived.AssignmentReceivedId,
+                            WorkTableId = tableId,
+                            IsActive = true,
+                            CreateDate = now,
+                            UpdateDate = now
+                        });
+
+                        var oldMembers = await
+                        (
+                            from member in _sPDbContext.AssignmentMember
+                            where member.AssignmentReceivedId == assignmentReceived.AssignmentReceivedId
+                                  && member.IsActive
+                            select member
+                        )
+                        .ToListAsync();
+
+                        foreach (var member in oldMembers)
+                        {
+                            member.IsActive = false;
+                            member.UpdateDate = now;
+                        }
+
+                        foreach (var memberId in memberIds)
+                        {
+                            _sPDbContext.AssignmentMember.Add(new AssignmentMember
+                            {
+                                AssignmentReceivedId = assignmentReceived.AssignmentReceivedId,
+                                WorkTableMemberId = Convert.ToInt32(memberId),
+                                IsActive = true,
+                                CreateDate = now,
+                                UpdateDate = now
+                            });
+                        }
+                    }
+                    else
+                    {
+                        // -------- CREATE NEW --------
+                        assignment = new Assignment
+                        {
+                            NumberWorkers = workerNumber + memberIds.Length,
+                            HasPartTime = hasPartTime,
+                            IsReturned = false,
+                            IsActive = true,
+                            CreateDate = now,
+                            UpdateDate = now
+                        };
+
+                        _sPDbContext.Assignment.Add(assignment);
+                        await _sPDbContext.SaveChangesAsync();
+
+                        assignmentReceived = new AssignmentReceived
+                        {
+                            AssignmentId = assignment.AssignmentId,
+                            ReceivedId = receivedId,
+                            IsActive = true,
+                            CreateDate = now,
+                            UpdateDate = now
+                        };
+
+                        _sPDbContext.AssignmentReceived.Add(assignmentReceived);
+                        await _sPDbContext.SaveChangesAsync();
+
+                        _sPDbContext.AssignmentTable.Add(new AssignmentTable
+                        {
+                            AssignmentReceivedId = assignmentReceived.AssignmentReceivedId,
+                            WorkTableId = tableId,
+                            IsActive = true,
+                            CreateDate = now,
+                            UpdateDate = now
+                        });
+
+                        foreach (var memberId in memberIds)
+                        {
+                            _sPDbContext.AssignmentMember.Add(new AssignmentMember
+                            {
+                                AssignmentReceivedId = assignmentReceived.AssignmentReceivedId,
+                                WorkTableMemberId = Convert.ToInt32(memberId),
+                                IsActive = true,
+                                CreateDate = now,
+                                UpdateDate = now
+                            });
+                        }
+                    }
+
+                    var receivedToAssign = await
+                    (
+                        from received in _sPDbContext.Received
+                        where received.ReceivedId == receivedId
+                        select received
+                    )
+                    .FirstAsync();
+
+                    receivedToAssign.IsAssigned = true;
+                    receivedToAssign.UpdateDate = now;
+                }
+
+                // =========================================================
+                // 5) Update Lot summary
+                // =========================================================
+                var lot = await
+                (
+                    from l in _sPDbContext.Lot
+                    where l.LotNo == lotNo
+                    select l
+                )
+                .FirstOrDefaultAsync();
+
                 if (lot != null)
                 {
-                    var assignedQty = await _sPDbContext.Received
-                        .Where(x => x.LotNo == lotNo && x.IsAssigned)
-                        .SumAsync(x => x.TtQty ?? 0);
+                    lot.AssignedQty = await
+                    (
+                        from received in _sPDbContext.Received
+                        where received.LotNo == lotNo && received.IsAssigned
+                        select received.TtQty ?? 0
+                    )
+                    .SumAsync();
 
-                    lot.AssignedQty = assignedQty;
-                    lot.UpdateDate = DateTime.Now;
+                    lot.UpdateDate = now;
                 }
 
                 await _sPDbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await tx.CommitAsync();
             }
-            catch (Exception)
+            catch
             {
-                await transaction.RollbackAsync();
+                await tx.RollbackAsync();
                 throw;
             }
         }
+
+
 
     }
 }
