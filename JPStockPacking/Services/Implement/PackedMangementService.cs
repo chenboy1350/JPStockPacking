@@ -18,7 +18,7 @@ namespace JPStockPacking.Services.Implement
         private readonly IPISService _pISService = pISService;
         private readonly IConfiguration _configuration = configuration;
         private static readonly string[] sendType = ["KS", "KM"];
-
+        
         public async Task<List<OrderToStoreModel>> GetOrderToStoreAsync(string orderNo)
         {
             var percentage = decimal.TryParse(_configuration["SendToStoreSettings:Percentage"], out var p) ? p : 0;
@@ -182,7 +182,6 @@ namespace JPStockPacking.Services.Implement
                     };
                 }
 
-                // ดึง Received ทั้งหมดที่ LotNo ตรง
                 var receivedList = await _sPDbContext.Received
                     .Where(x => x.LotNo == input.LotNo)
                     .OrderByDescending(o => o.CreateDate)
@@ -198,7 +197,6 @@ namespace JPStockPacking.Services.Implement
                     };
                 }
 
-                // หาตัวล่าสุดที่ Doc ยังว่างใน Store / Melt
                 var received = receivedList.FirstOrDefault(r =>
                     !_sPDbContext.Store.Any(s => s.BillNumber == r.BillNumber && s.Doc != string.Empty) &&
                     !_sPDbContext.Melt.Any(m => m.BillNumber == r.BillNumber && m.Doc != string.Empty)
@@ -385,7 +383,6 @@ namespace JPStockPacking.Services.Implement
 
         private async Task<BaseResponseModel> ProcessSendStockAsync(SendStockInput input)
         {
-            // ตรวจสอบ Doc ที่มีอยู่แล้ว
             var existingDocs = await _jPDbContext.JobBillSendStock
                 .Where(s => s.Billnumber == input.BillNumber &&
                             s.SizeNoOrd == input.SizeNoOrd &&
@@ -418,7 +415,6 @@ namespace JPStockPacking.Services.Implement
 
                 if (record == null && qty > 0)
                 {
-                    // INSERT
                     _jPDbContext.JobBillSendStock.Add(new JobBillSendStock
                     {
                         Billnumber = input.BillNumber,
@@ -437,14 +433,12 @@ namespace JPStockPacking.Services.Implement
                 {
                     if (qty == 0)
                     {
-                        // DELETE
                         _jPDbContext.JobBillSendStock.Remove(record);
                     }
                     else
                     {
                         if (qty != record.Ttqty)
                         {
-                            // UPDATE
                             record.Ttqty = qty;
                             record.Ttwg = wg;
                             record.ReturnFound = input.ReturnFound;
@@ -739,14 +733,12 @@ namespace JPStockPacking.Services.Implement
 
                 foreach (var pack in tempPacks)
                 {
-                    // ตรวจว่ารายการนี้เคยรับแล้วหรือไม่ (BillNumber + NumSend)
                     bool exists = await _jPDbContext.Sj1dreceive.AnyAsync(x => x.Numsend == pack.NumSend && x.Billnumber == pack.BillNumber);
 
                     if (exists) throw new InvalidOperationException($"รายการ {pack.BillNumber} เคยรับเข้าแล้ว");
 
                     var (Sizes, Quantities) = MapSizes(pack);
 
-                    // ดึง BoxNo จาก OrdLotno → OrdHorder ถ้าไม่มีใช้ "A1"
                     var defaultBox = "A1";
                     var boxQuery = await (from b in _jPDbContext.OrdLotno
                                           join c in _jPDbContext.OrdHorder on b.OrderNo equals c.OrderNo
@@ -804,7 +796,6 @@ namespace JPStockPacking.Services.Implement
 
                     _jPDbContext.Sj1dreceive.Add(detail);
 
-                    // อัปเดต JobBill_SendStock → Doc = ReceiveNo
                     var sendStock = await _jPDbContext.JobBillSendStock.FirstOrDefaultAsync(a =>
                         a.Billnumber == pack.BillNumber &&
                         a.Numsend == pack.NumSend &&
@@ -813,7 +804,6 @@ namespace JPStockPacking.Services.Implement
 
                     if (sendStock != null) sendStock.Doc = receiveNo;
 
-                    // อัปเดต JobBill → SendStockDoc
                     var jobBill = await _jPDbContext.JobBill.FirstOrDefaultAsync(b => b.Billnumber == pack.BillNumber);
                     if (jobBill != null) jobBill.SendStockDoc = receiveNo;
 

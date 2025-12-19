@@ -33,6 +33,16 @@ namespace JPStockPacking.Services.Implement
             await UpdateReceiveHeaderStatusAsync(receiveNo);
         }
 
+        public async Task CancelUpdateLotItemsAsync(string receiveNo, string[] orderNos, int[] receiveIds)
+        {
+            foreach (var receiveId in receiveIds)
+            {
+                await CancelAllReceivedItemsAsync(receiveId);
+            }
+
+            await UpdateReceiveHeaderStatusAsync(receiveNo);
+        }
+
         private async Task ImportOrderAsync(string orderNo)
         {
             List<OrderNotify> orderNotifies = [];
@@ -200,32 +210,100 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
+        private async Task CancelAllReceivedItemsAsync(int receiveId)
+        {
+            using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
+
+            try
+            {
+                var receivedList = await _sPDbContext.Received
+                    .Where(r => r.ReceiveId == receiveId && r.IsActive && !r.IsAssigned && !r.IsReturned)
+                    .ToListAsync();
+
+                if (receivedList.Count == 0)
+                    throw new InvalidOperationException("ไม่พบรายการรับเข้าที่สามารถยกเลิกได้");
+
+                var now = DateTime.Now;
+
+                var lotSums = receivedList
+                    .GroupBy(r => r.LotNo)
+                    .Select(g => new
+                    {
+                        LotNo = g.Key,
+                        SumQty = g.Sum(x => x.TtQty ?? 0m)
+                    })
+                    .ToList();
+
+                var lotNos = lotSums.Select(x => x.LotNo).ToList();
+
+                var lots = await _sPDbContext.Lot
+                    .Where(l => lotNos.Contains(l.LotNo))
+                    .ToListAsync();
+
+                var lotDict = lots.ToDictionary(l => l.LotNo);
+
+                foreach (var s in lotSums)
+                {
+                    if (!lotDict.TryGetValue(s.LotNo, out var lot))
+                        continue;
+
+                    var newQty = (lot.ReceivedQty ?? 0m) - s.SumQty;
+
+                    if (newQty < 0)
+                        throw new InvalidOperationException(
+                            $"Lot {s.LotNo} มีจำนวนรับเข้าคงเหลือน้อยกว่าที่จะยกเลิก");
+
+                    lot.ReceivedQty = newQty;
+                    lot.UpdateDate = now;
+                }
+
+                _sPDbContext.Received.RemoveRange(receivedList);
+
+                await _sPDbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         public async Task UpdateReceiveHeaderStatusAsync(string receiveNo)
         {
             using var transaction = await _jPDbContext.Database.BeginTransactionAsync();
+
             try
             {
                 var header = await _jPDbContext.Sphreceive
                     .Include(h => h.Spdreceive)
-                    .FirstOrDefaultAsync(h => h.ReceiveNo == receiveNo) ?? throw new InvalidOperationException($"ไม่พบใบรับ {receiveNo}");
+                    .FirstOrDefaultAsync(h => h.ReceiveNo == receiveNo)
+                    ?? throw new InvalidOperationException($"ไม่พบใบรับ {receiveNo}");
 
-                var detailIds = header.Spdreceive.Select(d => d.Id).ToList();
+                var detailIds = header.Spdreceive
+                    .Select(d => d.Id)
+                    .ToList();
+
                 if (detailIds.Count == 0)
                     throw new InvalidOperationException($"ใบรับ {receiveNo} ไม่มีรายการ detail");
 
-                var receivedIds = await _sPDbContext.Received
-                    .Where(r => r.ReceiveNo == receiveNo && r.IsReceived)
+                var receivedIdSet = await _sPDbContext.Received
+                    .Where(r =>
+                        r.ReceiveNo == receiveNo &&
+                        r.IsReceived &&
+                        r.IsActive)
                     .Select(r => r.ReceiveId)
-                    .ToListAsync();
+                    .ToHashSetAsync();
 
-                bool isComplete = detailIds.All(id => receivedIds.Contains(id));
+                bool isComplete = detailIds.All(id => receivedIdSet.Contains(id));
 
-                if (isComplete && !header.Mupdate)
+                if (header.Mupdate != isComplete)
                 {
-                    header.Mupdate = true;
+                    header.Mupdate = isComplete;
                     await _jPDbContext.SaveChangesAsync();
-                    await transaction.CommitAsync();
                 }
+
+                await transaction.CommitAsync();
             }
             catch
             {
@@ -340,14 +418,17 @@ namespace JPStockPacking.Services.Implement
 
         public async Task<List<ReceivedListModel>> GetTopJPReceivedAsync(string? receiveNo, string? orderNo, string? lotNo)
         {
-            var query = from a in _jPDbContext.Sphreceive
+            var query =
+                from a in _jPDbContext.Sphreceive
                 select new
                 {
                     a.ReceiveNo,
                     a.Mdate,
                     a.Mupdate,
-                    TotalDetail = _jPDbContext.Spdreceive.Count()
+                    TotalDetail = _jPDbContext.Spdreceive.Count(d => d.ReceiveNo == a.ReceiveNo)
                 };
+
+
 
             if (!string.IsNullOrWhiteSpace(receiveNo))
             {

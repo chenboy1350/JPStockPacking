@@ -224,6 +224,24 @@ namespace JPStockPacking.Controllers
 
         [HttpPatch]
         [Authorize]
+        public async Task<IActionResult> CancelUpdateLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
+        {
+            if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
+                return BadRequest("ข้อมูลไม่ครบถ้วน");
+
+            try
+            {
+                await _receiveManagementService.CancelUpdateLotItemsAsync(receiveNo, orderNos, receiveIds);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPatch]
+        [Authorize]
         public async Task<IActionResult> UpdateLotByRevNoItems([FromForm] string receiveNo)
         {
             if (string.IsNullOrWhiteSpace(receiveNo)) return BadRequest("ข้อมูลไม่ครบถ้วน");

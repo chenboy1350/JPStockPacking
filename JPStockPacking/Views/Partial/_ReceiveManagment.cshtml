@@ -77,7 +77,11 @@
                                     <td class="col-status">
                                         <span class="badge badge-success">รับเข้าครบแล้ว</span>
                                     </td>
-                                    <td class="col-action"></td>
+                                    <td class="col-action">
+                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
+                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                        </button>
+                                    </td>
                                 }
                                 else if (item.HasRevButNotAll && !item.IsReceived)
                                 {
@@ -165,8 +169,8 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ :</h4>
-                <input type="hidden" id="hddReceiveNo" value="" />
+                <h4 class="modal-title" id="txtTitleCancelUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ :</h4>
+                <input type="hidden" id="hddCancelReceiveNo" value="" />
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
                     <span>&times;</span>
                 </button>
