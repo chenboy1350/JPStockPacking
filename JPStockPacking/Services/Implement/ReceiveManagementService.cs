@@ -486,7 +486,8 @@ namespace JPStockPacking.Services.Implement
                     a.Barcode,
                     a.Article,
                     d.OrderNo,
-                    c.ListNo
+                    c.ListNo,
+                    d.CustCode
                 }
             ).ToListAsync();
 
@@ -509,6 +510,7 @@ namespace JPStockPacking.Services.Implement
             {
                 ReceivedID = x.Id,
                 ReceiveNo = x.ReceiveNo,
+                CustCode = x.CustCode,
                 LotNo = x.Lotno,
                 TtQty = x.Ttqty,
                 TtWg = (double)x.Ttwg,

@@ -15,8 +15,8 @@ public partial class WorkTable
     [Unicode(false)]
     public string? Name { get; set; }
 
-    [Column("Header_ID")]
-    public int HeaderId { get; set; }
+    [Column("LeaderID")]
+    public int LeaderId { get; set; }
 
     public bool IsActive { get; set; }
 

@@ -270,10 +270,10 @@ $(document).ready(function () {
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
+                CloseModal();
                 fetchOrdersByDateRange();
                 let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
                 await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
-                CloseModal();
             }
         });
     });
@@ -314,7 +314,8 @@ $(document).ready(function () {
                         },
                         error: async (xhr) => {
                             $('#loadingIndicator').hide();
-                            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})`);
+                            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                         }
                     });
                 }
@@ -410,17 +411,25 @@ $(document).ready(function () {
     $(document).on('click', '#btnAddLost', async function () {
         const lostQty = $('#txtLostQty').val();
         const lotNo = $('#hddLotNo').val();
+        const leaderID = $('#ddlTableLeader').val();
 
         if (lostQty == '' || lostQty == 0)
         {
             await showWarning('กรุณากรอกจำนวนหาย');
             return;
         }
+
+        if (leaderID == '' || leaderID == 0) {
+            await showWarning('กรุณาเลือกหัวหน้าโต๊ะ');
+            return;
+        }
+
         await showSaveConfirm(
             `ต้องการเพิ่ม รายการหาย จำนวน ${lostQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม รายการหาย", async () => {
                 const formData = new FormData();
                 formData.append("lotNo", lotNo);
                 formData.append("lostQty", lostQty);
+                formData.append("leaderID", leaderID);
                 $.ajax({
                     url: urlAddLost,
                     type: 'POST',
@@ -807,7 +816,7 @@ async function showModalTableMember(assignedID) {
         type: 'GET',
         data: { assignedID: assignedID },
         success: function (res) {
-            console.log(res)
+
         },
         error: async function (xhr) {
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
@@ -876,13 +885,13 @@ function showModalAssign(lotNo) {
         tbody.append(rows);
 
         tbody.append(`
-        <tr class="table-secondary fw-bold" id="totalRow">
-            <td colspan="6" class="text-end">รวม</td>
-            <td class="text-end" id="sumASTtQty">0</td>
-            <td class="text-end" id="sumASTtWg">0</td>
-            <td></td>
-        </tr>
-    `);
+            <tr class="table-secondary fw-bold" id="totalRow">
+                <td colspan="6" class="text-end">รวม</td>
+                <td class="text-end" id="sumASTtQty">0</td>
+                <td class="text-end" id="sumASTtWg">0</td>
+                <td></td>
+            </tr>
+        `);
 
 
         calcTotal();
@@ -895,10 +904,12 @@ function showModalAssign(lotNo) {
             "<i class='fas fa-folder-plus'></i> รายการมอบหมายงาน : " + html(items[0].lotNo ?? lotNo)
         );
     })
-    .fail(function (xhr) {
+    .fail(async function (xhr) {
+        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         tbody.empty().append(
             `<tr><td colspan="10" class="text-danger text-center">
-                เกิดข้อผิดพลาดในการโหลดข้อมูล (${xhr.status} ${xhr.statusText})
+                ${msg}
             </td></tr>`
         );
     });
@@ -960,7 +971,36 @@ async function showModalReturn(lotNo) {
 
 async function showModalAddLost() {
     $('#txtLostQty').val(0)
+    var lotNo = $('#hddLotNo').val();
+
     const modal = $('#modal-add-Lost');
+
+    let model = {
+        LotNo: String(lotNo),
+    };
+
+    $.ajax({
+        url: urlGetLeaderTabel,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        success: async (res) => {
+            $('#loadingIndicator').hide();
+
+            $('#ddlTableLeader').empty();
+            $('#ddlTableLeader').append(new Option('-- เลือกหัวหน้าโต๊ะ --', ''));
+            res.forEach(item => {
+                $('#ddlTableLeader').append(new Option(`${item.tableName} - ${item.leaderName}`, item.leaderTableID));
+            });
+        },
+        error: async (xhr) => {
+            $('#loadingIndicator').hide();
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        }
+    });
+
+
     modal.modal('show');
 }
 

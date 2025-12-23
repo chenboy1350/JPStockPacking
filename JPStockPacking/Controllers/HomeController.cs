@@ -471,6 +471,14 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
+        public async Task<IActionResult> GetLeaderTabel([FromBody] BreakAndLostFilterModel breakAndLostFilterModel)
+        {
+            List<AssignedWorkTableModel> result = await _lostService.GetTableLeaderAsync(breakAndLostFilterModel.LotNo);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
         public async Task<IActionResult> LostReport([FromBody] BreakAndLostFilterModel breakAndLostFilterModel)
         {
             UserModel user = await _orderManagementService.ValidateApporverAsync(breakAndLostFilterModel.Username, breakAndLostFilterModel.Password);
@@ -557,7 +565,7 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AddLost([FromForm] string lotNo, [FromForm] double lostQty)
+        public async Task<IActionResult> AddLost([FromForm] string lotNo, [FromForm] double lostQty, [FromForm] int leaderID)
         {
             try
             {

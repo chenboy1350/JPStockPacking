@@ -175,6 +175,7 @@ function showModalUpdateLot(receiveNo) {
 
             const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
             const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
+            const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
             const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
             const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
             const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
@@ -186,9 +187,9 @@ function showModalUpdateLot(receiveNo) {
                         data-order-no="${html(x.orderNo)}" 
                         data-ttqty="${numRaw(x.ttQty)}" 
                         data-ttwg="${numRaw(x.ttWg)}">
-                    <td>${html(x.receiveNo)}</td>
-                    <td>${lotNoDisplay}</td>
+                    <td class="text-center">${cusCodeDisplay}</td>
                     <td>${orderNoDisplay}</td>
+                    <td>${lotNoDisplay}</td>
                     <td class="text-center">${html(x.listNo)}</td>
                     <td>${barcodeDisplay}</td>
                     <td>${articleDisplay}</td>
@@ -304,6 +305,7 @@ function showModalCancelLot(receiveNo) {
 
             const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
             const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
+            const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
             const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
             const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
             const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
@@ -315,9 +317,9 @@ function showModalCancelLot(receiveNo) {
                     data-order-no="${html(x.orderNo)}" 
                     data-ttqty="${numRaw(x.ttQty)}" 
                     data-ttwg="${numRaw(x.ttWg)}">
-                <td>${html(x.receiveNo)}</td>
-                <td>${lotNoDisplay}</td>
+                <td class="text-center">${cusCodeDisplay}</td>
                 <td>${orderNoDisplay}</td>
+                <td>${lotNoDisplay}</td>
                 <td class="text-center">${html(x.listNo)}</td>
                 <td>${barcodeDisplay}</td>
                 <td>${articleDisplay}</td>

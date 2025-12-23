@@ -705,9 +705,13 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="card card-default">
+                <div class="">
                     <label for="txtLostQty">กรอกจำนวนที่สูญหาย</label>
                     <input type="number" min="0" step="0.5" id="txtLostQty" class="form-control">
+                    <label for="ddlTableLeader"><span style="color:red;">*</span> หัวหน้าโต๊ะ</label>
+                    <select id="ddlTableLeader" name="ddlTableLeader" class="form-control" style="width: 100%">
+                        <option value="" selected>-- เลือก --</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer justify-content-end">

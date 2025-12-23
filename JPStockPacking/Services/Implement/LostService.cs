@@ -7,9 +7,10 @@ using System.Globalization;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class LostService(SPDbContext sPDbContext) : ILostService
+    public class LostService(SPDbContext sPDbContext, IPISService pISService) : ILostService
     {
         private readonly SPDbContext _sPDbContext = sPDbContext;
+        private readonly IPISService _pISService = pISService;
 
         public async Task<List<LostAndRepairModel>> GetLostAsync(BreakAndLostFilterModel breakAndLostFilterModel)
         {
@@ -36,6 +37,8 @@ namespace JPStockPacking.Services.Implement
                 }
             ).ToListAsync();
 
+            await GetTableLeaderAsync("2500017748");
+
             if (result == null || result.Count == 0)
             {
                 return [];
@@ -51,7 +54,47 @@ namespace JPStockPacking.Services.Implement
                 result = result.Where(r => breakAndLostFilterModel.LostIDs.Contains(r.LostID)).ToList();
             }
 
-            return [.. result.Take(100).OrderByDescending(x => x.CreateDate)];
+            return [.. result.OrderByDescending(x => x.CreateDate).Take(100)];
+        }
+
+        public async Task<List<AssignedWorkTableModel>> GetTableLeaderAsync(string LotNo)
+        {
+            var employees = await _pISService.GetEmployeeAsync();
+            if (employees == null || employees.Count == 0)
+            {
+                return [];
+            }
+
+            var employeeDict = employees.ToDictionary(e => e.EmployeeID, e => string.Format("{0} {1} ({2})", e.FirstName, e.LastName, e.NickName));
+
+            var assignedTables = await (
+                from ass in _sPDbContext.Assignment
+                join asmr in _sPDbContext.AssignmentReceived on ass.AssignmentId equals asmr.AssignmentId
+                join asnt in _sPDbContext.AssignmentTable on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
+                join wt in _sPDbContext.WorkTable on asnt.WorkTableId equals wt.Id
+                join rev in _sPDbContext.Received on asmr.ReceivedId equals rev.ReceivedId
+                where rev.LotNo == LotNo && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
+                select new { rev.LotNo, ass.AssignmentId, wt.Name, wt.LeaderId }
+            ).ToListAsync();
+
+            var assignedTableDict = assignedTables
+                .GroupBy(a => a.LotNo)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .Select(x => new AssignedWorkTableModel
+                        {
+                            LeaderTableID = x.LeaderId,
+                            LeaderName = employeeDict.GetValueOrDefault(x.LeaderId) ?? string.Empty,
+                            TableName = x.Name!
+                        })
+                        .DistinctBy(m => m.TableName)
+                        .ToList()
+                );
+
+            assignedTableDict.TryGetValue(LotNo, out var atables);
+
+            return atables ?? [];
         }
 
         public async Task AddLostAsync(string lotNo, double lostQty)

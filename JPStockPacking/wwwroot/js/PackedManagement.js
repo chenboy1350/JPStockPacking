@@ -542,6 +542,7 @@ function FindOrderToStore() {
         $("#btnSelect").removeClass("d-none");
 
         $.each(response, function (i, item) {
+            const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
             const rowHtml = `
                 <tr data-lot-no="${html(item.lotNo)}"
                     data-ttwg="${html(item.ttWg)}"
@@ -569,21 +570,23 @@ function FindOrderToStore() {
                     data-lost-draft-qty="${html(item.lost_Qty)}"
                     data-lost-wg="${html(item.lost_Wg)}"
 
-                    data-available-qty="${html(item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty))}"
+                    data-available-qty="${html(available_qty)}"
                     >
                     <td class="text-center">${i + 1}</td>
                     <td class="text-start"><strong>${html(item.article)}</strong></br><small>${html(item.custCode)}/${html(item.orderNo)}</small></td>
                     <td class="text-center">${html(item.listNo)}</td>
-                    <td class="text-end">${numRaw(item.ttQty)}</td>
-                    <td class="text-end">${numRaw(item.si)}</td>
-                    <td class="text-end">${numRaw(item.sendPack_Qty)}</td>
-                    <td class="text-end">${numRaw(item.sendToPack_Qty)}</td>
-                    <td class="text-end col-packed">${numRaw(item.packed_Qty)}</td>
-                    <td class="text-center col-available"><strong>${ numRaw(item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty)) }</strong></td>
+                    <td class="text-end">${item.ttQty != 0 ? numRaw(item.ttQty) : '-'}</td>
+                    <td class="text-end">${item.si != 0 ? numRaw(item.si) : '-'}</td>
+                    <td class="text-end">${item.sendPack_Qty != 0 ? numRaw(item.sendPack_Qty) : '-'}</td>
+                    <td class="text-end">${item.sendToPack_Qty != 0 ? numRaw(item.sendToPack_Qty) : '-'}</td>
+                    <td class="text-end col-packed">${ item.packed_Qty != 0 ? numRaw(item.packed_Qty) : '-'}</td>
+
+                    <td class="text-center col-available fs-5"><strong>${available_qty != 0 ? numRaw(available_qty) : '-'}</strong></td>
+
                     <td class="text-end">
                         <div class="d-flex flex-column align-items-end">
                             <div class="d-flex justify-content-between align-content-center gap-2 w-100">
-                                <input class="form-control text-center qty-input store_qty"
+                                <input class="form-control text-center qty-input store_qty fw-bold fs-5"
                                        type="number"
                                        min="0"
                                        step="any"
@@ -595,14 +598,14 @@ function FindOrderToStore() {
                                 </button>
 
                             </div>
-                            <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.store_FixedQty)} / รอส่ง: ${numRaw(item.store_Qty)}</small>
+                            <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.store_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.store_Qty)}</strong></small>
                         </div>
                     </td>
 
                     <td class="text-end">
                         <div class="d-flex flex-column align-items-end">
                             <div class="d-flex justify-content-between align-content-center gap-2 w-100">
-                                <input class="form-control text-center qty-input melt_qty"
+                                <input class="form-control text-center qty-input melt_qty fw-bold fs-5"
                                        type="number"
                                        min="0"
                                        step="any"
@@ -614,14 +617,14 @@ function FindOrderToStore() {
                                 </button>
 
                             </div>
-                            <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.melt_FixedQty)} / รอส่ง: ${numRaw(item.melt_Qty)}</small>
+                            <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.melt_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.melt_Qty)}</strong></small>
                         </div>
                     </td>
 
                     <td class="text-end">
                         <div class="d-flex flex-column align-items-end">
                             <div class="d-flex justify-content-between align-content-center gap-2 w-100">
-                                <input class="form-control text-center qty-input lost_qty"
+                                <input class="form-control text-center qty-input lost_qty fw-bold fs-5"
                                        type="number"
                                        min="0"
                                        step="any"
@@ -633,14 +636,14 @@ function FindOrderToStore() {
                                 </button>
 
                             </div>
-                            <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.lost_FixedQty)} / รอส่ง: ${numRaw(item.lost_Qty)}</small>
+                            <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.lost_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.lost_Qty)}</strong></small>
                         </div>
                     </td>
 
                     <td class="text-end">
                         <div class="d-flex flex-column align-items-end">
                             <div class="d-flex justify-content-between align-content-center gap-2 w-100">
-                                <input class="form-control text-center qty-input export_qty"
+                                <input class="form-control text-center qty-input export_qty fw-bold fs-5"
                                        type="number"
                                        min="0"
                                        step="any"
@@ -652,7 +655,7 @@ function FindOrderToStore() {
                                 </button>
 
                             </div>
-                            <small class="text-muted pe-1">ส่งแล้ว: ${numRaw(item.export_FixedQty)} / รอส่ง: ${numRaw(item.export_Qty)}</small>
+                            <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.export_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.export_Qty)}</strong></small>
                         </div>
                     </td>
 
@@ -810,13 +813,13 @@ function updateAvailableQty($row) {
     $row.find('.col-available').text(formatted);
     $row.attr('data-available-qty', available);
 
+
     if (available < 0) {
-        $row.find('.col-available').addClass('text-danger fw-bold');
+        $row.find('.col-available').addClass('text-danger fw-bold fs-5');
     } else {$row
-        $row.find('.col-available').removeClass('text-danger fw-bold');
+        $row.find('.col-available').removeClass('text-danger fw-bold fs-5');
     }
 }
-
 
 function ShowForceSendToModal(button) {
     if (!currentForceRow || currentForceRow.length === 0) {

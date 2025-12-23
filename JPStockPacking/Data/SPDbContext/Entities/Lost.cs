@@ -16,6 +16,9 @@ public partial class Lost
     [Unicode(false)]
     public string LotNo { get; set; } = null!;
 
+    [Column("EmployeeID")]
+    public int EmployeeId { get; set; }
+
     [Column(TypeName = "decimal(18, 1)")]
     public decimal? LostQty { get; set; }
 

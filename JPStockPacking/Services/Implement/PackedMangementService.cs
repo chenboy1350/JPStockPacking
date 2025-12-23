@@ -7,6 +7,7 @@ using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Security;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
@@ -719,7 +720,15 @@ namespace JPStockPacking.Services.Implement
             await using var transaction = await _jPDbContext.Database.BeginTransactionAsync();
             try
             {
-                var receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ1);
+                var receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ1, false);
+                var existsHeader = await _jPDbContext.Sj1hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
+
+                while (existsHeader)
+                {
+                    receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ1, true);
+                    existsHeader = await _jPDbContext.Sj1hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
+                }
+
                 var header = new Sj1hreceive
                 {
                     ReceiveNo = receiveNo,
@@ -862,7 +871,15 @@ namespace JPStockPacking.Services.Implement
             await using var transaction = await _jPDbContext.Database.BeginTransactionAsync();
             try
             {
-                var receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ2);
+                var receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ2, false);
+                var existsHeader = await _jPDbContext.Sj1hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
+
+                while (existsHeader)
+                {
+                    receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ2, true);
+                    existsHeader = await _jPDbContext.Sj1hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
+                }
+
                 var now = DateTime.Now;
 
                 // ใช้ connection เดียวกับ EF Core
@@ -1345,7 +1362,7 @@ namespace JPStockPacking.Services.Implement
             return (resultSizes, resultQty);
         }
 
-        private async Task<string> GenerateReceiveNoAsync(ReceiveType type)
+        private async Task<string> GenerateReceiveNoAsync(ReceiveType type, bool IsDuplicate)
         {
             string middleCode = "RS";
             string year = DateTime.Now.ToString("yy");
@@ -1371,6 +1388,11 @@ namespace JPStockPacking.Services.Implement
                     .CountAsync(),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
+
+            if (IsDuplicate)
+            {
+                count += 1;
+            }
 
             int seq = count + 1;
 

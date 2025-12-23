@@ -4,6 +4,7 @@
     {
         public int ReceivedID { get; set; } = 0;
         public string ReceiveNo { get; set; } = string.Empty;
+        public string CustCode { get; set; } = string.Empty;
         public string LotNo { get; set; } = string.Empty;
         public string ListNo { get; set; } = string.Empty;
         public string OrderNo { get; set; } = string.Empty;

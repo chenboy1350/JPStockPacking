@@ -1,5 +1,4 @@
-﻿using JPStockPacking.Data.JPDbContext.Entities;
-using JPStockPacking.Data.SPDbContext.Entities;
+﻿using JPStockPacking.Data.SPDbContext.Entities;
 
 namespace JPStockPacking.Models
 {
