@@ -59,6 +59,16 @@
             <nav class="mt-2 d-flex flex-column flex-grow-1">
                 <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-header">MENU</li>
+                    @if (User.HasClaim("Menu", "PackingPlaning"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("PackingPlaning", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>วางแผนการแพ็ค</p>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.HasClaim("Menu", "ReceiveManagement"))
                     {
                         <li class="nav-item">
@@ -181,6 +191,20 @@
             <div id="content-container">
                 <h3 class="mb-2 text-center">MENU</h3>
                 <div class="row justify-content-center">
+                    @if (User.HasClaim("Menu", "PackingPlaning"))
+                    {
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <a href="#" class="menu-box-link" data-action="@Url.Action("PackingPlaning", "Home")" style="text-decoration: none;">
+                                <div class="info-box bg-info cursor-pointer hover-shadow">
+                                    <span class="info-box-icon"><i class="fas fa-receipt"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text" style="font-size:30px">วางแผนการแพ็ค</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+
                     @if (User.HasClaim("Menu", "ReceiveManagement"))
                     {
                         <div class="col-md-3 col-sm-6 col-12">
@@ -236,11 +260,9 @@
                             </a>
                         </div>
                     }
-                </div>
 
-                @if (User.HasClaim("Menu", "Validation"))
-                {
-                    <div class="row justify-content-center mt-3">
+                    @if (User.HasClaim("Menu", "Validation"))
+                    {
                         <div class="col-md-3 col-sm-6 col-12">
                             <a href="#" class="menu-box-link" data-action="@Url.Action("Validation", "Home")" style="text-decoration: none;">
                                 <div class="info-box bg-info cursor-pointer hover-shadow">
@@ -251,8 +273,8 @@
                                 </div>
                             </a>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
 
                 @if (User.HasClaim("Menu", "UserManagement") || User.HasClaim("Menu", "FormulaManagement") || User.HasClaim("Menu", "AppSettings"))
                 {

@@ -343,9 +343,12 @@ namespace JPStockPacking.Services.Implement
                 {
                     lot.AssignedQty = await
                     (
-                        from received in _sPDbContext.Received
-                        where received.LotNo == lotNo && received.IsAssigned
-                        select received.TtQty ?? 0
+                        from ar in _sPDbContext.AssignmentReceived
+                        join r in _sPDbContext.Received
+                            on ar.ReceivedId equals r.ReceivedId
+                        where ar.IsActive
+                              && r.LotNo == lotNo
+                        select r.TtQty ?? 0
                     )
                     .SumAsync();
 

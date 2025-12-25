@@ -7,7 +7,6 @@ using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Security;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
@@ -19,9 +18,11 @@ namespace JPStockPacking.Services.Implement
         private readonly IPISService _pISService = pISService;
         private readonly IConfiguration _configuration = configuration;
         private static readonly string[] sendType = ["KS", "KM"];
-        
+
         public async Task<List<OrderToStoreModel>> GetOrderToStoreAsync(string orderNo)
         {
+            await UpdateArticleAsync(orderNo);
+
             var percentage = decimal.TryParse(_configuration["SendToStoreSettings:Percentage"], out var p) ? p : 0;
 
             var dictStore = await (
@@ -356,7 +357,7 @@ namespace JPStockPacking.Services.Implement
                 lot.Unallocated = input.Unallocated;
                 lot.UpdateDate = DateTime.UtcNow;
 
-                if(input.Unallocated <= 0) lot.IsSuccess = true;
+                if (input.Unallocated <= 0) lot.IsSuccess = true;
 
                 await _sPDbContext.SaveChangesAsync();
 
@@ -1260,62 +1261,108 @@ namespace JPStockPacking.Services.Implement
             }
 
             List<TempPack> ExportTempPacks = await (from expt in _sPDbContext.Export
-                                              join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
-                                              from lot in gjLot.DefaultIfEmpty()
-                                              join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
-                                              from ord in gjOrd.DefaultIfEmpty()
-                                              where lotNos.Contains(expt.LotNo)
-                                                 && !string.IsNullOrEmpty(expt.Doc)
-                                                 && expt.CreateDate!.Value.Year == DateTime.Now.Year
-                                              select new TempPack
-                                              {
-                                                  LotNo = expt.LotNo,
-                                                  ListNo = lot.ListNo,
-                                                  OrderNo = ord != null ? ord.OrderNo : string.Empty,
-                                                  CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
-                                                  Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                  Doc = expt.Doc ?? string.Empty,
-                                                  MdateSend = expt.CreateDate!.Value,
-                                                  Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
-                                                  FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
-                                                  FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
-                                                  Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
-                                                  IsOverQouta = expt.IsOverQuota,
-                                                  SendType = "KX",
-                                                  OkTtl = expt.TtQty,
-                                                  OkWg = (decimal)expt.TtWg!,
-                                              }).ToListAsync();
+                                                    join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
+                                                    from lot in gjLot.DefaultIfEmpty()
+                                                    join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
+                                                    from ord in gjOrd.DefaultIfEmpty()
+                                                    where lotNos.Contains(expt.LotNo)
+                                                       && !string.IsNullOrEmpty(expt.Doc)
+                                                       && expt.CreateDate!.Value.Year == DateTime.Now.Year
+                                                    select new TempPack
+                                                    {
+                                                        LotNo = expt.LotNo,
+                                                        ListNo = lot.ListNo,
+                                                        OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                                                        CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                                                        Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                                                        Doc = expt.Doc ?? string.Empty,
+                                                        MdateSend = expt.CreateDate!.Value,
+                                                        Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                                                        FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                                                        FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                                                        Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                                                        IsOverQouta = expt.IsOverQuota,
+                                                        SendType = "KX",
+                                                        OkTtl = expt.TtQty,
+                                                        OkWg = (decimal)expt.TtWg!,
+                                                    }).ToListAsync();
 
             List<TempPack> LostTempPacks = await (from sl in _sPDbContext.SendLost
-                                              join lot in _sPDbContext.Lot on sl.LotNo equals lot.LotNo into gjLot
-                                              from lot in gjLot.DefaultIfEmpty()
-                                              join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
-                                              from ord in gjOrd.DefaultIfEmpty()
-                                              where lotNos.Contains(sl.LotNo)
-                                                 && !string.IsNullOrEmpty(sl.Doc)
-                                                 && sl.CreateDate!.Value.Year == DateTime.Now.Year
-                                              select new TempPack
-                                              {
-                                                  LotNo = sl.LotNo,
-                                                  ListNo = lot.ListNo,
-                                                  OrderNo = ord != null ? ord.OrderNo : string.Empty,
-                                                  CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
-                                                  Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                  Doc = sl.Doc ?? string.Empty,
-                                                  MdateSend = sl.CreateDate!.Value,
-                                                  Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
-                                                  FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
-                                                  FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
-                                                  Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
-                                                  SendType = "KL",
-                                                  OkTtl = sl.TtQty,
-                                                  OkWg = (decimal)sl.TtWg!,
-                                              }).ToListAsync();
+                                                  join lot in _sPDbContext.Lot on sl.LotNo equals lot.LotNo into gjLot
+                                                  from lot in gjLot.DefaultIfEmpty()
+                                                  join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
+                                                  from ord in gjOrd.DefaultIfEmpty()
+                                                  where lotNos.Contains(sl.LotNo)
+                                                     && !string.IsNullOrEmpty(sl.Doc)
+                                                     && sl.CreateDate!.Value.Year == DateTime.Now.Year
+                                                  select new TempPack
+                                                  {
+                                                      LotNo = sl.LotNo,
+                                                      ListNo = lot.ListNo,
+                                                      OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                                                      CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                                                      Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                                                      Doc = sl.Doc ?? string.Empty,
+                                                      MdateSend = sl.CreateDate!.Value,
+                                                      Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                                                      FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                                                      FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                                                      Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                                                      SendType = "KL",
+                                                      OkTtl = sl.TtQty,
+                                                      OkWg = (decimal)sl.TtWg!,
+                                                  }).ToListAsync();
 
             filteredResult.AddRange(ExportTempPacks);
             filteredResult.AddRange(LostTempPacks);
 
             return filteredResult;
+        }
+
+        public async Task UpdateArticleAsync(string orderNo)
+        {
+            if (string.IsNullOrWhiteSpace(orderNo))
+                return;
+
+            var baseData = await (
+                from a in _jPDbContext.OrdHorder.AsNoTracking()
+                join b in _jPDbContext.OrdLotno.AsNoTracking()
+                    on a.OrderNo equals b.OrderNo
+                join c in _jPDbContext.CpriceSale.AsNoTracking()
+                    on b.Barcode equals c.Barcode into bc
+                from c in bc.DefaultIfEmpty()
+                where a.OrderNo == orderNo
+                      && a.Factory
+                      && !string.IsNullOrEmpty(b.LotNo)
+                orderby b.ListNo
+                select new
+                {
+                    b.LotNo,
+                    Article = c.Article ?? string.Empty
+                }
+            ).ToListAsync();
+
+            if (!baseData.Any())
+                return;
+
+            var spLots = await _sPDbContext.Lot
+                .Where(x => x.OrderNo == orderNo)
+                .ToListAsync();
+
+            var spLotDict = spLots.ToDictionary(x => x.LotNo);
+
+            foreach (var item in baseData)
+            {
+                if (!spLotDict.TryGetValue(item.LotNo, out var spLot))
+                    continue;
+
+                if (spLot.Article != item.Article)
+                {
+                    spLot.Article = item.Article;
+                }
+            }
+
+            await _sPDbContext.SaveChangesAsync();
         }
 
         private static (string[] Sizes, double[] Quantities) MapSizes(TempPack pack)

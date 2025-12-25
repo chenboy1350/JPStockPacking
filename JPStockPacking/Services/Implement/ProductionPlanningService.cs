@@ -145,49 +145,35 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public DateTime FindAvailableStartDate(double totalWorkHours, DateTime deadline, Dictionary<DateTime, double> usedPerDay, double capacity)
+        public async Task GetOperateOrderToPlan(DateTime? FromDate = null, DateTime? ToDate = null)
         {
-            for (int offset = 0; offset <= 30; offset++)
+            var orders = from o in _sPDbContext.Order
+                         join l in _sPDbContext.Lot on o.OrderNo equals l.OrderNo
+                         select new { l, seldate = o.SeldDate1 };
+
+            if (FromDate != null)
             {
-                var candidateStart = deadline.AddDays(-offset);
-
-                while (candidateStart.DayOfWeek == DayOfWeek.Saturday || candidateStart.DayOfWeek == DayOfWeek.Sunday)
-                {
-                    candidateStart = candidateStart.AddDays(-1);
-                }
-
-                bool fits = true;
-                double hoursRemaining = totalWorkHours;
-                var day = candidateStart;
-
-                while (hoursRemaining > 0)
-                {
-                    if (day.DayOfWeek != DayOfWeek.Saturday && day.DayOfWeek != DayOfWeek.Sunday)
-                    {
-                        var used = usedPerDay.TryGetValue(day, out var u) ? u : 0;
-                        var available = capacity - used;
-                        if (available <= 0)
-                        {
-                            fits = false;
-                            break;
-                        }
-                        var hoursToUse = Math.Min(available, hoursRemaining);
-                        hoursRemaining -= hoursToUse;
-                    }
-                    day = day.AddDays(-1);
-                }
-
-                if (fits)
-                    return day.AddDays(1); // the day after the last used in planning
+                orders = orders.Where(o => o.seldate >= FromDate);
             }
 
-            // fallback if no fit
-            var fallback = deadline.AddDays(-1);
-            while (fallback.DayOfWeek == DayOfWeek.Saturday || fallback.DayOfWeek == DayOfWeek.Sunday)
+            if (ToDate != null)
             {
-                fallback = fallback.AddDays(-1);
+                orders = orders.Where(o => o.seldate <= ToDate);
             }
-            return fallback;
+
+            var orderList = await orders.ToListAsync();
+
+            var TotalOrder = orderList.DistinctBy(x => x.l.OrderNo).ToList().Count;
+
+            var TotalQty = orderList.Sum(o => o.l.TtQty);
+            var TotalLots = orderList.Count;
+
+            var TotalOperateDays = orderList.Sum(o => o.l.OperateDays);
+
+            var TotalWorker = 30; // Assume a fixed number of workers for this example
+
+            Console.WriteLine($"Total Quantity to Plan: {TotalQty}");
         }
     }
 }
+

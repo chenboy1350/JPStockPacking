@@ -526,7 +526,6 @@ namespace JPStockPacking.Services.Implement
 
             var notExistOrderNos = newOrderNos.Except(existingOrderNos).ToList();
 
-
             if (newOrders.Count != 0)
             {
                 newLots = await _receiveManagementService.GetJPLotAsync(newOrders);

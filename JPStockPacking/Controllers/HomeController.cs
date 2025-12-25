@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using System.Threading.Tasks;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Controllers
@@ -68,9 +69,10 @@ namespace JPStockPacking.Controllers
         }
 
         [Authorize]
-        public IActionResult DashBoard()
+        public async Task<IActionResult> PackingPlaning()
         {
-            return PartialView("~/Views/Partial/_DashBoardPartial.cshtml");
+            await _productionPlanningService.GetOperateOrderToPlan(DateTime.UtcNow, DateTime.UtcNow.AddDays(7));
+            return PartialView("~/Views/Partial/_PackingPlaning.cshtml");
         }
 
         [Authorize]

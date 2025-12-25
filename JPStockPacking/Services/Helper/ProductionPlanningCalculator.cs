@@ -5,8 +5,7 @@
         private const double MINUTES_PER_HOUR = 60.0;
         private const double WORKING_HOURS_PER_DAY = 8.5;
 
-        private static readonly int totalPiecesToProduce = 100000;
-        private static readonly int workersCount = 5;
+        private static readonly int workersCount = 30;
 
         private static readonly Dictionary<string, List<WorkStep>> workStepsTemplates = new()
         {

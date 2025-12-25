@@ -9,6 +9,6 @@ namespace JPStockPacking.Services.Interface
         Task<List<PackMethod>> GetPackMethodsAsync();
         Task RegroupCustomer();
         double CalLotOperateDay(int TtQty);
-        DateTime FindAvailableStartDate(double totalWorkHours, DateTime deadline, Dictionary<DateTime, double> usedPerDay, double capacity);
+        Task GetOperateOrderToPlan(DateTime? StartDate = null, DateTime? EndDate = null);
     }
 }
