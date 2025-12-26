@@ -344,7 +344,7 @@ async function FindOrderToSendQty() {
                 $tbody.empty();
 
                 const percentage = $('#tblOrderToSend .custom-percentage');
-                percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่ต่ำกว่า ${res.percentage}% ของจำนวนสัง`);
+                percentage.html(`แจ้งยอดส่งแพ็ค <span style="color:red;">*</span> ไม่ต่ำกว่า ${res.percentage}% ของจำนวนสั่ง`);
 
                 $('#txtCustCode').val(res.custCode);
                 $('#txtGrade').val(res.grade);

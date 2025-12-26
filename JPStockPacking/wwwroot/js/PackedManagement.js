@@ -810,15 +810,15 @@ function updateAvailableQty($row) {
         maximumFractionDigits: 2
     });
 
-    $row.find('.col-available').text(formatted);
+    $row.find('.col-available').text(formatted == 0 ? '-' : formatted);
     $row.attr('data-available-qty', available);
 
 
-    if (available < 0) {
-        $row.find('.col-available').addClass('text-danger fw-bold fs-5');
-    } else {$row
-        $row.find('.col-available').removeClass('text-danger fw-bold fs-5');
-    }
+    //if (available < 0) {
+    //    $row.find('.col-available').addClass('text-danger fw-bold fs-5');
+    //} else {$row
+    //    $row.find('.col-available').removeClass('text-danger fw-bold fs-5');
+    //}
 }
 
 function ShowForceSendToModal(button) {

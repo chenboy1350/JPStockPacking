@@ -1,3 +1,92 @@
-﻿
-
-<div id="page-title" data-title="Pack Planing"></div>
+﻿<div id="page-title" data-title="วางแผนจัดการออเดอร์"></div>
+<div class="ops-container">
+    <div class="ops-header">
+@*         <h1 class="ops-title"><i class="fas fa-calendar-check ops-title-icon"></i> ระบบวางแผนจัดการออเดอร์</h1> *@
+        <h1 class="ops-subtitle">จำลองและคำนวณทรัพยากรที่ต้องใช้ในการแพ็คสินค้า</h1>
+    </div>
+    <div class="ops-stats-grid mt-5">
+        <div class="ops-stat-card ops-stat-card--products">
+            <div class="ops-stat-icon ops-stat-icon--blue"><i class="fas fa-box"></i></div>
+            <div class="ops-stat-label">จำนวนสินค้า</div>
+            <div class="ops-stat-value"><span id="productCount">0</span><span class="ops-stat-unit">ชิ้น</span></div>
+            <div class="ops-stat-description">จำนวนสินค้าทั้งหมดที่ต้องแพ็ค</div>
+        </div>
+        <div class="ops-stat-card ops-stat-card--days">
+            <div class="ops-stat-icon ops-stat-icon--orange"><i class="fas fa-calendar-alt"></i></div>
+            <div class="ops-stat-label">ระยะเวลา</div>
+            <div class="ops-stat-value"><span id="daysCount">0</span><span class="ops-stat-unit">วัน</span></div>
+            <div class="ops-stat-description">จำนวนวันทำงานที่มีให้ใช้แพ็ค</div>
+        </div>
+        <div class="ops-stat-card ops-stat-card--workers">
+            <div class="ops-stat-icon ops-stat-icon--green"><i class="fas fa-users"></i></div>
+            <div class="ops-stat-label">พนักงาน</div>
+            <div class="ops-stat-value"><span id="workersCount">0</span><span class="ops-stat-unit">คน</span></div>
+            <div class="ops-stat-description">จำนวนพนักงานที่มีพร้อมทำงาน</div>
+        </div>
+        <div class="ops-stat-card ops-stat-card--summary">
+            <div class="ops-stat-icon ops-stat-icon--purple"><i class="fas fa-chart-line"></i></div>
+            <div class="ops-stat-label">เป้าหมายต่อคน</div>
+            <div class="ops-stat-value"><span id="targetPerWorker">0</span><span class="ops-stat-unit">ชิ้น/วัน</span></div>
+            <div class="ops-stat-description"><span class="ops-badge" id="statusBadge">รอข้อมูล</span></div>
+        </div>
+        <div class="ops-stat-card ops-stat-card--warning ops-stat-card--full ops-hidden" id="statusCard">
+            <div class="ops-status-wrapper">
+                <div class="ops-status-main">
+                    <div class="ops-stat-icon" id="statusIconWrapper"><i class="fas fa-exclamation-triangle" id="statusIcon"></i></div>
+                    <div>
+                        <div class="ops-stat-label" id="statusLabel">สถานะการทำงาน</div>
+                        <div class="ops-stat-value"><span id="statusDays">0</span><span class="ops-stat-unit" id="statusUnit">วัน</span></div>
+                    </div>
+                </div>
+                <div class="ops-status-details" id="statusDetails">
+                    <div class="ops-stat-label">รายละเอียดเวลา</div>
+                    <div id="statusDescription">กำลังคำนวณ...</div>
+                </div>
+                <div class="ops-status-workers" id="statusWorkers">
+                    <div class="ops-stat-label">ข้อมูลพนักงาน</div>
+                    <div id="workerInfo">กำลังคำนวณ...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ops-input-section">
+        <h2 class="ops-input-title"><i class="fas fa-filter"></i> กรองข้อมูลออเดอร์ตามวันที่</h2>
+        <div class="ops-input-grid">
+            <div class="ops-input-group">
+                <label class="ops-input-label"><i class="fas fa-calendar-day"></i>วันที่เริ่มต้น (From Date)</label>
+                <input type="date" id="fromDate" class="ops-input" value="2025-12-20">
+            </div>
+            <div class="ops-input-group">
+                <label class="ops-input-label"><i class="fas fa-calendar-day"></i>วันที่สิ้นสุด (To Date)</label>
+                <input type="date" id="toDate" class="ops-input" value="2025-12-31">
+            </div>
+            <div class="ops-input-group">
+                <label class="ops-input-label"><i class="fas fa-user"></i>จำนวนพนักงาน</label>
+                <input type="number" id="inputWorkers" class="ops-input" min="1" value="30" placeholder="เช่น 10">
+            </div>
+            <div class="ops-input-group">
+                <label class="ops-input-label"><i class="fas fa-toggle-on"></i>โหมดการแสดงผล</label>
+                <div class="ops-mode-toggle">
+                    <button id="modeToggle" class="ops-mode-btn ops-mode-btn--active" onclick="toggleMode()">
+                        <span class="ops-mode-icon">📦</span><span class="ops-mode-text">สินค้าทั้งหมด</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="ops-calculate-btn" onclick="filterAndCalculate()"><i class="fas fa-calculator"></i>คำนวณแผนการทำงาน</button>
+        <div class="ops-summary ops-hidden" id="summaryDetails">
+            <div class="ops-summary-row"><span>จำนวนออเดอร์ที่เลือก:</span><span id="selectedOrders">0 รายการ</span></div>
+            <div class="ops-summary-row"><span>จำนวนชั่วโมงทำงานทั้งหมด:</span><span id="totalHours">0 ชั่วโมง</span></div>
+            <div class="ops-summary-row"><span>เป้าหมายต่อชั่วโมง:</span><span id="targetPerHour">0 ชิ้น/ชม.</span></div>
+            <div class="ops-summary-row"><span>เป้าหมายต่อคนต่อวัน:</span><span id="targetPerWorkerDay">0 ชิ้น/วัน</span></div>
+            <div class="ops-summary-row"><span class="ops-font-bold">ประสิทธิภาพที่ต้องการ:</span><span id="efficiency">0 ชิ้น/คน/ชม.</span></div>
+        </div>
+    </div>
+    <div class="ops-table-section">
+        <h2 class="ops-table-title"><i class="fas fa-list"></i> รายการออเดอร์ทั้งหมด</h2>
+        <table class="ops-table">
+            <thead><tr><th>เลขที่ออเดอร์</th><th>จำนวนสินค้าทั้งหมด (ชิ้น)</th><th>ส่งมาแล้ว (ชิ้น)</th><th>ระยะเวลาดำเนินการ (วัน)</th><th>วันที่กำหนดส่ง</th><th>สถานะ</th></tr></thead>
+            <tbody id="ordersTableBody"></tbody>
+        </table>
+    </div>
+</div>

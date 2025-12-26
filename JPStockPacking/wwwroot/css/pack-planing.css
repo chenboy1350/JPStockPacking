@@ -1,0 +1,632 @@
+﻿/*!
+ * Order Planning Simulator - Custom Styles
+ * ใช้ร่วมกับ adminlte.min.css และ adminlte-modern-theme.css
+ */
+
+/* ===================================
+   PAGE LAYOUT
+   =================================== */
+.ops-body {
+    padding: 2rem;
+    min-height: 100vh;
+    animation: opsSlideUp 0.6s ease-out;
+}
+
+.ops-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ===================================
+   HEADER
+   =================================== */
+.ops-header {
+    margin-bottom: 3rem;
+    animation: opsSlideDown 0.6s ease-out;
+}
+
+.ops-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.ops-title-icon {
+    color: var(--accent-orange);
+}
+
+.ops-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+/* ===================================
+   STATS GRID
+   =================================== */
+.ops-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+/* ===================================
+   STAT CARD
+   =================================== */
+.ops-stat-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition-normal);
+    animation: opsSlideUp 0.6s ease-out backwards;
+}
+
+.ops-stat-card:nth-child(1) { animation-delay: 0.1s; }
+.ops-stat-card:nth-child(2) { animation-delay: 0.2s; }
+.ops-stat-card:nth-child(3) { animation-delay: 0.3s; }
+.ops-stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+.ops-stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.ops-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transition: height 0.3s ease;
+}
+
+.ops-stat-card:hover::before {
+    height: 6px;
+}
+
+/* Stat Card Color Variants */
+.ops-stat-card--products::before { background: var(--accent-blue); }
+.ops-stat-card--days::before { background: var(--accent-orange); }
+.ops-stat-card--workers::before { background: var(--accent-green); }
+.ops-stat-card--summary::before { background: var(--accent-purple); }
+
+/* Stat Card Warning State */
+.ops-stat-card--warning {
+    border: 2px solid var(--accent-red);
+    background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+}
+
+.ops-stat-card--warning::before {
+    background: var(--accent-red);
+    height: 6px;
+}
+
+.ops-stat-card--warning .ops-stat-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--accent-red);
+}
+
+/* Stat Card Success State */
+.ops-stat-card--success {
+    border: 2px solid var(--accent-green);
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.ops-stat-card--success::before {
+    background: var(--accent-green);
+    height: 6px;
+}
+
+.ops-stat-card--success .ops-stat-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+}
+
+/* Stat Card Full Width */
+.ops-stat-card--full {
+    grid-column: 1 / -1;
+}
+
+/* ===================================
+   STAT ICON
+   =================================== */
+.ops-stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.ops-stat-card:hover .ops-stat-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.ops-stat-icon--blue {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-blue);
+}
+
+.ops-stat-icon--orange {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--accent-orange);
+}
+
+.ops-stat-icon--green {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+}
+
+.ops-stat-icon--purple {
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--accent-purple);
+}
+
+.ops-stat-icon--red {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--accent-red);
+}
+
+/* ===================================
+   STAT CONTENT
+   =================================== */
+.ops-stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.ops-stat-value {
+    font-family: 'Sora', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.ops-stat-card:hover .ops-stat-value {
+    transform: scale(1.05);
+}
+
+.ops-stat-unit {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.ops-stat-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.75rem;
+    line-height: 1.5;
+}
+
+/* ===================================
+   STATUS CARD LAYOUT
+   =================================== */
+.ops-status-wrapper {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.ops-status-main {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.ops-status-details {
+    padding-left: 2rem;
+    border-left: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.ops-status-workers {
+    padding-left: 2rem;
+    border-left: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.ops-status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.ops-status-row:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ops-status-highlight {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+
+.ops-status-highlight--success {
+    color: var(--accent-green);
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+.ops-status-highlight--danger {
+    color: var(--accent-red);
+}
+
+@media (max-width: 1200px) {
+    .ops-status-wrapper {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .ops-status-details,
+    .ops-status-workers {
+        border-left: none;
+        border-top: 2px solid rgba(0, 0, 0, 0.1);
+        padding-left: 0;
+        padding-top: 1.5rem;
+    }
+}
+
+/* ===================================
+   INPUT SECTION
+   =================================== */
+.ops-input-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    animation: opsSlideUp 0.6s ease-out 0.5s backwards;
+}
+
+.ops-input-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    color: var(--primary-dark);
+}
+
+.ops-input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.ops-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ops-input-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+.ops-input-label i {
+    color: var(--accent-blue);
+}
+
+.ops-input {
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: var(--transition-normal);
+    background: white;
+}
+
+.ops-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===================================
+   MODE TOGGLE BUTTON
+   =================================== */
+.ops-mode-toggle {
+    width: 100%;
+}
+
+.ops-mode-btn {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: var(--transition-normal);
+}
+
+.ops-mode-btn:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.15);
+}
+
+.ops-mode-btn--active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-color: var(--primary);
+    color: white;
+}
+
+.ops-mode-btn--sent {
+    background: linear-gradient(135deg, var(--accent-green) 0%, #059669 100%);
+    border-color: var(--accent-green);
+}
+
+.ops-mode-icon {
+    font-size: 1.2rem;
+}
+
+.ops-mode-text {
+    font-weight: 600;
+}
+
+/* ===================================
+   CALCULATE BUTTON
+   =================================== */
+.ops-calculate-btn {
+    margin-top: 2rem;
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--primary) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.ops-calculate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.ops-calculate-btn:active {
+    transform: translateY(0);
+}
+
+/* ===================================
+   SUMMARY DETAILS
+   =================================== */
+.ops-summary {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border-radius: var(--radius-md);
+    border: 2px solid rgba(59, 130, 246, 0.1);
+}
+
+.ops-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.95rem;
+}
+
+.ops-summary-row:last-child {
+    border-bottom: none;
+    font-size: 1.1rem;
+}
+
+/* ===================================
+   BADGE
+   =================================== */
+.ops-badge {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ops-badge--success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+}
+
+.ops-badge--info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-blue);
+}
+
+.ops-badge--warning {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--accent-orange);
+}
+
+.ops-badge--muted {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--text-secondary);
+}
+
+/* ===================================
+   TABLE SECTION
+   =================================== */
+.ops-table-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    animation: opsSlideUp 0.6s ease-out 0.6s backwards;
+}
+
+.ops-table-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--primary-dark);
+}
+
+.ops-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ops-table thead {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+.ops-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-dark);
+    border-bottom: 2px solid var(--accent-blue);
+}
+
+.ops-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ops-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.ops-table tbody tr.ops-row--filtered {
+    opacity: 0.3;
+    background: var(--bg-light);
+}
+
+/* ===================================
+   FOOTER
+   =================================== */
+.ops-footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* ===================================
+   UTILITY CLASSES
+   =================================== */
+.ops-text-success { color: var(--accent-green); }
+.ops-text-info { color: var(--accent-blue); }
+.ops-text-warning { color: var(--accent-orange); }
+.ops-text-danger { color: var(--accent-red); }
+.ops-text-muted { color: var(--text-secondary); }
+
+.ops-font-bold { font-weight: 700; }
+.ops-font-semibold { font-weight: 600; }
+
+.ops-flex { display: flex; }
+.ops-items-center { align-items: center; }
+.ops-gap-sm { gap: 0.5rem; }
+
+.ops-hidden { display: none; }
+
+/* ===================================
+   ANIMATIONS
+   =================================== */
+@keyframes opsSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes opsSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes opsPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+.ops-pulse {
+    animation: opsPulse 2s ease-in-out infinite;
+}
+
+/* ===================================
+   RESPONSIVE
+   =================================== */
+@media (max-width: 768px) {
+    .ops-body {
+        padding: 1rem;
+    }
+
+    .ops-title {
+        font-size: 2rem;
+    }
+
+    .ops-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ops-input-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ops-table {
+        font-size: 0.85rem;
+    }
+
+    .ops-table th,
+    .ops-table td {
+        padding: 0.5rem;
+    }
+}
