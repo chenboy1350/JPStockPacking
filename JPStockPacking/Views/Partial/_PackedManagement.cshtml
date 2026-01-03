@@ -21,56 +21,59 @@
     <div class="row">
         <div class="card d-flex">
             <div class="card-header justify-content-between align-content-center">
-                <div class="d-flex justify-content-end">
-                    <button class="btn btn-info btn-sm me-2 d-none" id="btnSelect" onclick="showSelection()">
-                        <i class="fas fa-list-ul"></i> เลือก
+                <div class="d-flex justify-content-end flex-wrap gap-2">
+                    <button class="btn btn-info btn-sm d-none" id="btnSelect" onclick="showSelection()">
+                        <i class="fas fa-list-ul"></i> <span class="d-none d-sm-inline">เลือก</span>
                     </button>
-                    <button class="btn btn-success btn-sm me-2 d-none" id="btnConfirmSendToStore" onclick="confirmSendToStore()">
-                        <i class="fas fa-paper-plane"></i> ยืนยันส่ง
+                    <button class="btn btn-success btn-sm d-none" id="btnConfirmSendToStore" onclick="confirmSendToStore()">
+                        <i class="fas fa-paper-plane"></i> <span class="d-none d-sm-inline">ยืนยันส่ง</span>
                     </button>
-                    <button class="btn btn-info btn-sm me-2 d-none" id="btnPrintSendToStore" onclick="printSendToStore()">
-                        <i class="fas fa-print"></i> พิมพ์รายงาน
+                    <button class="btn btn-info btn-sm d-none" id="btnPrintSendToStore" onclick="printSendToStore()">
+                        <i class="fas fa-print"></i> <span class="d-none d-sm-inline">พิมพ์รายงาน</span>
                     </button>
-                    <button class="btn btn-secondary btn-sm me-2 d-none" id="btnUnselect" onclick="hideSelection()">
-                        <i class="fas fa-times"></i> ยกเลิก
+                    <button class="btn btn-secondary btn-sm d-none" id="btnUnselect" onclick="hideSelection()">
+                        <i class="fas fa-times"></i> <span class="d-none d-sm-inline">ยกเลิก</span>
                     </button>
                 </div>
             </div>
-            <div class="card-body">
-                <table class="table table-bordered table-striped projects ">
-                    <thead>
-                        <tr>
-                            <th style="width: 1%" class="text-center">#</th>
-                            <th style="width: 6%" class="text-start">รหัสสินค้า</th>
-                            <th style="width: 4%" class="text-center">ลำดับ</th>
-                            <th style="width: 4%" class="text-end">จำนวนสั่ง</th>
-                            <th style="width: 2%" class="text-end">Si</th>
-                            <th style="width: 4%" class="text-end">ส่งแพ็ค</th>
-                            <th style="width: 4%" class="text-end">แจ้งยอด</th>
-                            <th style="width: 4%" class="text-end">แพ็คแล้ว</th>
-                            <th style="width: 4%" class="text-center">คงเหลือ</th>
-                            <th style="width: 12%" class="text-center">เก็บ</th>
-                            <th style="width: 12%" class="text-center">หลอม</th>
-                            <th style="width: 12%" class="text-center">หาย</th>
-                            <th style="width: 12%" class="text-center">ส่งออก</th>
-                            <th style="width: 5%">
-                                <div id="selectAllLotToStore" class="d-none">
-                                    <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="chkSelectAllLotToStore">
-                                        <label for="chkSelectAllLotToStore">เลือกทั้งหมด</label>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped projects mb-0">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 40px;" class="text-center sticky-col sticky-col-1">#</th>
+                                <th style="min-width: 100px;" class="text-start sticky-col sticky-col-2">รหัสสินค้า</th>
+                                <th style="min-width: 70px;" class="text-center sticky-col sticky-col-3">ลำดับ</th>
+                                <th style="min-width: 80px;" class="text-end">จำนวนสั่ง</th>
+                                <th style="min-width: 50px;" class="text-end">Si</th>
+                                <th style="min-width: 80px;" class="text-end">ส่งแพ็ค</th>
+                                <th style="min-width: 80px;" class="text-end">แจ้งยอด</th>
+                                <th style="min-width: 80px;" class="text-end">แพ็คแล้ว</th>
+                                <th style="min-width: 80px;" class="text-center">คงเหลือ</th>
+                                <th style="width: 12%; min-width: 160px;" class="text-center">เก็บ</th>
+                                <th style="width: 12%; min-width: 160px;" class="text-center">หลอม</th>
+                                <th style="width: 12%; min-width: 160px;" class="text-center">หาย</th>
+                                <th style="width: 12%; min-width: 160px;" class="text-center">ส่งออก</th>
+                                <th style="min-width: 120px;">
+                                    <div id="selectAllLotToStore" class="d-none">
+                                        <div class="icheck-primary d-inline">
+                                            <input type="checkbox" id="chkSelectAllLotToStore">
+                                            <label for="chkSelectAllLotToStore">เลือกทั้งหมด</label>
+                                        </div>
                                     </div>
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-sendToStore-body">
-                        <tr><td colspan="14" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td></tr>
-                    </tbody>
-                </table>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-sendToStore-body">
+                            <tr>
+                                <td colspan="14" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <div class="modal fade" id="modal-edit-store" tabindex="-1">
     <div class="modal-dialog">

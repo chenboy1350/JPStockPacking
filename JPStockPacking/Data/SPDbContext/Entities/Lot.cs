@@ -70,6 +70,10 @@ public partial class Lot
     [Unicode(false)]
     public string? SaleRem { get; set; }
 
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? ImgPath { get; set; }
+
     [Column(TypeName = "numeric(18, 1)")]
     public decimal? ReceivedQty { get; set; }
 

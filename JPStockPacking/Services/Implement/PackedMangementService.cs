@@ -1099,7 +1099,9 @@ namespace JPStockPacking.Services.Implement
 
                 foreach (var pack in tempPacks)
                 {
-                    var export = await _sPDbContext.Export.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
+                    var exports = await _sPDbContext.Export.Where(x => x.LotNo == pack.LotNo).ToListAsync();
+
+                    var export = exports.FirstOrDefault(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
                     if (export != null)
                     {
                         export.Doc = receiveNo;
@@ -1107,6 +1109,18 @@ namespace JPStockPacking.Services.Implement
                         export.UpdateDate = DateTime.Now;
 
                         _sPDbContext.Export.UpdateRange(export);
+                    }
+
+                    var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo);
+                    var exportedQty = exports.Where(x => x.LotNo == pack.LotNo && x.IsSended == true && x.Doc != null && x.Doc != "").Sum(x => x.TtQty);
+
+                    if (lot != null)
+                    {
+                        if(exportedQty >= lot.TtQty)
+                        {
+                            lot.IsSuccess = true;
+                            lot.UpdateDate = DateTime.Now;
+                        }
                     }
                 }
                 await _sPDbContext.SaveChangesAsync();
@@ -1338,11 +1352,11 @@ namespace JPStockPacking.Services.Implement
                 select new
                 {
                     b.LotNo,
-                    Article = c.Article ?? string.Empty
+                    Article = c.Article ?? string.Empty,
                 }
             ).ToListAsync();
 
-            if (!baseData.Any())
+            if (baseData.Count == 0)
                 return;
 
             var spLots = await _sPDbContext.Lot

@@ -609,7 +609,7 @@ function renderOrderList(data) {
                         <table class="table table-striped projects">
                             <thead>
                                 <tr>
-                                    <th style="width: 1%">#</th>
+                                    <th style="width: 1%"></th>
                                     <th style="width: 20%">หมายเลขล็อต</th>
                                     <th style="width: 10%">ลำดับที่</th>
                                     <th style="width: 15%">การมอบหมาย</th>
@@ -643,9 +643,11 @@ function renderLotRow(order, lot, index = "#") {
         progressHtml = `<div class='progress-bar bg-light-orange' role='progressbar' style='width: ${percent}%'></div>`;
     } else if (lot.isPacking && !lot.isAllReturned) {
         progressHtml = `<div class='progress-bar bg-warning' role='progressbar' style='width: ${returnPercent}%'></div>`;
+    } else if (lot.isAllReturned && lot.isSuccess) {
+        progressHtml = `<div class='progress-bar bg-success' role='progressbar' style='width: 100%'></div>`;
     } else if (lot.isAllReturned) {
         progressHtml = `<div class='progress-bar bg-info' role='progressbar' style='width: 100%'></div>`;
-    }
+    } 
 
     // Progress Text
     let progressText = '';
@@ -655,9 +657,11 @@ function renderLotRow(order, lot, index = "#") {
         progressText = `${lot.receivedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
     } else if (lot.isPacking && !lot.isAllReturned) {
         progressText = `${lot.returnedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
+    } else if (lot.isAllReturned && lot.isSuccess) {
+        progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
     } else if (lot.isAllReturned) {
         progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
-    }
+    } 
 
     // Status Badges
     let statusHtml = '';
@@ -675,12 +679,14 @@ function renderLotRow(order, lot, index = "#") {
         statusHtml += `<span class="badge badge-danger">ส่งซ่อม</span>`;
     if (lot.hasLost)
         statusHtml += `<span class="badge badge-danger">สูญหาย</span>`;
+    if (lot.isSuccess)
+        statusHtml += `<span class="badge badge-success">ส่ง Export แล้ว</span>`;
 
     // Actions
     let actionsHtml = '';
-    if (lot.isPacking || lot.isAllReturned)
+    if ((lot.isPacking || lot.isAllReturned) && !lot.isSuccess)
         actionsHtml += `<button class='btn btn-warning btn-sm' onclick='showModalLost("${lot.lotNo}")'><i class='far fa-eye-slash'></i> หาย</button> `;
-    if (lot.isPacking || lot.isAllReturned)
+    if ((lot.isPacking || lot.isAllReturned) && !lot.isSuccess)
         actionsHtml += ` <button class='btn btn-warning btn-sm' onclick='showModalBreak("${lot.lotNo}")'><i class='fas fa-hammer'></i> ซ่อม</button> `;
     if ((!lot.isAllReturned && lot.ttQty !== 0) || lot.isRemainNotAssign)
         actionsHtml += ` <button class='btn btn-primary btn-sm' onclick='showModalAssign("${lot.lotNo}")'><i class='fas fa-folder'></i> จ่ายงาน</button> `;
@@ -694,7 +700,11 @@ function renderLotRow(order, lot, index = "#") {
 
     return `
         <tr data-lot-no="${lot.lotNo}">
-            <td>${index}</td>
+            <td> 
+                <div class="image-zoom-container">
+                    <img class="imgOrderLot" src="/api/image/${lot.fileName}" width="80" height="80" alt="Product Image">
+                </div>
+            </td>
             <td>
                 <a><strong>${lot.lotNo}</strong>
                     ${order.isReceivedLate && !lot.isAllReturned ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}

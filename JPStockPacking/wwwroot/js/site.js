@@ -165,3 +165,87 @@ window.onscroll = function () {
 function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ==========================================
+// Image Zoom on Hover Functionality (Fixed)
+// ==========================================
+let zoomPreview = null;
+
+// สร้าง element สำหรับแสดงรูปขยาย
+function createZoomPreview() {
+    if (!zoomPreview) {
+        zoomPreview = $('<div class="image-zoom-preview"><img src="" alt="Preview"></div>');
+        $('body').append(zoomPreview);
+    }
+    return zoomPreview;
+}
+
+// Event delegation สำหรับรูปที่โหลดแบบ dynamic
+$(document).on('mouseenter', '.image-zoom-container', function (e) {
+    const $container = $(this);
+    const $img = $container.find('img');
+    const imgSrc = $img.attr('src');
+
+    // ถ้าไม่มีรูปหรือเป็นรูป blank ให้ข้าม
+    if (!imgSrc || imgSrc.includes('blankimg.jpg')) {
+        return;
+    }
+
+    const preview = createZoomPreview();
+    const $previewImg = preview.find('img');
+
+    // Set รูปให้กับ preview
+    $previewImg.attr('src', imgSrc);
+
+    // แสดง preview
+    preview.show();
+
+    // ตำแหน่งเริ่มต้น
+    preview.css({
+        left: e.clientX + 20,  // ← เปลี่ยนจาก pageX เป็น clientX
+        top: e.clientY + 20    // ← เปลี่ยนจาก pageY เป็น clientY
+    });
+});
+
+$(document).on('mousemove', '.image-zoom-container', function (e) {
+    if (!zoomPreview || !zoomPreview.is(':visible')) return;
+
+    const offsetX = 20;
+    const offsetY = 20;
+    const previewWidth = zoomPreview.outerWidth();
+    const previewHeight = zoomPreview.outerHeight();
+    const windowWidth = $(window).width();
+    const windowHeight = $(window).height();
+
+    // ใช้ clientX และ clientY แทน pageX และ pageY
+    let left = e.clientX + offsetX;
+    let top = e.clientY + offsetY;
+
+    // ปรับตำแหน่งถ้าล้นขวา
+    if (left + previewWidth > windowWidth) {
+        left = e.clientX - previewWidth - offsetX;
+    }
+
+    // ปรับตำแหน่งถ้าล้นล่าง
+    if (top + previewHeight > windowHeight) {
+        top = e.clientY - previewHeight - offsetY;
+    }
+
+    // ปรับตำแหน่งถ้าล้นซ้าย
+    if (left < 0) {
+        left = offsetX;
+    }
+
+    // ปรับตำแหน่งถ้าล้นบน
+    if (top < 0) {
+        top = offsetY;
+    }
+
+    zoomPreview.css({ left: left, top: top });
+});
+
+$(document).on('mouseleave', '.image-zoom-container', function () {
+    if (zoomPreview) {
+        zoomPreview.hide();
+    }
+});

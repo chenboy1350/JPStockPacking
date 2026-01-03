@@ -2,18 +2,22 @@
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
+using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class OrderManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IPISService pISService, IReceiveManagementService receiveManagementService) : IOrderManagementService
+    public class OrderManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IPISService pISService, IReceiveManagementService receiveManagementService, IWebHostEnvironment webHostEnvironment) : IOrderManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
         private readonly IPISService _pISService = pISService;
         private readonly IReceiveManagementService _receiveManagementService = receiveManagementService;
+        private readonly IWebHostEnvironment _env = webHostEnvironment;
 
         public async Task<PagedScheduleListModel> GetOrderAndLotByRangeAsync(string orderNo, string lotNo, string custCode, DateTime fromDate, DateTime toDate, int page, int pageSize)
         {
@@ -178,6 +182,7 @@ namespace JPStockPacking.Services.Implement
                         IsActive = l.IsActive,
                         IsUpdate = isLotUpdate,
                         UpdateDate = l.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
+                        FileName = (l.ImgPath ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
                         AssignTo = atables ?? [],
                         IsPacking = isPacking,
                         IsAllAssigned = isAllAssigned,
@@ -346,6 +351,7 @@ namespace JPStockPacking.Services.Implement
                 IsActive = lot.IsActive,
                 IsUpdate = isLotUpdate,
                 UpdateDate = lot.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
+                FileName = (lot.ImgPath ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
                 AssignTo = atables ?? [],
                 IsPacking = isPacking,
                 IsAllAssigned = isAllAssigned,

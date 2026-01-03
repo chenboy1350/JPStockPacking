@@ -396,6 +396,7 @@ namespace JPStockPacking.Services.Implement
                                   EdesFn = i.EdesFn,
                                   MarkCenter = f.MarkCenter,
                                   SaleRem = g.SaleRem,
+                                  ImgPath = e.Picture,
                                   ReceivedQty = 0,
                                   AssignedQty = 0,
                                   ReturnedQty = 0,

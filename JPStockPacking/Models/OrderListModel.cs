@@ -54,6 +54,7 @@
         public bool IsRemainNotAssign { get; set; } = false;
         public bool IsRemainNotReturn { get; set; } = false;
         public List<TableMemberModel> TableMembers { get; set; } = [];
+        public string FileName { get; set; } = string.Empty;
     }
 
     public class PagedScheduleListModel
