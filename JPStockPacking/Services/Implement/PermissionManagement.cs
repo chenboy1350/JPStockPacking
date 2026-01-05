@@ -22,7 +22,8 @@ namespace JPStockPacking.Services.Implement
             var users = await _pISService.GetUser(new ReqUserModel());
 
             var userPermissions = from user in users
-                                  join up in _sPDbContext.MappingPermission on user.UserID equals up.UserId
+                                  join up in _sPDbContext.MappingPermission on user.UserID equals up.UserId into userPerms
+                                  from up in userPerms.DefaultIfEmpty()
                                   group user by new
                                   {
                                       user.UserID,

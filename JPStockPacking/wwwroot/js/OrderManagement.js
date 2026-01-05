@@ -702,7 +702,7 @@ function renderLotRow(order, lot, index = "#") {
         <tr data-lot-no="${lot.lotNo}">
             <td> 
                 <div class="image-zoom-container">
-                    <img class="imgOrderLot" src="/api/image/${lot.fileName}" width="80" height="80" alt="Product Image">
+                    <img class="imgOrderLot" src="${urlGetImage}?filename=${encodeURIComponent(lot.fileName)}" width="80" height="80" alt="Product Image">
                 </div>
             </td>
             <td>

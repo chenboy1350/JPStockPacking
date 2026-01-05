@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
-using System.Threading.Tasks;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Controllers
@@ -354,29 +353,6 @@ namespace JPStockPacking.Controllers
             Response.Headers.Append("Content-Disposition", contentDisposition);
 
             return File(pdfBytes, "application/pdf");
-        }
-
-        [HttpGet("api/image/{filename}")]
-        [Authorize]
-        public IActionResult GetLotImage(string filename)
-        {
-            var imgPath = Path.Combine(_env.WebRootPath, "img", "blankimg.png");
-
-            if (string.IsNullOrEmpty(filename))
-                return BadRequest("Missing filename.");
-
-            filename = Path.GetFileName(filename);
-            var fullPath = Path.Combine("\\\\factoryserver\\bmp$", filename);
-
-            if (!System.IO.File.Exists(fullPath))
-                fullPath = imgPath;
-
-            var contentType = fullPath.GetContentType();
-            if (string.IsNullOrEmpty(contentType))
-                contentType = "application/octet-stream";
-
-            var imageBytes = System.IO.File.ReadAllBytes(fullPath);
-            return File(imageBytes, contentType);
         }
 
         [HttpGet]

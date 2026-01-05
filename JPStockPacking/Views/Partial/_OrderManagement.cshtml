@@ -122,7 +122,7 @@
                                                     <td>
                                                         <div class="image-zoom-container">
                                                             <img class="imgOrderLot"
-                                                                 src="/api/image/@lot.FileName"
+                                                                 src="@Url.Action("GetImage", "Home", new { filename = lot.FileName })"
                                                                  width="80" height="80" alt="Product Image">
                                                         </div>
                                                     </td>
