@@ -856,3 +856,63 @@ body {
     height: auto;
     border-radius: 4px;
 }
+
+.lot-link {
+    cursor: pointer;
+    position: relative;
+    color: #000 !important;
+    text-decoration: none !important;
+}
+
+.lot-link:hover {
+    color: #333 !important;
+    text-decoration: underline !important;
+}
+
+.lot-link:visited {
+    color: #000 !important;
+}
+
+.copy-tooltip {
+    position: absolute;
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 5px;
+    animation: copy-tooltip-fadeInOut 2s ease-in-out;
+}
+
+.copy-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+@keyframes copy-tooltip-fadeInOut {
+    0% {
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}

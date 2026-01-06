@@ -171,7 +171,6 @@ function scrollToTop() {
 // ==========================================
 let zoomPreview = null;
 
-// สร้าง element สำหรับแสดงรูปขยาย
 function createZoomPreview() {
     if (!zoomPreview) {
         zoomPreview = $('<div class="image-zoom-preview"><img src="" alt="Preview"></div>');
@@ -180,13 +179,11 @@ function createZoomPreview() {
     return zoomPreview;
 }
 
-// Event delegation สำหรับรูปที่โหลดแบบ dynamic
 $(document).on('mouseenter', '.image-zoom-container', function (e) {
     const $container = $(this);
     const $img = $container.find('img');
     const imgSrc = $img.attr('src');
 
-    // ถ้าไม่มีรูปหรือเป็นรูป blank ให้ข้าม
     if (!imgSrc || imgSrc.includes('blankimg.jpg')) {
         return;
     }
@@ -194,16 +191,13 @@ $(document).on('mouseenter', '.image-zoom-container', function (e) {
     const preview = createZoomPreview();
     const $previewImg = preview.find('img');
 
-    // Set รูปให้กับ preview
     $previewImg.attr('src', imgSrc);
 
-    // แสดง preview
     preview.show();
 
-    // ตำแหน่งเริ่มต้น
     preview.css({
-        left: e.clientX + 20,  // ← เปลี่ยนจาก pageX เป็น clientX
-        top: e.clientY + 20    // ← เปลี่ยนจาก pageY เป็น clientY
+        left: e.clientX + 20,
+        top: e.clientY + 20
     });
 });
 
@@ -217,26 +211,21 @@ $(document).on('mousemove', '.image-zoom-container', function (e) {
     const windowWidth = $(window).width();
     const windowHeight = $(window).height();
 
-    // ใช้ clientX และ clientY แทน pageX และ pageY
     let left = e.clientX + offsetX;
     let top = e.clientY + offsetY;
 
-    // ปรับตำแหน่งถ้าล้นขวา
     if (left + previewWidth > windowWidth) {
         left = e.clientX - previewWidth - offsetX;
     }
 
-    // ปรับตำแหน่งถ้าล้นล่าง
     if (top + previewHeight > windowHeight) {
         top = e.clientY - previewHeight - offsetY;
     }
 
-    // ปรับตำแหน่งถ้าล้นซ้าย
     if (left < 0) {
         left = offsetX;
     }
 
-    // ปรับตำแหน่งถ้าล้นบน
     if (top < 0) {
         top = offsetY;
     }
@@ -249,3 +238,23 @@ $(document).on('mouseleave', '.image-zoom-container', function () {
         zoomPreview.hide();
     }
 });
+
+async function copyToClipboard(element, text) {
+    try {
+        await navigator.clipboard.writeText(text);
+
+        var tooltip = document.createElement('span');
+        tooltip.className = 'copy-tooltip';
+        tooltip.textContent = 'คัดลอกแล้ว!';
+
+        element.style.position = 'relative';
+        element.appendChild(tooltip);
+
+        setTimeout(function () {
+            element.removeChild(tooltip);
+        }, 2000);
+
+    } catch (err) {
+        console.error('ไม่สามารถคัดลอกได้:', err);
+    }
+}

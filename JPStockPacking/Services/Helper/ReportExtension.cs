@@ -765,11 +765,22 @@ namespace JPStockPacking.Services.Helper
                                                 col.Item().Text("(...............................)").AlignCenter().FontSize(11);
                                                 col.Item().Text("ผู้รับสินค้า").FontSize(11).AlignCenter();
                                             });
-                                            row.RelativeItem().AlignCenter().Column(col =>
+                                            if (tempack.SendType != "KL")
                                             {
-                                                col.Item().Text("(...............................)").AlignCenter().FontSize(11);
-                                                col.Item().Text("QA Packing").FontSize(11).AlignCenter();
-                                            });
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text("(...............................)").AlignCenter().FontSize(11);
+                                                    col.Item().Text("QA Packing").FontSize(11).AlignCenter();
+                                                });
+                                            }
+                                            else
+                                            {
+                                                row.RelativeItem().AlignCenter().Column(col =>
+                                                {
+                                                    col.Item().Text("(...............................)").AlignCenter().FontSize(11);
+                                                    col.Item().Text($"{tempack.TableName}").FontSize(11).AlignCenter();
+                                                });
+                                            }
                                         });
                                     });
                             });

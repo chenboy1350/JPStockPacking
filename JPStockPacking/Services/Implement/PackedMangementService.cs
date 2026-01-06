@@ -1274,6 +1274,30 @@ namespace JPStockPacking.Services.Implement
                 }
             }
 
+            var assignedTables = await (
+                from ass in _sPDbContext.Assignment
+                join asmr in _sPDbContext.AssignmentReceived on ass.AssignmentId equals asmr.AssignmentId
+                join asnt in _sPDbContext.AssignmentTable on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
+                join wt in _sPDbContext.WorkTable on asnt.WorkTableId equals wt.Id
+                join rev in _sPDbContext.Received on asmr.ReceivedId equals rev.ReceivedId
+                where lotNos.Contains(rev.LotNo) && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
+                select new { rev.LotNo, ass.AssignmentId, wt.Name }
+            ).ToListAsync();
+
+            var assignedTableDict = assignedTables
+                .GroupBy(a => a.LotNo)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .Select(x => new AssignedWorkTableModel
+                        {
+                            AssignmentId = x.AssignmentId,
+                            TableName = x.Name!
+                        })
+                        .DistinctBy(m => m.TableName)
+                        .ToList()
+                );
+
             List<TempPack> ExportTempPacks = await (from expt in _sPDbContext.Export
                                                     join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
                                                     from lot in gjLot.DefaultIfEmpty()
@@ -1322,10 +1346,19 @@ namespace JPStockPacking.Services.Implement
                                                       FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
                                                       FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
                                                       Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                                                      TableName = string.Empty,
                                                       SendType = "KL",
                                                       OkTtl = sl.TtQty,
                                                       OkWg = (decimal)sl.TtWg!,
                                                   }).ToListAsync();
+
+            foreach (var item in LostTempPacks)
+            {
+                if (assignedTableDict.TryGetValue(item.LotNo, out var tables))
+                {
+                    item.TableName = string.Join(", ", tables.Select(t => t.TableName));
+                }
+            }
 
             filteredResult.AddRange(ExportTempPacks);
             filteredResult.AddRange(LostTempPacks);

@@ -40,5 +40,6 @@
         public decimal? OrderQty { get; set; }
         public bool IsReported { get; set; } = false;
         public DateTime CreateDate { get; set; }
+        public int LeaderID { get; set; } = 0;
     }
 }

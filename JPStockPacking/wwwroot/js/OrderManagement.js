@@ -706,7 +706,8 @@ function renderLotRow(order, lot, index = "#") {
                 </div>
             </td>
             <td>
-                <a><strong>${lot.lotNo}</strong>
+                <a href="javascript:void(0);" class="lot-link" onclick="copyToClipboard(this, '${lot.lotNo}')" style="cursor: pointer; position: relative;">
+                    <strong>${lot.lotNo}</strong>
                     ${order.isReceivedLate && !lot.isAllReturned ? "<i class='fas fa-fire-alt' style='color: #e85700;'></i>" : ""}
                     ${order.isPackingLate && !lot.isAllReturned ? "<i class='fas fa-fire-alt' style='color: red;'></i>" : ""}
                 </a><br/>

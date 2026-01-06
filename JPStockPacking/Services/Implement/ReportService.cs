@@ -338,6 +338,7 @@ namespace JPStockPacking.Services.Implement
                             },
                             OrderNoAndCusCode = $"{g.First().CustCode.Trim()}/{g.First().OrderNo}",
                             Reporter = g.First().Username,
+                            TableName = g.First().TableName,
                             TempPacks = [.. g.OrderBy(x => x.LotNo)]
                         })
                         .OrderByDescending(x => x.ListDate)

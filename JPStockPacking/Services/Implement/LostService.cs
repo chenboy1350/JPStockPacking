@@ -28,6 +28,7 @@ namespace JPStockPacking.Services.Implement
                     ListNo = lot.ListNo,
                     SeldDate1 = ord.SeldDate1.GetValueOrDefault().ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
                     CustCode = ord.CustCode ?? string.Empty,
+                    LeaderID = los.EmployeeId,
                     LostQty = los.LostQty,
                     TtQty = lot.TtQty ?? 0,
                     TtWg = (double)(lot.TtWg ?? 0),
@@ -36,8 +37,6 @@ namespace JPStockPacking.Services.Implement
                     CreateDate = los.CreateDate.GetValueOrDefault()
                 }
             ).ToListAsync();
-
-            await GetTableLeaderAsync("2500017748");
 
             if (result == null || result.Count == 0)
             {
@@ -97,7 +96,7 @@ namespace JPStockPacking.Services.Implement
             return atables ?? [];
         }
 
-        public async Task AddLostAsync(string lotNo, double lostQty)
+        public async Task AddLostAsync(string lotNo, double lostQty,int leaderID)
         {
             using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
             try
@@ -119,6 +118,7 @@ namespace JPStockPacking.Services.Implement
                 {
                     LotNo = lotNo,
                     LostQty = (decimal)lostQty,
+                    EmployeeId = leaderID,
                     IsReported = false,
                     IsActive = true,
                     CreateDate = DateTime.Now,

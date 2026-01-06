@@ -62,7 +62,7 @@ namespace JPStockPacking.Services.Implement
                     JPInvoiceList = JPInvoiceList.Where(x => x.dinv.OrderNo == comparedInvoiceFilterModel.OrderNo);
                 }
 
-                var JPExDminv = await JPInvoiceList.Select(x => new ExDminv
+                var JPExDminv = await JPInvoiceList.Where(w => !string.IsNullOrEmpty(w.dinv.OrderNo)).Select(x => new ExDminv
                 {
                     MinvNo = x.hinv.MinvNo,
                     InvNo = x.hinv.InvNo,
@@ -79,9 +79,9 @@ namespace JPStockPacking.Services.Implement
 
                 List<ComparedInvoiceModel> JPComparedInvoiceList = [];
 
-                foreach (var jpItem in JPExDminv.Where(w => !string.IsNullOrEmpty(w.OrderNo)))
+                foreach (var jpItem in JPExDminv)
                 {
-                    if (!string.IsNullOrEmpty(jpItem.SetNo) && string.IsNullOrEmpty(jpItem.Article))
+                    if (!string.IsNullOrWhiteSpace(jpItem.SetNo) && string.IsNullOrWhiteSpace(jpItem.Article))
                     {
                         var lot = await _jPDbContext.OrdLotno.Where(x => x.SetNo1 == jpItem.SetNo.Trim() && x.OrderNo == jpItem.OrderNo).ToListAsync();
                         if (lot != null && lot.Count > 0)

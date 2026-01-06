@@ -79,6 +79,7 @@
         public bool IsOverQouta { get; set; } = false;
 
         public decimal Unallocated { get; set; } = 0;
+        public string TableName { get; set; } = string.Empty;
     }
 
     public class TempPackPage
@@ -90,6 +91,7 @@
         public string SendType { get; set; } = string.Empty;
         public string OrderNoAndCusCode { get; set; } = string.Empty;
         public string Reporter { get; set; } = string.Empty;
+        public string TableName { get; set; } = string.Empty;
         public List<TempPack> TempPacks { get; set; } = [];
     }
 }

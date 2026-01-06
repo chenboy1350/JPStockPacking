@@ -570,7 +570,7 @@ namespace JPStockPacking.Controllers
         {
             try
             {
-                await _lostService.AddLostAsync(lotNo, lostQty);
+                await _lostService.AddLostAsync(lotNo, lostQty, leaderID);
                 return Ok();
             }
             catch (Exception ex)
