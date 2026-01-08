@@ -475,9 +475,7 @@ namespace JPStockPacking.Services.Implement
                 join g in _jPDbContext.JobBillsize
                     on a.Billnumber equals g.Billnumber into gjG
                 from g in gjG.Where(x => a.SizeNoOrd == true).DefaultIfEmpty()
-                where EF.Functions.Like(h.SendType.Substring(1, 1), "S")
-                    && (h.Doc == "" || h.Doc == null)
-                    && h.MdateSend.Year == DateTime.Now.Year
+                where EF.Functions.Like(h.SendType.Substring(1, 1), "S") && (h.Doc == "" || h.Doc == null)
                 orderby h.MdateSend, a.Lotno, a.Num
                 select new TempPack
                 {
@@ -575,10 +573,7 @@ namespace JPStockPacking.Services.Implement
                     .Where(x => a.SizeNoOrd == true)
                     .DefaultIfEmpty()
 
-                where
-                    h.SendType.Substring(1, 1) == "M" &&
-                    (h.Doc == null || h.Doc == "") &&
-                    h.MdateSend.Year == DateTime.Now.Year
+                where h.SendType.Substring(1, 1) == "M" && (h.Doc == null || h.Doc == "")
 
                 orderby h.MdateSend, a.Lotno, a.Num
 
@@ -601,7 +596,7 @@ namespace JPStockPacking.Services.Implement
                     SendPack = a.SendPack,
                     PackDoc = a.PackDoc ?? string.Empty,
                     Num = a.Num,
-                    SendDate = a.SendDate ?? DateTime.MinValue,
+                    SendDate = a.SendDate.GetValueOrDefault(),
                     SizeNoOrd = a.SizeNoOrd,
                     Wg_Over = a.WgOver,
                     BillNumber = a.Billnumber,
@@ -665,16 +660,14 @@ namespace JPStockPacking.Services.Implement
                                               from lot in gjLot.DefaultIfEmpty()
                                               join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
                                               from ord in gjOrd.DefaultIfEmpty()
-                                              where lotNos.Contains(sl.LotNo)
-                                                 && (sl.Doc == "" || sl.Doc == null)
-                                                 && sl.CreateDate!.Value.Year == DateTime.Now.Year
+                                              where lotNos.Contains(sl.LotNo) && (sl.Doc == "" || sl.Doc == null)
                                               select new TempPack
                                               {
                                                   LotNo = sl.LotNo,
                                                   OrderNo = ord != null ? ord.OrderNo : string.Empty,
                                                   CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
                                                   Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                  SendDate = sl.CreateDate!.Value,
+                                                  SendDate = sl.CreateDate.GetValueOrDefault(),
                                                   Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
                                                   FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
                                                   FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
@@ -692,9 +685,7 @@ namespace JPStockPacking.Services.Implement
                                               from lot in gjLot.DefaultIfEmpty()
                                               join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
                                               from ord in gjOrd.DefaultIfEmpty()
-                                              where lotNos.Contains(expt.LotNo)
-                                                 && (expt.Doc == "" || expt.Doc == null)
-                                                 && expt.CreateDate!.Value.Year == DateTime.Now.Year
+                                              where lotNos.Contains(expt.LotNo) && (expt.Doc == "" || expt.Doc == null)
                                               select new TempPack
                                               {
                                                   LotNo = expt.LotNo,
@@ -873,22 +864,20 @@ namespace JPStockPacking.Services.Implement
             try
             {
                 var receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ2, false);
-                var existsHeader = await _jPDbContext.Sj1hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
+                var existsHeader = await _jPDbContext.Sj2hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
 
                 while (existsHeader)
                 {
                     receiveNo = await GenerateReceiveNoAsync(ReceiveType.SJ2, true);
-                    existsHeader = await _jPDbContext.Sj1hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
+                    existsHeader = await _jPDbContext.Sj2hreceive.AnyAsync(x => x.ReceiveNo == receiveNo);
                 }
 
                 var now = DateTime.Now;
 
-                // ใช้ connection เดียวกับ EF Core
                 var connection = _jPDbContext.Database.GetDbConnection();
                 if (connection.State != System.Data.ConnectionState.Open)
                     await connection.OpenAsync();
 
-                // ใช้ Dapper บน connection นี้ พร้อมกับ EF transaction
                 await connection.ExecuteAsync(@"
                     INSERT INTO Sj2hreceive
                     (ReceiveNo, Username, Mdate, Upday, Department, return_found)
@@ -902,10 +891,9 @@ namespace JPStockPacking.Services.Implement
                         Department = "BL",
                         ReturnFound = false
                     },
-                    transaction: transaction.GetDbTransaction() // ผูก transaction เดียวกับ EF
+                    transaction: transaction.GetDbTransaction()
                 );
 
-                // ส่วนอื่นยังคงใช้ EF Core ได้ตามปกติ
                 foreach (var pack in tempPacks)
                 {
                     bool exists = await _jPDbContext.Sj2dreceive
@@ -924,7 +912,6 @@ namespace JPStockPacking.Services.Implement
                     if (!string.IsNullOrEmpty(boxQuery))
                         defaultBox = boxQuery;
 
-                    // ใช้ connection และ transaction เดิมจาก EF
                     if (connection.State != System.Data.ConnectionState.Open)
                         await connection.OpenAsync();
 
@@ -986,10 +973,8 @@ namespace JPStockPacking.Services.Implement
                         Q10 = (decimal)Quantities[9],
                         Q11 = (decimal)Quantities[10],
                         Q12 = (decimal)Quantities[11]
-                    }, transaction: transaction.GetDbTransaction()); //อยู่ใน transaction เดียวกับ EF
+                    }, transaction: transaction.GetDbTransaction());
 
-
-                    // อัปเดต JobBill_SendStock
                     var sendMelt = await _jPDbContext.JobBillSendStock.FirstOrDefaultAsync(a =>
                         a.Billnumber == pack.BillNumber &&
                         a.Numsend == pack.NumSend &&
@@ -1000,7 +985,6 @@ namespace JPStockPacking.Services.Implement
                     if (sendMelt != null)
                         sendMelt.Doc = receiveNo;
 
-                    // อัปเดต JobBill
                     var jobBill = await _jPDbContext.JobBill.FirstOrDefaultAsync(b => b.Billnumber == pack.BillNumber);
                     if (jobBill != null)
                         jobBill.SendMeltDoc = receiveNo;
@@ -1155,9 +1139,7 @@ namespace JPStockPacking.Services.Implement
                 join f in _jPDbContext.OrdLotno on a.Lotno equals f.LotNo
                 join g in _jPDbContext.JobBillsize on a.Billnumber equals g.Billnumber into gjG
                 from g in gjG.Where(x => a.SizeNoOrd == true).DefaultIfEmpty()
-                where (h.SendType == "KM" || h.SendType == "KS")
-                    && !string.IsNullOrEmpty(h.Doc)
-                    && h.MdateSend.Year == DateTime.Now.Year
+                where (h.SendType == "KM" || h.SendType == "KS") && !string.IsNullOrEmpty(h.Doc)
                 orderby a.Lotno
                 select new TempPack
                 {
