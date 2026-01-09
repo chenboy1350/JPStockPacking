@@ -1,6 +1,7 @@
 ﻿using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.JPDbContext.Entities;
 using JPStockPacking.Data.SPDbContext;
+using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -193,6 +194,112 @@ namespace JPStockPacking.Services.Implement
                 return [];
             }
 
+        }
+
+        public async Task<List<ComparedInvoiceModel>> GetConfirmedInvoice(string InvoiceNo)
+        {
+            var invoiceNo = InvoiceNo.Insert(2, "I").ToUpper();
+            var confirmedInvoices = await _sPDbContext.ComparedInvoice
+                .Where(x => x.InvoiceNo.ToLower() == invoiceNo)
+                .Select(x => new ComparedInvoiceModel
+                {
+                    JPInvoiceNo = x.InvoiceNo,
+                    JPOrderNo = x.OrderNo,
+                    JPArticle = x.Article,
+                    JPTtQty = (double)x.JpttQty,
+                    JPPrice = (double)x.Jpprice,
+                    JPTotalPrice = (double)x.JptotalPrice,
+                    JPTotalSetTtQty = (double)x.JptotalSetTtQty,
+                    SPTtQty = (double)x.SpttQty,
+                    SPPrice = (double)x.Spprice,
+                    SPTotalPrice = (double)x.SptotalPrice,
+                    SPTotalSetTtQty = (double)x.SptotalSetTtQty,
+                    IsMatched = x.IsMatched,
+                    CustCode = x.CustCode,
+                    MakeUnit = x.MakeUnit
+                })
+                .ToListAsync();
+
+            return confirmedInvoices;
+        }
+
+        public async Task<BaseResponseModel> GetIsMarked(string InvoiceNo)
+        {
+            if (InvoiceNo.Length < 2)
+            {
+                return new BaseResponseModel { IsSuccess = false };
+            }
+
+            var invoiceNo = InvoiceNo.Insert(2, "I").ToUpper();
+            var isMarked = _sPDbContext.ComparedInvoice.Any(x => x.InvoiceNo == invoiceNo);
+            if (isMarked)
+            {
+                return new BaseResponseModel { IsSuccess = true};
+            }
+            else
+            {
+                return new BaseResponseModel { IsSuccess = false };
+            }
+        }
+
+        public async Task<BaseResponseModel> MarkInvoiceAsRead(string InvoiceNo, int userId)
+        {
+            using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var invoiceNo = InvoiceNo.Insert(2, "I").ToUpper();
+                List<ComparedInvoiceModel> comparedInvoiceModels = await GetFilteredInvoice(new ComparedInvoiceFilterModel { InvoiceNo = InvoiceNo });
+                var comparedInvoices = _sPDbContext.ComparedInvoice.Where(x => x.InvoiceNo == invoiceNo).ToList();
+
+                BaseResponseModel responseModel = new();
+
+                if (comparedInvoices.Count == 0 && comparedInvoiceModels.Count > 0)
+                {
+                    var result = comparedInvoiceModels.Select(x => new ComparedInvoice
+                    {
+                        InvoiceNo = x.JPInvoiceNo,
+                        OrderNo = x.JPOrderNo,
+                        Article = x.JPArticle,
+                        JpttQty = x.JPTtQty,
+                        Jpprice = x.JPPrice,
+                        JptotalPrice = x.JPTotalPrice,
+                        JptotalSetTtQty = x.JPTotalSetTtQty,
+                        SpttQty = x.SPTtQty,
+                        Spprice = x.SPPrice,
+                        SptotalPrice = x.SPTotalPrice,
+                        SptotalSetTtQty = x.SPTotalSetTtQty,
+                        IsMatched = x.IsMatched,
+                        CustCode = x.CustCode,
+                        MakeUnit = x.MakeUnit,
+                        IsActive = true,
+                        CreateDate = DateTime.UtcNow,
+                        CreateBy = userId,
+                        UpdateDate = DateTime.UtcNow,
+                        UpdateBy = userId
+                    }).ToList();
+
+                    await _sPDbContext.ComparedInvoice.AddRangeAsync(result);
+                    await _sPDbContext.SaveChangesAsync();
+
+                    responseModel = new BaseResponseModel { IsSuccess = true, Message = "Invoice marked as read successfully." };
+                }
+                else if (comparedInvoices.Count == 0 && comparedInvoiceModels.Count == 0)
+                {
+                    responseModel = new BaseResponseModel { IsSuccess = false, Message = "No invoice data found to mark as read." };
+                }
+                else
+                {
+                    responseModel = new BaseResponseModel { IsSuccess = true, Message = "Invoice already marked as read." };
+                }
+
+                await transaction.CommitAsync();
+                return responseModel;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                return new BaseResponseModel { IsSuccess = false, Message = "Failed to mark invoice as read." };
+            }
         }
 
         public async Task<List<UnallocatedQuantityModel>> GetUnallocatedQuentityToStore(ComparedInvoiceFilterModel comparedInvoiceFilterModel)

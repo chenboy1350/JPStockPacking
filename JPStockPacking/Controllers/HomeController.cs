@@ -1,3 +1,4 @@
+using JPStockPacking.Data.JPDbContext.Entities;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Helper;
@@ -690,6 +691,42 @@ namespace JPStockPacking.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetIsMarked(string InvoiceNo)
+        {
+            var result = await _auditService.GetIsMarked(InvoiceNo);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetConfirmedInvoice([FromBody] ComparedInvoiceFilterModel comparedInvoiceFilterModel)
+        {
+            try
+            {
+                List<ComparedInvoiceModel> result = await _auditService.GetConfirmedInvoice(comparedInvoiceFilterModel.InvoiceNo);
+                byte[] pdfBytes = _reportService.GenerateComparedInvoiceReport(comparedInvoiceFilterModel, result, InvoiceType.All);
+
+                string contentDisposition = $"inline; filename=ComINV{DateTime.Now:yyyyMMdd}.pdf";
+                Response.Headers.Append("Content-Disposition", contentDisposition);
+
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> MarkInvoiceAsRead([FromForm] string InvoiceNo, [FromForm] int userId)
+        {
+            var res = await _auditService.MarkInvoiceAsRead(InvoiceNo, userId);
+            return Ok(res);
         }
 
         [HttpPost]

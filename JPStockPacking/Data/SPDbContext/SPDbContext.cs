@@ -24,6 +24,8 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<BreakDescription> BreakDescription { get; set; }
 
+    public virtual DbSet<ComparedInvoice> ComparedInvoice { get; set; }
+
     public virtual DbSet<CustomerGroup> CustomerGroup { get; set; }
 
     public virtual DbSet<Export> Export { get; set; }

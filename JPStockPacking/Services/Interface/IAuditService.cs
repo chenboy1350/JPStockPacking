@@ -7,5 +7,8 @@ namespace JPStockPacking.Services.Interface
     {
         Task<List<ComparedInvoiceModel>> GetFilteredInvoice(ComparedInvoiceFilterModel comparedInvoiceFilterModel);
         Task<List<UnallocatedQuantityModel>> GetUnallocatedQuentityToStore(ComparedInvoiceFilterModel comparedInvoiceFilterModel);
+        Task<BaseResponseModel> MarkInvoiceAsRead(string InvoiceNo, int userId);
+        Task<List<ComparedInvoiceModel>> GetConfirmedInvoice(string InvoiceNo);
+        Task<BaseResponseModel> GetIsMarked(string InvoiceNo);
     }
 }
