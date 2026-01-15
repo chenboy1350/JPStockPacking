@@ -29,7 +29,8 @@ namespace JPStockPacking.Controllers
         IProductionPlanningService productionPlanningService,
         IFormulaManagementService formulaManagementService,
         IPermissionManagement permissionManagement,
-        IReturnService returnService) : Controller
+        IReturnService returnService,
+        ISampleReceiveManagementService sampleReceiveManagementService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly INotificationService _notificationService = notificationService;
@@ -50,6 +51,7 @@ namespace JPStockPacking.Controllers
         private readonly IFormulaManagementService _formulaManagementService = formulaManagementService;
         private readonly IPermissionManagement _permissionManagement = permissionManagement;
         private readonly IReturnService _returnService = returnService;
+        private readonly ISampleReceiveManagementService _sampleReceiveManagementService = sampleReceiveManagementService;
 
         [Authorize]
         public IActionResult Index()
@@ -79,9 +81,16 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> ReceiveManagement()
         {
             var result = await _receiveManagementService.GetTopJPReceivedAsync(null, null, null);
-            _logger.Information("GetTopJPReceivedAsync : {@result}", result);
-
             return PartialView("~/Views/Partial/_ReceiveManagment.cshtml", result);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> SampleReceiveManagement()
+        {
+            var result = await _sampleReceiveManagementService.GetTopJPReceivedAsync(null, null, null);
+            _logger.Information("GetTopJPReceivedAsync (Sample) : {@result}", result);
+
+            return PartialView("~/Views/Partial/_SampleReceiveManagement.cshtml", result);
         }
 
         [Authorize]
@@ -109,7 +118,6 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> UserManagement()
         {
-            ViewBag.Employees = await _pISService.GetAvailableEmployeeAsync();
             List<UserModel> res = await _pISService.GetUser(new ReqUserModel());
             return PartialView("~/Views/Partial/_UserManagement.cshtml", res);
         }
@@ -251,6 +259,76 @@ namespace JPStockPacking.Controllers
             try
             {
                 await _orderManagementService.UpdateAllReceivedItemsAsync(receiveNo);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetSampleReceiveRow(string receiveNo)
+        {
+            var result = await _sampleReceiveManagementService.GetTopJPReceivedAsync(receiveNo, null, null);
+            return Ok(result.FirstOrDefault());
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetSampleReceiveList(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _sampleReceiveManagementService.GetTopJPReceivedAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ImportSampleReceiveNo(string receiveNo, string orderNo, string lotNo)
+        {
+            if (receiveNo == string.Empty && receiveNo == null) return BadRequest();
+            var res = await _sampleReceiveManagementService.GetJPReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(res);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> CancelImportSampleReceiveNo(string receiveNo, string orderNo, string lotNo)
+        {
+            if (receiveNo == string.Empty && receiveNo == null) return BadRequest();
+            var res = await _sampleReceiveManagementService.GetJPReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(res);
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> UpdateSampleLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
+        {
+            if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
+                return BadRequest("ข้อมูลไม่ถูกต้อง");
+
+            try
+            {
+                await _sampleReceiveManagementService.UpdateLotItemsAsync(receiveNo, orderNos, receiveIds);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> CancelUpdateSampleLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
+        {
+            if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
+                return BadRequest("ข้อมูลไม่ถูกต้อง");
+
+            try
+            {
+                await _sampleReceiveManagementService.CancelUpdateLotItemsAsync(receiveNo, orderNos, receiveIds);
                 return Ok();
             }
             catch (Exception ex)

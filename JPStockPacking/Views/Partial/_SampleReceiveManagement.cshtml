@@ -1,6 +1,6 @@
-﻿@model List<JPStockPacking.Models.ReceivedListModel>
+@model List<JPStockPacking.Models.ReceivedListModel>
 @{
-    
+
 }
 
 <div class="container-fluid">
@@ -20,18 +20,18 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>เลขใบส่ง</label>
-                                            <input type="text" id="txtFindReceivedNo" class="form-control" placeholder="กรอก ReceiveNo">
+                                            <input type="text" id="txtFindSampleReceivedNo" class="form-control" placeholder="กรอก ReceiveNo">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>เลขที่งาน</label>
-                                            <input type="text" id="txtFindLotNo" class="form-control" placeholder="กรอก LotNo">
+                                            <input type="text" id="txtFindSampleLotNo" class="form-control" placeholder="กรอก LotNo">
                                         </div>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary" onclick="ClearFindByReceive()">Clear</button>
-                                <button class="btn btn-primary" onclick="findReceive()">ค้นหา</button>
+                                <button class="btn btn-secondary" onclick="ClearFindBySampleReceive()">Clear</button>
+                                <button class="btn btn-primary" onclick="findSampleReceive()">ค้นหา</button>
                             </div>
                         </div>
                     </div>
@@ -44,11 +44,11 @@
         <div class="card d-flex">
             <div class="card-header justify-content-between align-content-center">
                 <div class="justify-content-center">
-                    <h3 class="card-title">รายการใบส่ง</h3>
+                    <h3 class="card-title">รายการใบส่ง (Sample)</h3>
                 </div>
             </div>
             <div class="card-body table-responsive p-0" style="height:87vh">
-                <table id="tbl-main" class="table table-head-fixed table-striped table-hover text-nowrap">
+                <table id="tbl-sample-main" class="table table-head-fixed table-striped table-hover text-nowrap">
                     <thead>
                         <tr>
                             <th class="text-start">#</th>
@@ -58,7 +58,7 @@
                             <th class="text-center"></th>
                         </tr>
                     </thead>
-                    <tbody id="tbl-receive-list-body">
+                    <tbody id="tbl-sample-receive-list-body">
                         @foreach (var item in Model)
                         {
                             <tr data-receive-no="@item.ReceiveNo">
@@ -72,7 +72,7 @@
                                         <span class="badge badge-success">รับเข้าครบแล้ว</span>
                                     </td>
                                     <td class="col-action">
-                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
+                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
                                     </td>
@@ -83,10 +83,10 @@
                                         <span class="badge badge-warning">รับเข้ายังไม่ครบ</span>
                                     </td>
                                     <td class="col-action">
-                                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
+                                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateSampleLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
-                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
+                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
                                     </td>
@@ -97,10 +97,10 @@
                                         <span class="badge badge-secondary">รอรับเข้า</span>
                                     </td>
                                     <td class="col-action">
-                                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
+                                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateSampleLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
-                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
+                                        <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('@item.ReceiveNo')">
                                             <i class="fas fa-folder"></i> ตรวจสอบ
                                         </button>
                                     </td>
@@ -114,12 +114,12 @@
     </div>
 </div>
 
-<div class="modal fade" id="modal-update">
+<div class="modal fade" id="modal-sample-update">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ :</h4>
-                <input type="hidden" id="hddReceiveNo" value="" />
+                <h4 class="modal-title" id="txtTitleSampleUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ (Sample) :</h4>
+                <input type="hidden" id="hddSampleReceiveNo" value="" />
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
                     <span>&times;</span>
                 </button>
@@ -139,32 +139,32 @@
                                 <th>น้ำหนักรวม(g)</th>
                                 <th class="text-center">
                                     <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="chkSelectAll" checked>
-                                        <label for="chkSelectAll">เลือก</label>
+                                        <input type="checkbox" id="chkSampleSelectAll" checked>
+                                        <label for="chkSampleSelectAll">เลือก</label>
                                     </div>
                                 </th>
 
                             </tr>
                         </thead>
-                        <tbody id="tbl-received-body">
+                        <tbody id="tbl-sample-received-body">
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-warning" id="btnUpdateLot">รับเข้า</button>
+                <button type="button" class="btn btn-warning" id="btnUpdateSampleLot">รับเข้า</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modal-cancel-update">
+<div class="modal fade" id="modal-sample-cancel-update">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="txtTitleCancelUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ :</h4>
-                <input type="hidden" id="hddCancelReceiveNo" value="" />
+                <h4 class="modal-title" id="txtTitleSampleCancelUpdate"><i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ (Sample) :</h4>
+                <input type="hidden" id="hddSampleCancelReceiveNo" value="" />
                 <button type="button" class="close" onclick="CloseModal()" aria-label="Close">
                     <span>&times;</span>
                 </button>
@@ -184,24 +184,24 @@
                                 <th>น้ำหนักรวม(g)</th>
                                 <th class="text-center">
                                     <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="chkSelectAll" checked>
-                                        <label for="chkSelectAll">เลือก</label>
+                                        <input type="checkbox" id="chkSampleSelectAll" checked>
+                                        <label for="chkSampleSelectAll">เลือก</label>
                                     </div>
                                 </th>
 
                             </tr>
                         </thead>
-                        <tbody id="tbl-cancel-received-body">
+                        <tbody id="tbl-sample-cancel-received-body">
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-danger" id="btnCancelUpdateLot">ยกเลิก</button>
+                <button type="button" class="btn btn-danger" id="btnCancelUpdateSampleLot">ยกเลิก</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="page-title" data-title="ใบรับสินค้า (ลงบิล)"></div>
+<div id="page-title" data-title="ใบรับสินค้า Sample"></div>

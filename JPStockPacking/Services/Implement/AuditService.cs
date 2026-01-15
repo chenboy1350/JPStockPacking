@@ -40,14 +40,11 @@ namespace JPStockPacking.Services.Implement
                 var JPInvoiceList = (from hinv in _jPDbContext.ExHminv
                                      join dinv in _jPDbContext.ExDminv on hinv.MinvNo equals dinv.MinvNo into dinvGroup
                                      from dinv in dinvGroup
-                                     join ord in _jPDbContext.OrdHorder on dinv.OrderNo equals ord.OrderNo into ordGroup
-                                     from ord in ordGroup.DefaultIfEmpty()
                                      where hinv.InvSend
                                      select new
                                      {
                                          hinv,
                                          dinv,
-                                         ord.CustCode
                                      });
 
                 JPInvoiceList = JPInvoiceList.Where(x => x.hinv.Mdate >= FromDate && x.hinv.Mdate <= ToDate);
@@ -75,7 +72,7 @@ namespace JPStockPacking.Services.Implement
                     TtQty = x.dinv.TtQty,
                     PperUnit = x.dinv.PperUnit,
                     TtPrice = x.dinv.TtPrice,
-                    OrderCust = x.CustCode
+                    OrderCust = x.hinv.CusCode ?? string.Empty,
                 }).ToListAsync();
 
                 List<ComparedInvoiceModel> JPComparedInvoiceList = [];
@@ -92,6 +89,8 @@ namespace JPStockPacking.Services.Implement
                             {
                                 continue;
                             }
+
+                            string ListNo = lot.FirstOrDefault()!.GroupNo ?? string.Empty;
 
                             decimal JPQty = jpItem.TtQty ?? 0;
                             decimal JPPrice = jpItem.PperUnit;
@@ -114,6 +113,7 @@ namespace JPStockPacking.Services.Implement
                             {
                                 CustCode = jpItem.OrderCust ?? string.Empty,
                                 MakeUnit = jpItem.MakeUnit!.Trim() ?? string.Empty,
+                                ListNo = ListNo,
 
                                 JPInvoiceNo = jpItem.InvNo,
                                 JPOrderNo = jpItem.OrderNo,
@@ -146,6 +146,8 @@ namespace JPStockPacking.Services.Implement
 
                             if (spexlot != null && spexlot.Count > 0)
                             {
+                                string ListNo = lot.ListNo ?? string.Empty;
+
                                 decimal JPQty = jpItem.TtQty ?? 0;
                                 decimal JPPrice = jpItem.PperUnit;
                                 decimal JPTotalPrice = jpItem.TtPrice ?? 0;
@@ -165,6 +167,7 @@ namespace JPStockPacking.Services.Implement
                                 {
                                     CustCode = jpItem.OrderCust ?? string.Empty,
                                     MakeUnit = jpItem.MakeUnit!.Trim() ?? string.Empty,
+                                    ListNo = ListNo,
 
                                     JPInvoiceNo = jpItem.InvNo,
                                     JPOrderNo = jpItem.OrderNo,
@@ -216,7 +219,8 @@ namespace JPStockPacking.Services.Implement
                     SPTotalSetTtQty = (double)x.SptotalSetTtQty,
                     IsMatched = x.IsMatched,
                     CustCode = x.CustCode,
-                    MakeUnit = x.MakeUnit
+                    MakeUnit = x.MakeUnit,
+                    ListNo = x.ListNo
                 })
                 .ToListAsync();
 
@@ -271,6 +275,7 @@ namespace JPStockPacking.Services.Implement
                         IsMatched = x.IsMatched,
                         CustCode = x.CustCode,
                         MakeUnit = x.MakeUnit,
+                        ListNo = x.ListNo,
                         IsActive = true,
                         CreateDate = DateTime.UtcNow,
                         CreateBy = userId,
@@ -302,6 +307,7 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
+        //in progress
         public async Task<List<UnallocatedQuantityModel>> GetUnallocatedQuentityToStore(ComparedInvoiceFilterModel comparedInvoiceFilterModel)
         {
             DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;

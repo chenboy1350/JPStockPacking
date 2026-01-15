@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace JPStockPacking.Controllers
 {
-    public class AuthController(IAuthService userService) : Controller
+    public class AuthController(IAuthService userService, ICacheService cacheService) : Controller
     {
         private readonly IAuthService _authService = userService;
+        private readonly ICacheService _cacheService = cacheService;
 
         public IActionResult Login()
         {
@@ -45,6 +46,11 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> Logout()
         {
             await _authService.LogoutAsync();
+
+            _cacheService.Remove("EmployeeList");
+            _cacheService.Remove("DepartmentList");
+            _cacheService.Remove("UserList");
+
             return Json(new
             {
                 success = true,

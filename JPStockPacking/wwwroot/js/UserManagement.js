@@ -160,7 +160,7 @@ function showAddUserModal() {
             $ddl.append('<option value="" selected>-- เลือกพนักงาน --</option>');
 
             $.each(res, function (i, item) {
-                $ddl.append(`<option value="${item.id}">${item.firstName} ${item.lastName} (${item.nickName})</option>`);
+                $ddl.append(`<option value="${item.employeeID}">${item.firstName} ${item.lastName} (${item.nickName})</option>`);
             });
         },
         error: function () {
@@ -176,6 +176,23 @@ function showEditUserModal(userId) {
 
     $('#ddlEditEmp').select2({
         dropdownParent: $('#modal-edit-user'),
+    });
+
+    $.ajax({
+        url: urlAvailableEmployee,
+        type: 'GET',
+        success: function (res) {
+            let $ddl = $('#ddlEditEmp');
+            $ddl.empty();
+            $ddl.append('<option value="" selected>-- เลือกพนักงาน --</option>');
+
+            $.each(res, function (i, item) {
+                $ddl.append(`<option value="${item.employeeID}">${item.firstName} ${item.lastName} (${item.nickName})</option>`);
+            });
+        },
+        error: function () {
+            alert('Error retrieving user data.');
+        }
     });
 
     $.ajax({

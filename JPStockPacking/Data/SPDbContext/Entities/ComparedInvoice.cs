@@ -32,6 +32,10 @@ public partial class ComparedInvoice
     [Unicode(false)]
     public string MakeUnit { get; set; } = null!;
 
+    [StringLength(50)]
+    [Unicode(false)]
+    public string ListNo { get; set; } = null!;
+
     [Column("JPTtQty")]
     public double JpttQty { get; set; }
 

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JPStockPacking.Data.SPDbContext.Entities;
 
-public partial class Lot
+public partial class SampleLot
 {
     [Key]
     [StringLength(50)]
@@ -15,11 +15,11 @@ public partial class Lot
 
     [StringLength(50)]
     [Unicode(false)]
-    public string OrderNo { get; set; } = null!;
+    public string? OrderNo { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
-    public string ListNo { get; set; } = null!;
+    public string? ListNo { get; set; }
 
     [Column("CustPCode")]
     [StringLength(50)]
@@ -34,7 +34,7 @@ public partial class Lot
     [Column(TypeName = "numeric(18, 1)")]
     public decimal? Si { get; set; }
 
-    [StringLength(10)]
+    [StringLength(50)]
     [Unicode(false)]
     public string? Unit { get; set; }
 

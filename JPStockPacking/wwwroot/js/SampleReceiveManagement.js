@@ -1,16 +1,16 @@
-﻿$(document).ready(function () {
-    $(document).on('keydown', '#txtFindReceivedNo, #txtFindLotNo', function (e) {
+$(document).ready(function () {
+    $(document).on('keydown', '#txtFindSampleReceivedNo, #txtFindSampleOrderNo, #txtFindSampleLotNo', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            findReceive();
+            findSampleReceive();
         }
     });
 
-    $(document).on('click', '#btnUpdateLot', async function () {
+    $(document).on('click', '#btnUpdateSampleLot', async function () {
         $('#loadingIndicator').show();
 
-        const tbody = $('#tbl-received-body');
-        const hddReceiveNo = $('#hddReceiveNo').val();
+        const tbody = $('#tbl-sample-received-body');
+        const hddReceiveNo = $('#hddSampleReceiveNo').val();
         const orderNos = [];
         const receiveIds = [];
 
@@ -40,15 +40,15 @@
         receiveIds.forEach(no => formData.append("receiveIds", no));
 
         $.ajax({
-            url: urlUpdateLotItems,
+            url: urlUpdateSampleLotItems,
             type: 'PATCH',
             processData: false,
             contentType: false,
             data: formData,
-            success: async function () {
+            success: async function (lot) {
                 $('#loadingIndicator').hide();
-                $('#modal-update').modal('hide');
-                refreshReceiveRow(hddReceiveNo);
+                $('#modal-sample-update').modal('hide');
+                refreshSampleReceiveRow(hddReceiveNo);
                 await showSuccess(`นำเข้าแล้ว ${receiveIds.length} รายการ`);
             },
             error: async function (xhr) {
@@ -59,11 +59,11 @@
         });
     });
 
-    $(document).on('click', '#btnCancelUpdateLot', async function () {
+    $(document).on('click', '#btnCancelUpdateSampleLot', async function () {
         $('#loadingIndicator').show();
 
-        const tbody = $('#tbl-cancel-received-body');
-        const hddReceiveNo = $('#hddCancelReceiveNo').val();
+        const tbody = $('#tbl-sample-cancel-received-body');
+        const hddReceiveNo = $('#hddSampleCancelReceiveNo').val();
         const orderNos = [];
         const receiveIds = [];
 
@@ -93,15 +93,15 @@
         receiveIds.forEach(no => formData.append("receiveIds", no));
 
         $.ajax({
-            url: urlCancelUpdateLotItems,
+            url: urlCancelUpdateSampleLotItems,
             type: 'PATCH',
             processData: false,
             contentType: false,
             data: formData,
             success: async function (lot) {
                 $('#loadingIndicator').hide();
-                $('#modal-cancel-update').modal('hide');
-                refreshReceiveRow(hddReceiveNo);
+                $('#modal-sample-cancel-update').modal('hide');
+                refreshSampleReceiveRow(hddReceiveNo);
                 await showSuccess(`ยกเลิกการนำเข้าแล้ว ${receiveIds.length} รายการ`);
             },
             error: async function (xhr) {
@@ -112,40 +112,40 @@
         });
     });
 
-    $(document).on('change', '#chkSelectAll', function () {
+    $(document).on('change', '#chkSampleSelectAll', function () {
         const isChecked = $(this).is(':checked');
-        $('#tbl-received-body .chk-row:enabled')
+        $('#tbl-sample-received-body .chk-row:enabled')
             .prop('checked', isChecked)
             .trigger('change');
     });
 
-    $(document).on('change', '#tbl-received-body .chk-row', function () {
-        const allEnabled = $('#tbl-received-body .chk-row:enabled').length;
-        const allChecked = $('#tbl-received-body .chk-row:enabled:checked').length;
+    $(document).on('change', '#tbl-sample-received-body .chk-row', function () {
+        const allEnabled = $('#tbl-sample-received-body .chk-row:enabled').length;
+        const allChecked = $('#tbl-sample-received-body .chk-row:enabled:checked').length;
 
-        $('#chkSelectAll')
+        $('#chkSampleSelectAll')
             .prop('checked', allEnabled > 0 && allChecked === allEnabled)
             .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
     });
 
 });
 
-function showModalUpdateLot(receiveNo) {
-    const txtFindLotNo = $('#txtFindLotNo').val().trim();
+function showModalUpdateSampleLot(receiveNo) {
+    const txtFindLotNo = $('#txtFindSampleLotNo').val().trim();
 
-    const modal = $('#modal-update');
-    const tbody = modal.find('#tbl-received-body');
+    const modal = $('#modal-sample-update');
+    const tbody = modal.find('#tbl-sample-received-body');
 
     tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
 
-    modal.find('#txtTitleUpdate').html(
-        "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ: " + html(receiveNo)
+    modal.find('#txtTitleSampleUpdate').html(
+        "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ (Sample): " + html(receiveNo)
     );
 
     modal.modal('show');
 
     $.ajax({
-        url: urlImportReceiveNo,
+        url: urlImportSampleReceiveNo,
         method: 'GET',
         data: {
             receiveNo: receiveNo,
@@ -156,7 +156,7 @@ function showModalUpdateLot(receiveNo) {
     .done(function (items) {
         tbody.empty();
 
-        $('#hddReceiveNo').val(receiveNo);
+        $('#hddSampleReceiveNo').val(receiveNo);
 
         if (!items || items.length === 0) {
             tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
@@ -180,10 +180,10 @@ function showModalUpdateLot(receiveNo) {
             const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
 
             return `
-                <tr class="${rowClass}" 
-                        data-receive-id="${html(x.receivedID)}" 
-                        data-order-no="${html(x.orderNo)}" 
-                        data-ttqty="${numRaw(x.ttQty)}" 
+                <tr class="${rowClass}"
+                        data-receive-id="${html(x.receivedID)}"
+                        data-order-no="${html(x.orderNo)}"
+                        data-ttqty="${numRaw(x.ttQty)}"
                         data-ttwg="${numRaw(x.ttWg)}">
                     <td class="text-center">${cusCodeDisplay}</td>
                     <td>${orderNoDisplay}</td>
@@ -219,7 +219,7 @@ function showModalUpdateLot(receiveNo) {
         const allEnabled = tbody.find('.chk-row:enabled').length;
         const allChecked = tbody.find('.chk-row:enabled:checked').length;
 
-        $('#chkSelectAll')
+        $('#chkSampleSelectAll')
             .prop('checked', allEnabled > 0 && allChecked === allEnabled)
             .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
 
@@ -229,7 +229,7 @@ function showModalUpdateLot(receiveNo) {
             const allEnabled = tbody.find('.chk-row:enabled').length;
             const allChecked = tbody.find('.chk-row:enabled:checked').length;
 
-            $('#chkSelectAll')
+            $('#chkSampleSelectAll')
                 .prop('checked', allEnabled > 0 && allChecked === allEnabled)
                 .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
         });
@@ -258,22 +258,22 @@ function showModalUpdateLot(receiveNo) {
     }
 }
 
-function showModalCancelLot(receiveNo) {
-    const txtFindLotNo = $('#txtFindLotNo').val().trim();
+function showModalCancelSampleLot(receiveNo) {
+    const txtFindLotNo = $('#txtFindSampleLotNo').val().trim();
 
-    const modal = $('#modal-cancel-update');
-    const tbody = modal.find('#tbl-cancel-received-body');
+    const modal = $('#modal-sample-cancel-update');
+    const tbody = modal.find('#tbl-sample-cancel-received-body');
 
     tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
 
-    modal.find('#txtTitleCancelUpdate').html(
-        "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ: " + html(receiveNo)
+    modal.find('#txtTitleSampleCancelUpdate').html(
+        "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ (Sample): " + html(receiveNo)
     );
 
     modal.modal('show');
 
     $.ajax({
-        url: urlCancelImportReceiveNo,
+        url: urlCancelImportSampleReceiveNo,
         method: 'GET',
         data: {
             receiveNo: receiveNo,
@@ -284,7 +284,7 @@ function showModalCancelLot(receiveNo) {
     .done(function (items) {
         tbody.empty();
 
-        $('#hddCancelReceiveNo').val(receiveNo);
+        $('#hddSampleCancelReceiveNo').val(receiveNo);
 
         if (!items || items.length === 0) {
             tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
@@ -308,10 +308,10 @@ function showModalCancelLot(receiveNo) {
             const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
 
             return `
-            <tr class="${rowClass}" 
-                    data-receive-id="${html(x.receivedID)}" 
-                    data-order-no="${html(x.orderNo)}" 
-                    data-ttqty="${numRaw(x.ttQty)}" 
+            <tr class="${rowClass}"
+                    data-receive-id="${html(x.receivedID)}"
+                    data-order-no="${html(x.orderNo)}"
+                    data-ttqty="${numRaw(x.ttQty)}"
                     data-ttwg="${numRaw(x.ttWg)}">
                 <td class="text-center">${cusCodeDisplay}</td>
                 <td>${orderNoDisplay}</td>
@@ -347,7 +347,7 @@ function showModalCancelLot(receiveNo) {
         const allEnabled = tbody.find('.chk-row:enabled').length;
         const allChecked = tbody.find('.chk-row:enabled:checked').length;
 
-        $('#chkSelectAll')
+        $('#chkSampleSelectAll')
             .prop('checked', allEnabled > 0 && allChecked === allEnabled)
             .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
 
@@ -357,7 +357,7 @@ function showModalCancelLot(receiveNo) {
             const allEnabled = tbody.find('.chk-row:enabled').length;
             const allChecked = tbody.find('.chk-row:enabled:checked').length;
 
-            $('#chkSelectAll')
+            $('#chkSampleSelectAll')
                 .prop('checked', allEnabled > 0 && allChecked === allEnabled)
                 .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
         });
@@ -386,16 +386,16 @@ function showModalCancelLot(receiveNo) {
     }
 }
 
-async function findReceive() {
-    const txtFindReceivedNo = $('#txtFindReceivedNo').val().trim();
-    const txtFindLotNo = $('#txtFindLotNo').val().trim();
+async function findSampleReceive() {
+    const txtFindReceivedNo = $('#txtFindSampleReceivedNo').val().trim();
+    const txtFindLotNo = $('#txtFindSampleLotNo').val().trim();
 
-    const tbody = $('#tbl-main tbody');
+    const tbody = $('#tbl-sample-main tbody');
 
     tbody.html('<tr><td colspan="5" class="text-center text-muted">กำลังค้นหา...</td></tr>');
 
     $.ajax({
-        url: urlGetReceiveList,
+        url: urlGetSampleReceiveList,
         method: 'GET',
         data: {
             receiveNo: txtFindReceivedNo,
@@ -415,13 +415,13 @@ async function findReceive() {
                         : '<span class="badge badge-secondary">รอรับเข้า</span>';
 
                 const action = r.isReceived && !r.hasRevButNotAll
-                    ? `<button class="btn btn-danger btn-sm" onclick="showModalCancelLot('${r.receiveNo}')">
+                    ? `<button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('${r.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                        </button>`
-                    : `<button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('${r.receiveNo}')">
+                    : `<button class="btn btn-warning btn-sm" onclick="showModalUpdateSampleLot('${r.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                        </button>
-                       <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('${r.receiveNo}')">
+                       <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('${r.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                        </button>`;
 
@@ -445,41 +445,41 @@ async function findReceive() {
 }
 
 
-function refreshReceiveRow(receiveNo) {
+function refreshSampleReceiveRow(receiveNo) {
     $.ajax({
-        url: urlGetReceiveRow,
+        url: urlGetSampleReceiveRow,
         type: 'GET',
         data: { receiveNo: receiveNo },
         success: function (row) {
             if (!row) return;
-            const tr = $(`#tbl-main tr[data-receive-no="${row.receiveNo}"]`);
+            const tr = $(`#tbl-sample-main tr[data-receive-no="${row.receiveNo}"]`);
             if (tr.length) {
                 tr.find('.col-mdate').text(row.mdat);
 
                 if (row.isReceived && !row.hasRevButNotAll) {
                     tr.find('.col-status').html('<span class="badge badge-success">รับเข้าครบแล้ว</span>');
                     tr.find('.col-action').html(`
-                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('${row.receiveNo}')">
+                        <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('${row.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                         </button>
                     `);
                 } else if (row.hasRevButNotAll && !row.isReceived) {
                     tr.find('.col-status').html('<span class="badge badge-warning">รับเข้ายังไม่ครบ</span>');
                     tr.find('.col-action').html(`
-                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('${row.receiveNo}')">
+                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateSampleLot('${row.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('${row.receiveNo}')">
+                        <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('${row.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                         </button>
                     `);
                 } else {
                     tr.find('.col-status').html('<span class="badge badge-secondary">รอรับเข้า</span>');
                     tr.find('.col-action').html(`
-                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('${row.receiveNo}')">
+                        <button class="btn btn-warning btn-sm" onclick="showModalUpdateSampleLot('${row.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('${row.receiveNo}')">
+                        <button class="btn btn-danger btn-sm" onclick="showModalCancelSampleLot('${row.receiveNo}')">
                             <i class="fas fa-folder"></i> ตรวจสอบ
                         </button>
                     `);
@@ -489,9 +489,9 @@ function refreshReceiveRow(receiveNo) {
     });
 }
 
-function ClearFindByReceive() {
-    $("#txtFindReceivedNo").val("");
-    $("#txtFindLotNo").val("");
+function ClearFindBySampleReceive() {
+    $("#txtFindSampleReceivedNo").val("");
+    $("#txtFindSampleLotNo").val("");
 
-    findReceive()
+    findSampleReceive()
 }

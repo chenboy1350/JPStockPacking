@@ -1,4 +1,4 @@
-﻿using JPStockPacking.Data.JPDbContext;
+using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
@@ -8,11 +8,10 @@ using System.Globalization;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class ReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService) : IReceiveManagementService
+    public class SampleReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService) : ISampleReceiveManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
-        private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
 
         public async Task UpdateLotItemsAsync(string receiveNo, string[] orderNos, int[] receiveIds)
         {
@@ -45,9 +44,6 @@ namespace JPStockPacking.Services.Implement
 
         private async Task ImportOrderAsync(string orderNo)
         {
-            List<OrderNotify> orderNotifies = [];
-            List<LotNotify> lotNotifies = [];
-
             var newLots = new List<Lot>();
 
             var existingOrder = await _sPDbContext.Order.AnyAsync(o => o.OrderNo == orderNo && o.IsActive);
@@ -66,31 +62,6 @@ namespace JPStockPacking.Services.Implement
                 {
                     return;
                 }
-
-                foreach (var order in newOrders)
-                {
-                    orderNotifies.Add(new OrderNotify
-                    {
-                        OrderNo = order.OrderNo,
-                        IsNew = true,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
-
-                foreach (var lot in newLots)
-                {
-                    lotNotifies.Add(new LotNotify
-                    {
-                        LotNo = lot.LotNo,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
             }
             else
             {
@@ -102,8 +73,6 @@ namespace JPStockPacking.Services.Implement
             {
                 _sPDbContext.Order.AddRange(newOrders);
                 _sPDbContext.Lot.AddRange(newLots);
-                _sPDbContext.OrderNotify.AddRange(orderNotifies);
-                _sPDbContext.LotNotify.AddRange(lotNotifies);
 
                 await _sPDbContext.SaveChangesAsync();
 
@@ -160,6 +129,8 @@ namespace JPStockPacking.Services.Implement
                     BillNumber = receive.Billnumber,
                     Mdate = receive.Mdate,
                     IsReceived = true,
+                    IsAssigned = true,
+                    IsReturned = true,
                     IsActive = true,
                     CreateDate = DateTime.Now,
                     UpdateDate = DateTime.Now
@@ -197,6 +168,9 @@ namespace JPStockPacking.Services.Implement
                     if (lot == null) continue;
 
                     lot.ReceivedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
+                    lot.AssignedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
+                    lot.ReturnedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
+                    lot.Unallocated = (lot.ReceivedQty ?? 0m) + s.SumQty;
                     lot.UpdateDate = now;
                 }
 
@@ -217,10 +191,10 @@ namespace JPStockPacking.Services.Implement
             try
             {
                 var receivedList = (from r in _sPDbContext.Received
-                                     join l in _sPDbContext.Lot on r.LotNo equals l.LotNo
-                                     join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
-                                     where r.ReceiveId == receiveId && o.CustCode != "SAMPLE" && r.IsActive && !r.IsAssigned && !r.IsReturned
-                                     select r).ToList();
+                                    join l in _sPDbContext.Lot on r.LotNo equals l.LotNo
+                                    join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
+                                    where r.ReceiveId == receiveId && o.CustCode == "SAMPLE" && r.IsActive
+                                    select r).ToList();
 
                 if (receivedList.Count == 0)
                     throw new InvalidOperationException("ไม่พบรายการรับเข้าที่สามารถยกเลิกได้");
@@ -256,6 +230,9 @@ namespace JPStockPacking.Services.Implement
                             $"Lot {s.LotNo} มีจำนวนรับเข้าคงเหลือน้อยกว่าที่จะยกเลิก");
 
                     lot.ReceivedQty = newQty;
+                    lot.AssignedQty = newQty;
+                    lot.ReceivedQty = newQty;
+                    lot.Unallocated = newQty;
                     lot.UpdateDate = now;
                 }
 
@@ -323,9 +300,7 @@ namespace JPStockPacking.Services.Implement
                                 where a.OrderNo == orderNo
                                       && (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025)
                                       && a.Factory == true
-                                      && !a.OrderNo.StartsWith("S")
-                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+                                      && (a.OrderNo.StartsWith("S") || (a.CustCode == "SAMPLE") || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))
 
                                 orderby a.FactoryDate descending
 
@@ -355,7 +330,7 @@ namespace JPStockPacking.Services.Implement
             return [.. existingOrders];
         }
 
-        public async Task<List<Lot>> GetJPLotAsync(List<Order> newOrders)
+        private async Task<List<Lot>> GetJPLotAsync(List<Order> newOrders)
         {
             var Lots = await (from a in _jPDbContext.OrdHorder
                               join b in _jPDbContext.OrdLotno on a.OrderNo equals b.OrderNo into abGroup
@@ -374,9 +349,7 @@ namespace JPStockPacking.Services.Implement
                               where (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025)
                                       && a.Factory == true
                                       && !string.IsNullOrEmpty(b.LotNo)
-                                      && !a.OrderNo.StartsWith("S")
-                                      && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")
-                                      && _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner != "SAMPLE")
+                                      && (a.OrderNo.StartsWith("S") || (a.CustCode == "SAMPLE") || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))
 
                               orderby a.FactoryDate descending
 
@@ -403,7 +376,7 @@ namespace JPStockPacking.Services.Implement
                                   AssignedQty = 0,
                                   ReturnedQty = 0,
                                   Unallocated = 0,
-                                  OperateDays = _productionPlanningService.CalLotOperateDay(Convert.ToInt32(b.TtQty ?? 0)),
+                                  OperateDays = 0,
                                   IsSuccess = false,
                                   IsActive = true,
                                   CreateDate = DateTime.Now,

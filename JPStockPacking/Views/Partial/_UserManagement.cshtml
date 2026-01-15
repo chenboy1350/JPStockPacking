@@ -128,10 +128,6 @@
                                     <label>พนักงาน</label>
                                     <select id="ddlEmp" name="ddlEmp" class="form-control" style="width: 100%">
                                         <option value="" selected>-- เลือกพนักงาน --</option>
-                                        @foreach (var emp in ViewBag.Employees)
-                                        {
-                                            <option value="@emp.EmployeeID">@emp.FirstName @emp.LastName (@emp.NickName)</option>
-                                        }
                                     </select>
                                 </div>
                                 <div class="col-4 mt-2">
@@ -187,10 +183,6 @@
                                     <label>เปลี่ยนพนักงาน</label>
                                     <select id="ddlEditEmp" name="ddlEditEmp" class="form-control" style="width: 100%">
                                         <option value="" selected>-- เลือกพนักงาน --</option>
-                                        @foreach (var emp in ViewBag.Employees)
-                                        {
-                                            <option value="@emp.EmployeeID">@emp.FirstName @emp.LastName (@emp.NickName)</option>
-                                        }
                                     </select>
                                 </div>
                                 <div class="col-4 mt-2">

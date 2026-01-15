@@ -590,7 +590,7 @@ namespace JPStockPacking.Services.Implement
                                 join b in _jPDbContext.OrdOrder on a.OrderNo equals b.Ordno into bGroup
                                 from b in bGroup.DefaultIfEmpty()
 
-                                where a.FactoryDate!.Value.Year == DateTime.Now.Year
+                                where (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025)
                                       && a.Factory == true
                                       && !a.OrderNo.StartsWith("S")
                                       && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")

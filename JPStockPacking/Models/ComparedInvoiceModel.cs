@@ -32,5 +32,6 @@ namespace JPStockPacking.Models
         public bool IsMatched { get; set; } = false;
         public string CustCode { get; set; } = string.Empty;
         public string MakeUnit { get; set; } = string.Empty;
+        public string ListNo { get; set; } = string.Empty;
     }
 }

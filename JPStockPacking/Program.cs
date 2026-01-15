@@ -1,5 +1,6 @@
 using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.SPDbContext;
+using JPStockPacking.Data.BMDbContext;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Implement;
@@ -16,6 +17,7 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("JPDBEntries")));
 builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SPDBEntries")));
+builder.Services.AddDbContext<BMDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("BMDBEntries")));
 
 builder.Services.Configure<AppSettingModel>(builder.Configuration.GetSection("AppSettings"));
 builder.Services.Configure<SendQtyModel>(builder.Configuration.GetSection("SendQtySettings"));
@@ -45,6 +47,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IFormulaManagementService, FormulaManagementService>();
 builder.Services.AddScoped<IPermissionManagement, PermissionManagement>();
 builder.Services.AddScoped<IReturnService, ReturnService>();
+builder.Services.AddScoped<ISampleReceiveManagementService, SampleReceiveManagementService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

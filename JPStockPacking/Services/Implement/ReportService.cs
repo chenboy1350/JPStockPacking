@@ -28,6 +28,11 @@ namespace JPStockPacking.Services.Implement
 
             int totalPages = (int)Math.Ceiling(Items.Count / (double)rowsPerPage);
 
+            if (totalPages == 0 && ItemSizes.Count > 0)
+            {
+                totalPages = 1;
+            }
+
             var document = Document.Create(container =>
             {
                 for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
@@ -427,7 +432,6 @@ namespace JPStockPacking.Services.Implement
                                 if (comparedInvoiceFilterModel.FromDate != null && comparedInvoiceFilterModel.ToDate == null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.FromDate:dd/MM/yyyy}").FontSize(8);
                                 if (comparedInvoiceFilterModel.FromDate == null && comparedInvoiceFilterModel.ToDate != null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.ToDate:dd/MM/yyyy}").FontSize(8);
 
-
                                 if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.InvoiceNo))
                                     table.Cell().Element(CellStyle).AlignLeft().Text($"InvoiceNo : {comparedInvoiceFilterModel.InvoiceNo.ToUpper()}").FontSize(8);
                                 if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.OrderNo))
@@ -447,6 +451,7 @@ namespace JPStockPacking.Services.Implement
                                     columns.RelativeColumn(1);
                                     columns.RelativeColumn(3);
                                     columns.RelativeColumn(3);
+                                    columns.RelativeColumn(1);
                                     columns.RelativeColumn(3);
                                     columns.RelativeColumn(2);
                                     columns.RelativeColumn(2);
@@ -460,6 +465,7 @@ namespace JPStockPacking.Services.Implement
                                 table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("No").FontSize(8).SemiBold();
                                 table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("InvoiceNo").FontSize(8).SemiBold();
                                 table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("OrderNo").FontSize(8).SemiBold();
+                                table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("ListNo").FontSize(8).SemiBold();
                                 table.Cell().RowSpan(2).Element(CellStyle).AlignCenter().AlignMiddle().Text("Article").FontSize(8).SemiBold();
 
                                 table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text("EXPORT").FontSize(8).SemiBold();
@@ -480,7 +486,8 @@ namespace JPStockPacking.Services.Implement
                                 {
                                     table.Cell().Element(CellStyle).AlignCenter().Text($"{i}").FontSize(8);
                                     table.Cell().Element(CellStyle).AlignCenter().Text($"{item.JPInvoiceNo}").FontSize(8);
-                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.CustCode}/{item.JPOrderNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.CustCode.Trim()}/{item.JPOrderNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
                                     table.Cell().Element(CellStyle).AlignLeft().Text($"{item.JPArticle}").FontSize(8);
 
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{item.JPTtQty}").FontSize(8);
@@ -498,7 +505,7 @@ namespace JPStockPacking.Services.Implement
 
                                 if (pageIndex == totalPages - 1)
                                 {
-                                    table.Cell().ColumnSpan(7).Padding(2).Column(col =>
+                                    table.Cell().ColumnSpan(8).Padding(2).Column(col =>
                                     {
                                         col.Item().AlignRight().Padding(2)
                                             .Text($"EXPORT TOTAL :     {FormatNumber(model.Where(w => w.MakeUnit == "PC").Sum(s => s.JPTtQty))}    PC").FontSize(10).Bold();

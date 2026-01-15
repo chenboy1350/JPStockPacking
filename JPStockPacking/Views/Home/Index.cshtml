@@ -54,6 +54,16 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "SampleReceiveManagement"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("SampleReceiveManagement", "Home")">
+                                <i class="nav-icon fas fa-receipt"></i>
+                                <p>ใบรับสินค้าตัวอย่าง (ลงบิล)</p>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.HasClaim("Menu", "OrderManagement"))
                     {
                         <li class="nav-item">
@@ -206,6 +216,26 @@
                                         </div>
                                         <div class="mc-content">
                                             <h4 class="mc-title">ใบรับสินค้า</h4>
+                                            <p class="mc-desc">บันทึกรับสินค้าเข้าระบบ</p>
+                                        </div>
+                                        <div class="mc-arrow">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+
+                        @if (User.HasClaim("Menu", "SampleReceiveManagement"))
+                        {
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-4">
+                                <a href="#" class="mc-link" data-action="@Url.Action("SampleReceiveManagement", "Home")">
+                                    <div class="mc-card mc-card--green">
+                                        <div class="mc-icon">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </div>
+                                        <div class="mc-content">
+                                            <h4 class="mc-title">ใบรับสินค้าตัวอย่าง</h4>
                                             <p class="mc-desc">บันทึกรับสินค้าเข้าระบบ</p>
                                         </div>
                                         <div class="mc-arrow">
@@ -486,6 +516,12 @@
         window.urlMarkInvoiceAsRead = '@Url.Action("MarkInvoiceAsRead", "Home")';
         window.urlGetConfirmedInvoice = '@Url.Action("GetConfirmedInvoice", "Home")';
         window.urlGetIsMarked = '@Url.Action("GetIsMarked", "Home")';
+        window.urlGetSampleReceiveRow = '@Url.Action("GetSampleReceiveRow", "Home")';
+        window.urlGetSampleReceiveList = '@Url.Action("GetSampleReceiveList", "Home")';
+        window.urlImportSampleReceiveNo = '@Url.Action("ImportSampleReceiveNo", "Home")';
+        window.urlCancelImportSampleReceiveNo = '@Url.Action("CancelImportSampleReceiveNo", "Home")';
+        window.urlUpdateSampleLotItems = '@Url.Action("UpdateSampleLotItems", "Home")';
+        window.urlCancelUpdateSampleLotItems = '@Url.Action("CancelUpdateSampleLotItems", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -499,10 +535,10 @@
     <script src="~/js/PermissionManagement.js" asp-append-version="true"></script>
     <script src="~/js/EmploeeManagement.js" asp-append-version="true"></script>
     <script src="~/js/PackPlaning.js" asp-append-version="true"></script>
+    <script src="~/js/SampleReceiveManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {
-            // Sidebar navigation
             $('.nav-sidebar .nav-link').on('click', function(e) {
                 e.preventDefault();
                 var actionUrl = $(this).data('action');
@@ -525,7 +561,6 @@
                 }
             });
 
-            // Menu card navigation
             $('.mc-link').on('click', function(e) {
                 e.preventDefault();
                 var actionUrl = $(this).data('action');
@@ -554,7 +589,6 @@
                 }
             });
 
-            // Sign out
             $('#btnSignOut').on('click', function(e) {
                 e.preventDefault();
                 $('#loadingIndicator').show();
