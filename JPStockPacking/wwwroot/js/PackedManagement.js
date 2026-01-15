@@ -541,37 +541,48 @@ function FindOrderToStore() {
 
         $("#btnSelect").removeClass("d-none");
 
-        $.each(response, function (i, item) {
-            const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
-            const rowHtml = `
-                <tr data-lot-no="${html(item.lotNo)}"
-                    data-ttwg="${html(item.ttWg)}"
-                    data-percentage="${html(item.percentage)}"
-                    data-sendtopack-qty="${html(item.sendToPack_Qty)}"
+        // Batch rendering to prevent out-of-memory crash
+        const BATCH_SIZE = 50;
+        let currentIndex = 0;
 
-                    data-store-fixed-qty="${html(item.store_FixedQty)}"
-                    data-store-fixed-wg="${html(item.store_FixedWg)}"
-                    data-store-draft-qty="${html(item.store_Qty)}"
-                    data-store-wg="${html(item.store_Wg)}"
+        function renderBatch() {
+            const fragment = document.createDocumentFragment();
+            const endIndex = Math.min(currentIndex + BATCH_SIZE, response.length);
 
-                    data-melt-fixed-qty="${html(item.melt_FixedQty)}"
-                    data-melt-fixed-wg="${html(item.melt_FixedWg)}"
-                    data-melt-draft-qty="${html(item.melt_Qty)}"
-                    data-melt-wg="${html(item.melt_Wg)}"
-                    data-melt-des="${html(item.breakDescriptionId)}"
+            for (let i = currentIndex; i < endIndex; i++) {
+                const item = response[i];
+                const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
 
-                    data-export-fixed-qty="${html(item.export_FixedQty)}"
-                    data-export-fixed-wg="${html(item.export_FixedWg)}"
-                    data-export-draft-qty="${html(item.export_Qty)}"
-                    data-export-wg="${html(item.export_Wg)}"
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-lot-no', item.lotNo || '');
+                tr.setAttribute('data-ttwg', item.ttWg || 0);
+                tr.setAttribute('data-percentage', item.percentage || 0);
+                tr.setAttribute('data-sendtopack-qty', item.sendToPack_Qty || 0);
 
-                    data-lost-fixed-qty="${html(item.lost_FixedQty)}"
-                    data-lost-fixed-wg="${html(item.lost_FixedWg)}"
-                    data-lost-draft-qty="${html(item.lost_Qty)}"
-                    data-lost-wg="${html(item.lost_Wg)}"
+                tr.setAttribute('data-store-fixed-qty', item.store_FixedQty || 0);
+                tr.setAttribute('data-store-fixed-wg', item.store_FixedWg || 0);
+                tr.setAttribute('data-store-draft-qty', item.store_Qty || 0);
+                tr.setAttribute('data-store-wg', item.store_Wg || 0);
 
-                    data-available-qty="${html(available_qty)}"
-                    >
+                tr.setAttribute('data-melt-fixed-qty', item.melt_FixedQty || 0);
+                tr.setAttribute('data-melt-fixed-wg', item.melt_FixedWg || 0);
+                tr.setAttribute('data-melt-draft-qty', item.melt_Qty || 0);
+                tr.setAttribute('data-melt-wg', item.melt_Wg || 0);
+                tr.setAttribute('data-melt-des', item.breakDescriptionId || '');
+
+                tr.setAttribute('data-export-fixed-qty', item.export_FixedQty || 0);
+                tr.setAttribute('data-export-fixed-wg', item.export_FixedWg || 0);
+                tr.setAttribute('data-export-draft-qty', item.export_Qty || 0);
+                tr.setAttribute('data-export-wg', item.export_Wg || 0);
+
+                tr.setAttribute('data-lost-fixed-qty', item.lost_FixedQty || 0);
+                tr.setAttribute('data-lost-fixed-wg', item.lost_FixedWg || 0);
+                tr.setAttribute('data-lost-draft-qty', item.lost_Qty || 0);
+                tr.setAttribute('data-lost-wg', item.lost_Wg || 0);
+
+                tr.setAttribute('data-available-qty', available_qty);
+
+                tr.innerHTML = `
                     <td class="text-center">${i + 1}</td>
                     <td class="text-start"><strong>${html(item.article)}</strong></br><small>${html(item.custCode)}/${html(item.orderNo)}</small></td>
                     <td class="text-center">${html(item.listNo)}</td>
@@ -672,10 +683,20 @@ function FindOrderToStore() {
                             </div>
                         </div>
                     </td>
-                </tr>`;
+                `;
 
-            tbody.append(rowHtml);
-        });
+                fragment.appendChild(tr);
+            }
+
+            tbody[0].appendChild(fragment);
+            currentIndex = endIndex;
+
+            if (currentIndex < response.length) {
+                requestAnimationFrame(renderBatch);
+            }
+        }
+
+        renderBatch();
     })
     .fail(function (error) {
         $('#loadingIndicator').hide();
