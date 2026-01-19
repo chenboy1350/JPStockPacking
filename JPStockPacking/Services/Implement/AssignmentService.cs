@@ -82,6 +82,7 @@ namespace JPStockPacking.Services.Implement
                           && table.IsActive
                           && assignmentReceived.IsActive
                           && received.LotNo == lotNo
+                          && !received.IsReturned
                     select received.ReceivedId
                 )
                 .Distinct()
@@ -341,17 +342,26 @@ namespace JPStockPacking.Services.Implement
 
                 if (lot != null)
                 {
-                    lot.AssignedQty = await
+                    // คำนวณ TtQty ของ Received ที่เพิ่ง assign ใหม่
+                    var newAssignedQty = await
                     (
-                        from ar in _sPDbContext.AssignmentReceived
-                        join r in _sPDbContext.Received
-                            on ar.ReceivedId equals r.ReceivedId
-                        where ar.IsActive
-                              && r.LotNo == lotNo
+                        from r in _sPDbContext.Received
+                        where toAssign.Contains(r.ReceivedId)
                         select r.TtQty ?? 0
                     )
                     .SumAsync();
 
+                    // คำนวณ TtQty ของ Received ที่เพิ่ง unassign
+                    var unassignedQty = await
+                    (
+                        from r in _sPDbContext.Received
+                        where toUnassign.Contains(r.ReceivedId)
+                        select r.TtQty ?? 0
+                    )
+                    .SumAsync();
+
+                    // บวกเพิ่มอันใหม่ ลบอันที่ unassign ออก
+                    lot.AssignedQty = (lot.AssignedQty ?? 0) + newAssignedQty - unassignedQty;
                     lot.UpdateDate = now;
                 }
 
@@ -364,8 +374,5 @@ namespace JPStockPacking.Services.Implement
                 throw;
             }
         }
-
-
-
     }
 }
