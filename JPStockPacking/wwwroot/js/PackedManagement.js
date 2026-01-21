@@ -530,58 +530,61 @@ function FindOrderToStore() {
         data: { orderNo: txtOrderNo },
         dataType: 'json',
     })
-    .done(function (response) {
-        $('#loadingIndicator').hide();
-        tbody.empty();
+        .done(function (response) {
+            $('#loadingIndicator').hide();
+            tbody.empty();
 
-        if (!response || response.length === 0) {
-            tbody.append('<tr><td colspan="14" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
+            if (!response || response.length === 0) {
+                tbody.append('<tr><td colspan="14" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                return;
+            }
 
-        $("#btnSelect").removeClass("d-none");
+            $("#btnSelect").removeClass("d-none");
 
-        const BATCH_SIZE = 50;
-        let currentIndex = 0;
+            const BATCH_SIZE = 50;
+            let currentIndex = 0;
 
-        function renderBatch() {
-            const fragment = document.createDocumentFragment();
-            const endIndex = Math.min(currentIndex + BATCH_SIZE, response.length);
+            function renderBatch() {
+                const fragment = document.createDocumentFragment();
+                const endIndex = Math.min(currentIndex + BATCH_SIZE, response.length);
 
-            for (let i = currentIndex; i < endIndex; i++) {
-                const item = response[i];
-                const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
+                for (let i = currentIndex; i < endIndex; i++) {
+                    const item = response[i];
+                    const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
 
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-lot-no', item.lotNo || '');
-                tr.setAttribute('data-ttwg', item.ttWg || 0);
-                tr.setAttribute('data-percentage', item.percentage || 0);
-                tr.setAttribute('data-sendtopack-qty', item.sendToPack_Qty || 0);
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-lot-no', item.lotNo || '');
+                    tr.setAttribute('data-ttwg', item.ttWg || 0);
+                    tr.setAttribute('data-percentage', item.percentage || 0);
+                    tr.setAttribute('data-sendtopack-qty', item.sendToPack_Qty || 0);
+                    tr.setAttribute('data-bs-toggle', 'tooltip');
+                    tr.setAttribute('data-bs-placement', 'top');
+                    tr.setAttribute('data-bs-title', `${item.article || '-'} / ${item.listNo || '-'}`);
 
-                tr.setAttribute('data-store-fixed-qty', item.store_FixedQty || 0);
-                tr.setAttribute('data-store-fixed-wg', item.store_FixedWg || 0);
-                tr.setAttribute('data-store-draft-qty', item.store_Qty || 0);
-                tr.setAttribute('data-store-wg', item.store_Wg || 0);
+                    tr.setAttribute('data-store-fixed-qty', item.store_FixedQty || 0);
+                    tr.setAttribute('data-store-fixed-wg', item.store_FixedWg || 0);
+                    tr.setAttribute('data-store-draft-qty', item.store_Qty || 0);
+                    tr.setAttribute('data-store-wg', item.store_Wg || 0);
 
-                tr.setAttribute('data-melt-fixed-qty', item.melt_FixedQty || 0);
-                tr.setAttribute('data-melt-fixed-wg', item.melt_FixedWg || 0);
-                tr.setAttribute('data-melt-draft-qty', item.melt_Qty || 0);
-                tr.setAttribute('data-melt-wg', item.melt_Wg || 0);
-                tr.setAttribute('data-melt-des', item.breakDescriptionId || '');
+                    tr.setAttribute('data-melt-fixed-qty', item.melt_FixedQty || 0);
+                    tr.setAttribute('data-melt-fixed-wg', item.melt_FixedWg || 0);
+                    tr.setAttribute('data-melt-draft-qty', item.melt_Qty || 0);
+                    tr.setAttribute('data-melt-wg', item.melt_Wg || 0);
+                    tr.setAttribute('data-melt-des', item.breakDescriptionId || '');
 
-                tr.setAttribute('data-export-fixed-qty', item.export_FixedQty || 0);
-                tr.setAttribute('data-export-fixed-wg', item.export_FixedWg || 0);
-                tr.setAttribute('data-export-draft-qty', item.export_Qty || 0);
-                tr.setAttribute('data-export-wg', item.export_Wg || 0);
+                    tr.setAttribute('data-export-fixed-qty', item.export_FixedQty || 0);
+                    tr.setAttribute('data-export-fixed-wg', item.export_FixedWg || 0);
+                    tr.setAttribute('data-export-draft-qty', item.export_Qty || 0);
+                    tr.setAttribute('data-export-wg', item.export_Wg || 0);
 
-                tr.setAttribute('data-lost-fixed-qty', item.lost_FixedQty || 0);
-                tr.setAttribute('data-lost-fixed-wg', item.lost_FixedWg || 0);
-                tr.setAttribute('data-lost-draft-qty', item.lost_Qty || 0);
-                tr.setAttribute('data-lost-wg', item.lost_Wg || 0);
+                    tr.setAttribute('data-lost-fixed-qty', item.lost_FixedQty || 0);
+                    tr.setAttribute('data-lost-fixed-wg', item.lost_FixedWg || 0);
+                    tr.setAttribute('data-lost-draft-qty', item.lost_Qty || 0);
+                    tr.setAttribute('data-lost-wg', item.lost_Wg || 0);
 
-                tr.setAttribute('data-available-qty', available_qty);
+                    tr.setAttribute('data-available-qty', available_qty);
 
-                tr.innerHTML = `
+                    tr.innerHTML = `
                     <td class="text-center">${i + 1}</td>
                     <td class="text-start"><strong>${html(item.article)}</strong></br><small>${html(item.custCode)}/${html(item.orderNo)}</small></td>
                     <td class="text-center">${html(item.listNo)}</td>
@@ -589,7 +592,7 @@ function FindOrderToStore() {
                     <td class="text-end">${item.si != 0 ? numRaw(item.si) : '-'}</td>
                     <td class="text-end">${item.sendPack_Qty != 0 ? numRaw(item.sendPack_Qty) : '-'}</td>
                     <td class="text-end">${item.sendToPack_Qty != 0 ? numRaw(item.sendToPack_Qty) : '-'}</td>
-                    <td class="text-end col-packed">${ item.packed_Qty != 0 ? numRaw(item.packed_Qty) : '-'}</td>
+                    <td class="text-end col-packed">${item.packed_Qty != 0 ? numRaw(item.packed_Qty) : '-'}</td>
 
                     <td class="text-center col-available fs-5"><strong>${available_qty != 0 ? numRaw(available_qty) : '-'}</strong></td>
 
@@ -684,28 +687,31 @@ function FindOrderToStore() {
                     </td>
                 `;
 
-                fragment.appendChild(tr);
+                    fragment.appendChild(tr);
+                }
+
+                tbody[0].appendChild(fragment);
+                currentIndex = endIndex;
+
+                if (currentIndex < response.length) {
+                    requestAnimationFrame(renderBatch);
+                } else {
+                    // Initialize Bootstrap tooltips after all rows are rendered
+                    const tooltipTriggerList = tbody[0].querySelectorAll('[data-bs-toggle="tooltip"]');
+                    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+                }
             }
 
-            tbody[0].appendChild(fragment);
-            currentIndex = endIndex;
-
-            if (currentIndex < response.length) {
-                requestAnimationFrame(renderBatch);
-            }
-        }
-
-        renderBatch();
-    })
-    .fail(function (error) {
-        $('#loadingIndicator').hide();
-        console.error('Error fetching data:', error);
-        tbody.empty().append('<tr><td colspan="14" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>');
-    });
+            renderBatch();
+        })
+        .fail(function (error) {
+            $('#loadingIndicator').hide();
+            console.error('Error fetching data:', error);
+            tbody.empty().append('<tr><td colspan="14" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>');
+        });
 }
 
-async function confirmSendToStore()
-{
+async function confirmSendToStore() {
     const uid = $('#hddUserID').val();
     const selectedLots = [];
     $(".chk-row:checked").each(function () {
@@ -874,8 +880,7 @@ function ShowForceSendToModal(button) {
     $('#modal-force-send-to-export').modal('show');
 }
 
-function ClearSearch()
-{
+function ClearSearch() {
     $('#txtOrderNo').val('');
     const tbody = $('#tbl-sendToStore-body');
     tbody.empty().append('<tr><td colspan="13" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td></tr>');
