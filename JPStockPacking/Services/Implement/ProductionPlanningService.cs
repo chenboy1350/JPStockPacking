@@ -39,19 +39,6 @@ namespace JPStockPacking.Services.Implement
             return customerGroups;
         }
 
-        public async Task<List<PackMethod>> GetPackMethodsAsync()
-        {
-            var packMethods = await _sPDbContext.PackMethod
-                .Where(pm => pm.IsActive)
-                .Select(pm => new PackMethod
-                {
-                    PackMethodId = pm.PackMethodId,
-                    Name = pm.Name
-                })
-                .ToListAsync();
-            return packMethods;
-        }
-
         public async Task RegroupCustomer()
         {
             using var transaction = await _sPDbContext.Database.BeginTransactionAsync();

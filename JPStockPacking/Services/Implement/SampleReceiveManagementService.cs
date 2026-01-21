@@ -298,7 +298,7 @@ namespace JPStockPacking.Services.Implement
                                 from b in bGroup.DefaultIfEmpty()
 
                                 where a.OrderNo == orderNo
-                                      && (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025)
+                                      && (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025 || a.FactoryDate!.Value.Year == 2024)
                                       && a.Factory == true
                                       && (a.OrderNo.StartsWith("S") || (a.CustCode == "SAMPLE") || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))
 
@@ -346,7 +346,7 @@ namespace JPStockPacking.Services.Implement
                               join i in _jPDbContext.CfnCode on e.FnCode equals i.FnCode into eiGroup
                               from i in eiGroup.DefaultIfEmpty()
 
-                              where (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025)
+                              where (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025 || a.FactoryDate!.Value.Year == 2024)
                                       && a.Factory == true
                                       && !string.IsNullOrEmpty(b.LotNo)
                                       && (a.OrderNo.StartsWith("S") || (a.CustCode == "SAMPLE") || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))

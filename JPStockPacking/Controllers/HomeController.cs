@@ -27,7 +27,6 @@ namespace JPStockPacking.Controllers
         IAuditService comparedInvoiceService,
         Serilog.ILogger logger,
         IProductionPlanningService productionPlanningService,
-        IFormulaManagementService formulaManagementService,
         IPermissionManagement permissionManagement,
         IReturnService returnService,
         ISampleReceiveManagementService sampleReceiveManagementService) : Controller
@@ -48,7 +47,6 @@ namespace JPStockPacking.Controllers
         private readonly IAuditService _auditService = comparedInvoiceService;
         private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
         private readonly Serilog.ILogger _logger = logger;
-        private readonly IFormulaManagementService _formulaManagementService = formulaManagementService;
         private readonly IPermissionManagement _permissionManagement = permissionManagement;
         private readonly IReturnService _returnService = returnService;
         private readonly ISampleReceiveManagementService _sampleReceiveManagementService = sampleReceiveManagementService;
@@ -135,17 +133,6 @@ namespace JPStockPacking.Controllers
             ViewBag.Departments = await _pISService.GetDepartmentAsync();
             var res = await _pISService.GetEmployeeAsync();
             return PartialView("~/Views/Partial/_EmployeeManagement.cshtml", res);
-        }
-
-        [Authorize]
-        public async Task<IActionResult> FormulaManagement()
-        {
-            //await _productionPlanningService.RegroupCustomer();
-            ViewBag.CustomerGroups = await _productionPlanningService.GetCustomerGroupsAsync();
-            ViewBag.ProductionTypes = await _productionPlanningService.GetProductionTypeAsync();
-            ViewBag.PackMethods = await _productionPlanningService.GetPackMethodsAsync();
-            var result = await _formulaManagementService.GetFormula(new Formula());
-            return PartialView("~/Views/Partial/_FormulaManagement.cshtml", result);
         }
 
         [Authorize]
@@ -821,59 +808,6 @@ namespace JPStockPacking.Controllers
 
                 //return File(pdfBytes, "application/pdf");
                 return Ok();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> GetFormula([FromBody] Formula formula)
-        {
-            var result = await _formulaManagementService.GetFormula(formula);
-            return Ok(result);
-        }
-
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> AddNewFormula([FromBody] Formula formula)
-        {
-            try
-            {
-                var res = await _formulaManagementService.AddNewFormula(formula);
-                return Ok(res);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpPatch]
-        [Authorize]
-        public async Task<IActionResult> EditFormula([FromBody] Formula formula)
-        {
-            try
-            {
-                var res = await _formulaManagementService.UpdateFormula(formula);
-                return Ok(res);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpPatch]
-        [Authorize]
-        public async Task<IActionResult> ToggleFormulaStatus([FromBody] Formula formula)
-        {
-            try
-            {
-                var res = await _formulaManagementService.ToggleFormulaStatus(formula.FormulaId);
-                return Ok(res);
             }
             catch (Exception ex)
             {

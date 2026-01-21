@@ -6,7 +6,6 @@ namespace JPStockPacking.Services.Interface
     {
         Task<List<CustomerGroup>> GetCustomerGroupsAsync();
         Task<List<ProductType>> GetProductionTypeAsync();
-        Task<List<PackMethod>> GetPackMethodsAsync();
         Task RegroupCustomer();
         double CalLotOperateDay(int TtQty);
         Task GetOperateOrderToPlan(DateTime? StartDate = null, DateTime? EndDate = null);

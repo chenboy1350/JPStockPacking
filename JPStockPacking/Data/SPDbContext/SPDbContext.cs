@@ -30,8 +30,6 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<Export> Export { get; set; }
 
-    public virtual DbSet<Formula> Formula { get; set; }
-
     public virtual DbSet<Lost> Lost { get; set; }
 
     public virtual DbSet<Lot> Lot { get; set; }
@@ -47,8 +45,6 @@ public partial class SPDbContext : DbContext
     public virtual DbSet<Order> Order { get; set; }
 
     public virtual DbSet<OrderNotify> OrderNotify { get; set; }
-
-    public virtual DbSet<PackMethod> PackMethod { get; set; }
 
     public virtual DbSet<Permission> Permission { get; set; }
 
