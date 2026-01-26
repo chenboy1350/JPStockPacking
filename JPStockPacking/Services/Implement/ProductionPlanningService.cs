@@ -19,6 +19,7 @@ namespace JPStockPacking.Services.Implement
 
         public async Task<List<OrderPlanModel>> GetOrderToPlan(DateTime FromDate, DateTime ToDate)
         {
+            // Query หลัก (ที่ทำงานได้อยู่แล้ว)
             var result = await (from ord in _sPDbContext.Order
                                 join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
                                 where ord.SeldDate1 >= FromDate
@@ -29,6 +30,7 @@ namespace JPStockPacking.Services.Implement
                                 {
                                     OrderNo = ord.OrderNo,
                                     CustCode = ord.CustCode ?? string.Empty,
+                                    CustomerGroup = 5, // ใส่ default ไว้ก่อน
                                     Article = validLots.FirstOrDefault()!.Article ?? string.Empty,
                                     ProdType = validLots.FirstOrDefault()!.EdesArt ?? string.Empty,
                                     Qty = validLots.Sum(lot => lot.TtQty ?? 0),
@@ -36,6 +38,21 @@ namespace JPStockPacking.Services.Implement
                                     OperateDay = validLots.Sum(lot => lot.OperateDays ?? 0),
                                     DueDate = ord.SeldDate1 ?? DateTime.MinValue
                                 }).ToListAsync();
+
+            // ดึง CustomerGroup แยก แล้ว map ใน memory
+            var custCodes = result.Select(r => r.CustCode).Distinct().ToList();
+            var customerGroups = await _sPDbContext.MappingCustomerGroup
+                .Where(cg => custCodes.Contains(cg.CustCode))
+                .ToDictionaryAsync(cg => cg.CustCode, cg => cg.CustomerGroupId);
+
+            // อัพเดท CustomerGroup
+            foreach (var item in result)
+            {
+                if (customerGroups.TryGetValue(item.CustCode, out var groupId))
+                {
+                    item.CustomerGroup = groupId;
+                }
+            }
 
             foreach (var item in result)
             {

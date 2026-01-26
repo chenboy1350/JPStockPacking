@@ -4,6 +4,7 @@ namespace JPStockPacking.Data.Models
     {
         public string OrderNo { get; set; } = string.Empty;
         public string CustCode { get; set; } = string.Empty;
+        public int CustomerGroup { get; set; } = 0;
         public string Article { get; set; } = string.Empty;
         public decimal Qty { get; set; } = 0;
         public decimal SendToPackQty { get; set; } = 0;

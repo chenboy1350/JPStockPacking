@@ -193,8 +193,26 @@ namespace JPStockPacking.Services.Implement
                 var receivedList = (from r in _sPDbContext.Received
                                     join l in _sPDbContext.Lot on r.LotNo equals l.LotNo
                                     join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
-                                    where r.ReceiveId == receiveId && o.CustCode == "SAMPLE" && r.IsActive
+                                    where r.ReceiveId == receiveId && r.IsActive
                                     select r).ToList();
+
+                foreach (var received in receivedList)
+                {
+                    var jpReceivedList = from a in _jPDbContext.OrdHorder
+                             join b in _jPDbContext.OrdLotno on a.OrderNo equals b.OrderNo into abGroup
+                             from b in abGroup.DefaultIfEmpty()
+                             where b.LotNo == received.LotNo
+                                && (a.OrderNo.StartsWith("S") 
+                                    || (a.CustCode == "SAMPLE") 
+                                    || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))
+                             select a;
+
+                    if (!jpReceivedList.Any())
+                    {
+                        receivedList.Remove(received);
+                    }
+                }
+
 
                 if (receivedList.Count == 0)
                     throw new InvalidOperationException("ไม่พบรายการรับเข้าที่สามารถยกเลิกได้");
@@ -422,7 +440,7 @@ namespace JPStockPacking.Services.Implement
                 query = query.Where(b => _jPDbContext.Spdreceive.Any(sr => sr.Lotno.Contains(lotNo) && sr.ReceiveNo == b.ReceiveNo));
             }
 
-            var receives = await query.OrderByDescending(o => o.Mdate).Take(100).ToListAsync();
+            var receives = await query.OrderByDescending(o => o.Mdate).Take(200).ToListAsync();
 
             var receiveNos = receives.Select(r => r.ReceiveNo).ToList();
 
