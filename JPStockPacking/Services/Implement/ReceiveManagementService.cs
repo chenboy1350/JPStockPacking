@@ -403,7 +403,7 @@ namespace JPStockPacking.Services.Implement
                                   AssignedQty = 0,
                                   ReturnedQty = 0,
                                   Unallocated = 0,
-                                  OperateDays = _productionPlanningService.CalLotOperateDay(Convert.ToInt32(b.TtQty ?? 0)),
+                                  OperateDays = _productionPlanningService.CalLotOperateDay(Convert.ToInt32(b.TtQty ?? 0), f.EdesArt, e.Article, a.OrderNo),
                                   IsSuccess = false,
                                   IsActive = true,
                                   CreateDate = DateTime.Now,

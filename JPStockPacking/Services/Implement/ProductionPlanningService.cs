@@ -1,42 +1,80 @@
-﻿using JPStockPacking.Data.JPDbContext;
+﻿using JPStockPacking.Data.BMDbContext;
+using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.JPDbContext.Entities;
+using JPStockPacking.Data.Models;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class ProductionPlanningService(JPDbContext jPDbContext, SPDbContext sPDbContext) : IProductionPlanningService
+    public class ProductionPlanningService(JPDbContext jPDbContext, SPDbContext sPDbContext, BMDbContext bMDbContext) : IProductionPlanningService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
+        private readonly BMDbContext _bMDbContext = bMDbContext;
 
-        public async Task<List<CustomerGroup>> GetCustomerGroupsAsync()
+        public async Task<List<OrderPlanModel>> GetOrderToPlan(DateTime FromDate, DateTime ToDate)
         {
-            var customerGroups = await _sPDbContext.CustomerGroup
-                .Where(cg => cg.IsActive)
-                .Select(cg => new CustomerGroup
-                {
-                    CustomerGroupId = cg.CustomerGroupId,
-                    Name = cg.Name
-                })
-                .ToListAsync();
-            return customerGroups;
-        }
+            var result = await (from ord in _sPDbContext.Order
+                                join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
+                                where ord.SeldDate1 >= FromDate
+                                      && ord.SeldDate1 <= ToDate
+                                      && lotGroup.Any(lg => lg.OperateDays > 0)
+                                let validLots = lotGroup.Where(lg => lg.OperateDays > 0)
+                                select new OrderPlanModel
+                                {
+                                    OrderNo = ord.OrderNo,
+                                    CustCode = ord.CustCode ?? string.Empty,
+                                    Article = validLots.FirstOrDefault()!.Article ?? string.Empty,
+                                    ProdType = validLots.FirstOrDefault()!.EdesArt ?? string.Empty,
+                                    Qty = validLots.Sum(lot => lot.TtQty ?? 0),
+                                    SendToPackQty = validLots.Sum(lot => lot.ReceivedQty ?? 0),
+                                    OperateDay = validLots.Sum(lot => lot.OperateDays ?? 0),
+                                    DueDate = ord.SeldDate1 ?? DateTime.MinValue
+                                }).ToListAsync();
 
-        public async Task<List<ProductType>> GetProductionTypeAsync()
-        {
-            var customerGroups = await _sPDbContext.ProductType
-                .Where(cg => cg.IsActive)
-                .Select(cg => new ProductType
+            foreach (var item in result)
+            {
+                double BaseTime = 0;
+                var a = _bMDbContext.OrderDetail.FirstOrDefault(od => od.OrderNo == item.OrderNo && od.Article == item.Article);
+                if (a != null)
                 {
-                    ProductTypeId = cg.ProductTypeId,
-                    Name = cg.Name
-                })
-                .ToListAsync();
-            return customerGroups;
+                    if (!string.IsNullOrEmpty(a.Mask))
+                    {
+                        BaseTime += 0.2;
+                    }
+
+                    if (!string.IsNullOrEmpty(a.Box))
+                    {
+                        BaseTime += 0.2;
+                    }
+
+                    if (!string.IsNullOrEmpty(a.MaskAndBox))
+                    {
+                        BaseTime += 0.3;
+                    }
+                }
+                else
+                {
+                    BaseTime = 0.3;
+                }
+
+
+                var b = _sPDbContext.ProductType.FirstOrDefault(pt => pt.Name == item.ProdType.Trim());
+                if (b != null && b.BaseTime.HasValue)
+                {
+                    BaseTime += b.BaseTime.Value;
+                }
+
+                item.BaseTime = BaseTime;
+                item.SendToPackOperateDay = CalLotOperateDay((int)item.SendToPackQty, item.ProdType, item.Article, item.OrderNo);
+            }
+
+            return result;
         }
 
         public async Task RegroupCustomer()
@@ -118,12 +156,43 @@ namespace JPStockPacking.Services.Implement
         }
 
 
-        public double CalLotOperateDay(int TtQty)
+        public double CalLotOperateDay(int TtQty, string ProdType, string Article, string OrderNo)
         {
+            double BaseTime = 0;
+            var a = _bMDbContext.OrderDetail.FirstOrDefault(od => od.OrderNo == OrderNo && od.Article == Article);
+            if (a != null)
+            {
+                if (!string.IsNullOrEmpty(a.Mask))
+                {
+                    BaseTime += 0.2;
+                }
+
+                if (!string.IsNullOrEmpty(a.Box))
+                {
+                    BaseTime += 0.2;
+                }
+
+                if (!string.IsNullOrEmpty(a.MaskAndBox))
+                {
+                    BaseTime += 0.3;
+                }
+            }
+            else
+            {
+                BaseTime = 0.3;
+            }
+
+
+            var b = _sPDbContext.ProductType.FirstOrDefault(pt => pt.Name == ProdType.Trim());
+            if (b != null && b.BaseTime.HasValue)
+            {
+                BaseTime += b.BaseTime.Value;
+            }
+
             if (TtQty > 0)
             {
                 ProductionPlanningCalculator productionPlanningCalculator = new();
-                var productionPlan = productionPlanningCalculator.CalculateProductionPlan(TtQty);
+                var productionPlan = productionPlanningCalculator.CalculateProductionPlan(TtQty, BaseTime);
                 return productionPlan.ActualProductionDays;
             }
             else

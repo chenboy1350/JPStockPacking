@@ -1,5 +1,3 @@
-using JPStockPacking.Data.JPDbContext.Entities;
-using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
@@ -927,6 +925,21 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
+        public async Task<IActionResult> GetOrderToPlan([FromForm] DateTime FromDate, [FromForm] DateTime ToDate)
+        {
+            try
+            {
+                var res = await _productionPlanningService.GetOrderToPlan(FromDate, ToDate);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
         public async Task<IActionResult> UpdateAppSettings([FromBody] UpdateAppSettingsModel updateAppSettingsModel, [FromServices] IWebHostEnvironment env)
         {
             var environmentName = env.EnvironmentName;
@@ -954,12 +967,12 @@ namespace JPStockPacking.Controllers
                 var sendQtySettings = JsonSerializer.Deserialize<Dictionary<string, object>>(
                     root.GetProperty("SendQtySettings").GetRawText()
                 )!;
-                sendQtySettings["Persentage"] = updateAppSettingsModel.ChxQtyPersentage;
+                sendQtySettings["Percentage"] = updateAppSettingsModel.ChxQtyPersentage;
 
                 var sendToStoreSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(
                     root.GetProperty("SendToStoreSettings").GetRawText()
                 )!;
-                sendToStoreSettings["Persentage"] = updateAppSettingsModel.MinWgPersentage;
+                sendToStoreSettings["Percentage"] = updateAppSettingsModel.MinWgPersentage;
 
                 dict["SendQtySettings"] = sendQtySettings;
                 dict["SendToStoreSettings"] = sendToStoreSettings;

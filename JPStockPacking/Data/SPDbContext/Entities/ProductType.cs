@@ -16,6 +16,8 @@ public partial class ProductType
     [Unicode(false)]
     public string? Name { get; set; }
 
+    public double? BaseTime { get; set; }
+
     public bool IsActive { get; set; }
 
     [Column(TypeName = "datetime")]

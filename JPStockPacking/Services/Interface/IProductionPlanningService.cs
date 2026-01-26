@@ -1,13 +1,13 @@
-﻿using JPStockPacking.Data.SPDbContext.Entities;
+﻿using JPStockPacking.Data.Models;
+using System.Threading.Tasks;
 
 namespace JPStockPacking.Services.Interface
 {
     public interface IProductionPlanningService
     {
-        Task<List<CustomerGroup>> GetCustomerGroupsAsync();
-        Task<List<ProductType>> GetProductionTypeAsync();
         Task RegroupCustomer();
-        double CalLotOperateDay(int TtQty);
+        double CalLotOperateDay(int TtQty, string ProdType, string Article, string OrderNo);
         Task GetOperateOrderToPlan(DateTime? StartDate = null, DateTime? EndDate = null);
+        Task<List<OrderPlanModel>> GetOrderToPlan(DateTime FromDate, DateTime ToDate);
     }
 }
