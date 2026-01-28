@@ -7,7 +7,6 @@ namespace JPStockPacking.Services.Interface
     {
         Task RegroupCustomer();
         double CalLotOperateDay(int TtQty, string ProdType, string Article, string OrderNo);
-        Task GetOperateOrderToPlan(DateTime? StartDate = null, DateTime? EndDate = null);
         Task<List<OrderPlanModel>> GetOrderToPlan(DateTime FromDate, DateTime ToDate);
     }
 }

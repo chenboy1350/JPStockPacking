@@ -217,36 +217,6 @@ namespace JPStockPacking.Services.Implement
                 return 0;
             }
         }
-
-        public async Task GetOperateOrderToPlan(DateTime? FromDate = null, DateTime? ToDate = null)
-        {
-            var orders = from o in _sPDbContext.Order
-                         join l in _sPDbContext.Lot on o.OrderNo equals l.OrderNo
-                         select new { l, seldate = o.SeldDate1 };
-
-            if (FromDate != null)
-            {
-                orders = orders.Where(o => o.seldate >= FromDate);
-            }
-
-            if (ToDate != null)
-            {
-                orders = orders.Where(o => o.seldate <= ToDate);
-            }
-
-            var orderList = await orders.ToListAsync();
-
-            var TotalOrder = orderList.DistinctBy(x => x.l.OrderNo).ToList().Count;
-
-            var TotalQty = orderList.Sum(o => o.l.TtQty);
-            var TotalLots = orderList.Count;
-
-            var TotalOperateDays = orderList.Sum(o => o.l.OperateDays);
-
-            var TotalWorker = 30; // Assume a fixed number of workers for this example
-
-            Console.WriteLine($"Total Quantity to Plan: {TotalQty}");
-        }
     }
 }
 

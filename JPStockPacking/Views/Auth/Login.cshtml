@@ -68,13 +68,13 @@
                             window.location.href = response.redirectUrl;
                         } else {
                             $('#loadingIndicator').hide();
-                            await showWarning(`ชื่อผู้ใช้ หรือ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง`);
+                            await swalWarning(`ชื่อผู้ใช้ หรือ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง`);
                         }
                     },
                     error: async function (err) {
                         $('#loadingIndicator').hide();
                         console.log(err);
-                        await showWarning(`เกิดข้อผิดพลาดในการลงชื่อเข้าใช้`);
+                        await swalWarning(`เกิดข้อผิดพลาดในการลงชื่อเข้าใช้`);
                     }
                 });
             });

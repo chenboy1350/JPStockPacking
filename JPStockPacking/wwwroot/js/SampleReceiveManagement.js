@@ -30,7 +30,7 @@ $(document).ready(function () {
 
         if (receiveIds.length === 0 || orderNos.length === 0) {
             $('#loadingIndicator').hide();
-            await showWarning('กรุณาเลือกข้อมูลที่จะนำเข้า');
+            await swalWarning('กรุณาเลือกข้อมูลที่จะนำเข้า');
             return;
         }
 
@@ -49,12 +49,12 @@ $(document).ready(function () {
                 $('#loadingIndicator').hide();
                 $('#modal-sample-update').modal('hide');
                 refreshSampleReceiveRow(hddReceiveNo);
-                await showSuccess(`นำเข้าแล้ว ${receiveIds.length} รายการ`);
+                swalToastSuccess(`นำเข้าแล้ว ${receiveIds.length} รายการ`);
             },
             error: async function (xhr) {
                 $('#loadingIndicator').hide();
                 let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });
@@ -83,7 +83,7 @@ $(document).ready(function () {
 
         if (receiveIds.length === 0 || orderNos.length === 0) {
             $('#loadingIndicator').hide();
-            await showWarning('กรุณาเลือกข้อมูลที่จะยกเลิก');
+            await swalWarning('กรุณาเลือกข้อมูลที่จะยกเลิก');
             return;
         }
 
@@ -102,12 +102,12 @@ $(document).ready(function () {
                 $('#loadingIndicator').hide();
                 $('#modal-sample-cancel-update').modal('hide');
                 refreshSampleReceiveRow(hddReceiveNo);
-                await showSuccess(`ยกเลิกการนำเข้าแล้ว ${receiveIds.length} รายการ`);
+                swalToastSuccess(`ยกเลิกการนำเข้าแล้ว ${receiveIds.length} รายการ`);
             },
             error: async function (xhr) {
                 $('#loadingIndicator').hide();
                 let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });

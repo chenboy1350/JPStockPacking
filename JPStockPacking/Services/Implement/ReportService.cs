@@ -562,5 +562,154 @@ namespace JPStockPacking.Services.Implement
                 return value.ToString("N2").TrimEnd('0').TrimEnd('.');
             }
         }
+
+        public byte[] GenerateUnallocatedInvoiceReport(ComparedInvoiceFilterModel comparedInvoiceFilterModel, List<UnallocatedQuantityModel> model)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;
+            DateTime ToDate = comparedInvoiceFilterModel.ToDate ?? DateTime.Now;
+
+            if (comparedInvoiceFilterModel.OrderNo != null)
+            {
+                FromDate = SqlDateTime.MinValue.Value;
+                ToDate = SqlDateTime.MaxValue.Value;
+            }
+
+            if (comparedInvoiceFilterModel.FromDate != null)
+            {
+                FromDate = comparedInvoiceFilterModel.FromDate.Value;
+            }
+
+            if (comparedInvoiceFilterModel.ToDate != null)
+            {
+                ToDate = comparedInvoiceFilterModel.ToDate.Value;
+            }
+
+            const int rowsPerPage = 46;
+            int totalPages = Math.Max(1, (int)Math.Ceiling(model.Count / (double)rowsPerPage));
+
+            var document = Document.Create(container =>
+            {
+                for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
+                {
+                    var pageItems = model
+                        .Skip(pageIndex * rowsPerPage)
+                        .Take(rowsPerPage)
+                        .ToList();
+
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4.Portrait());
+                        page.Margin(0.5f, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Tahoma"));
+
+                        page.Header()
+                            .PaddingBottom(5)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Cell().ColumnSpan(3).Element(CellStyle).AlignCenter().Text($"รายงานสินค้าคงเหลือจากการส่งออกที่ยังไม่ได้เก็บหรือยังเก็บไม่ครบ").FontSize(11).SemiBold();
+                                table.Cell().Element(CellStyle).AlignRight().Text($"Print Date: {DateTime.Now:dd/MM/yyyy}").FontSize(7);
+
+                                if (comparedInvoiceFilterModel.FromDate != null && comparedInvoiceFilterModel.ToDate != null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.FromDate:dd/MM/yyyy} - {comparedInvoiceFilterModel.ToDate:dd/MM/yyyy}").FontSize(8);
+                                if (comparedInvoiceFilterModel.FromDate != null && comparedInvoiceFilterModel.ToDate == null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.FromDate:dd/MM/yyyy}").FontSize(8);
+                                if (comparedInvoiceFilterModel.FromDate == null && comparedInvoiceFilterModel.ToDate != null) table.Cell().Element(CellStyle).AlignLeft().Text($"Date : {comparedInvoiceFilterModel.ToDate:dd/MM/yyyy}").FontSize(8);
+
+                                if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.OrderNo))
+                                    table.Cell().Element(CellStyle).AlignLeft().Text($"OrderNo : {comparedInvoiceFilterModel.OrderNo}").FontSize(8);
+
+                                static IContainer CellStyle(IContainer container) => container.Padding(3);
+                            });
+
+                        page.Content()
+                            .PaddingVertical(2)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1);      // No
+                                    columns.RelativeColumn(3);      // LotNo
+                                    columns.RelativeColumn(3);      // OrderNo
+                                    columns.RelativeColumn(2);      // ListNo
+                                    columns.RelativeColumn(4);      // Article
+                                    columns.RelativeColumn(2);      // Exported
+                                    columns.RelativeColumn(2);      // Stored
+                                    columns.RelativeColumn(2);      // Melted
+                                    columns.RelativeColumn(2);      // Unallocated
+                                });
+
+                                // Header row
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("No").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("LotNo").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("OrderNo").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("ListNo").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Article").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Exported").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Stored").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Melted").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Unallocated").FontSize(8).SemiBold();
+
+                                int i = pageIndex * rowsPerPage + 1;
+
+                                foreach (var item in pageItems)
+                                {
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{i}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.LotNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OrderNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignLeft().Text($"{item.Article}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.ExportedQty)}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.StoredQty)}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.MeltedQty)}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.UnallocatedQty)}").FontSize(8);
+
+                                    i++;
+                                }
+
+                                // Summary row on last page
+                                if (pageIndex == totalPages - 1)
+                                {
+                                    table.Cell().ColumnSpan(5).Element(CellStyle).AlignRight().Text("Total:").FontSize(8).SemiBold();
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.ExportedQty))}").FontSize(8).SemiBold();
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.StoredQty))}").FontSize(8).SemiBold();
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.MeltedQty))}").FontSize(8).SemiBold();
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.UnallocatedQty))}").FontSize(8).SemiBold();
+                                }
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Page ");
+                                x.CurrentPageNumber();
+                                x.Span($" of {totalPages}");
+                            });
+
+                        static IContainer CellStyle(IContainer container) =>
+                            container.Border(0.5f).BorderColor(Colors.Black).Padding(3);
+                    });
+                }
+            });
+
+            return document.GeneratePdf();
+
+            static string FormatNumber(decimal value)
+            {
+                if (value == 0) return "-";
+                if (value % 1 == 0) return value.ToString("N0");
+                return value.ToString("N2").TrimEnd('0').TrimEnd('.');
+            }
+        }
+
     }
 }

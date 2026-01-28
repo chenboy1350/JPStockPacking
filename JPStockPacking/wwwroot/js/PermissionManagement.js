@@ -23,10 +23,10 @@
             data: JSON.stringify(payload),
             success: async function () {
                 $("#modal-edit-user-permission").modal("hide");
-                await showSuccess("บันทึกสำเร็จ");
+                await swalSuccess("บันทึกสำเร็จ");
             },
             error: async function (xhr) {
-                await showWarning(`บันทึกไม่สำเร็จ (${xhr.status})`);
+                await swalWarning(`บันทึกไม่สำเร็จ (${xhr.status})`);
             }
         });
     });
@@ -97,7 +97,7 @@ function showEditPermissionModal(userId, username) {
                 </td></tr>
             `);
 
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
         },
     });
 }

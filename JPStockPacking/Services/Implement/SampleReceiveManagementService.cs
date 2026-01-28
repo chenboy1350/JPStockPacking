@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class SampleReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService) : ISampleReceiveManagementService
+    public class SampleReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext) : ISampleReceiveManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
@@ -168,9 +168,9 @@ namespace JPStockPacking.Services.Implement
                     if (lot == null) continue;
 
                     lot.ReceivedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
-                    lot.AssignedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
-                    lot.ReturnedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
-                    lot.Unallocated = (lot.ReceivedQty ?? 0m) + s.SumQty;
+                    lot.AssignedQty = (lot.ReceivedQty ?? 0m);
+                    lot.ReturnedQty = (lot.ReceivedQty ?? 0m);
+                    lot.Unallocated = (lot.ReceivedQty ?? 0m);
                     lot.UpdateDate = now;
                 }
 

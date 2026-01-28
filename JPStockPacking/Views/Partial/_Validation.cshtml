@@ -13,7 +13,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>From Date</label>
-                        <input type="date" id="dtInvFromDate" class="form-control">
+                        <input type="date" id="dtInvFromDate" class="form-control" value="@DateTime.UtcNow.Date.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -49,7 +49,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>To Date</label>
-                        <input type="date" id="dtInvToDate" class="form-control">
+                        <input type="date" id="dtInvToDate" class="form-control" value="@DateTime.UtcNow.Date.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -68,7 +68,7 @@
 
     <div class="card d-flex">
         <div class="card-header">
-            <h3 class="card-title">ตรวจสอบสถานะการเก็บ (อยู่ระหว่างพัฒนา)</h3>
+            <h3 class="card-title">ตรวจสอบสถานะการเก็บ</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -80,7 +80,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>From Date</label>
-                        <input type="date" id="dtLocFromDate" class="form-control">
+                        <input type="date" id="dtLocFromDate" class="form-control" value="@DateTime.UtcNow.Date.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
             </div>
@@ -88,7 +88,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>To Date</label>
-                        <input type="date" id="dtLocToDate" class="form-control">
+                        <input type="date" id="dtLocToDate" class="form-control" value="@DateTime.UtcNow.Date.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -98,7 +98,7 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-secondary" onclick="ClearInvoice()">Clear</button>
+            <button class="btn btn-secondary" onclick="ClearLocInput()">Clear</button>
             <button class="btn btn-primary" onclick="FindUnalocateLot()">ค้นหา</button>
         </div>
     </div>

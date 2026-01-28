@@ -115,6 +115,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(3px);
     backdrop-filter: blur(3px);
     z-index: 9999;
     display: flex;
@@ -144,639 +145,141 @@ body {
     font-weight: 500;
 }
 
-/* modal */
-.custom-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1070;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
+/* ===== SweetAlert2 Custom Modal Style ===== */
+.swal-custom-popup {
+    border-radius: 12px !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+    max-width: 420px !important;
+    padding: 0 !important;
 }
 
-    .custom-modal-overlay.show {
-        opacity: 1;
-        visibility: visible;
-    }
-
-.custom-modal-content {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-    max-width: 420px;
-    width: 90%;
-    transform: scale(0.7);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.custom-modal-overlay.show .custom-modal-content {
-    transform: scale(1);
-}
-
-.custom-modal-header {
-    padding: 25px;
-    text-align: center;
-    border-bottom: 1px solid #f0f0f0;
-    position: relative;
-}
-
-.custom-modal-icon {
+.swal-custom-popup .swal2-icon {
     width: 70px;
     height: 70px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: bold;
-    color: white;
-    margin: 0 auto 20px;
-    position: relative;
-    overflow: hidden;
+    margin: 25px auto 20px;
 }
 
-    /* Success */
-    .custom-modal-icon.success {
-        background: linear-gradient(135deg, #4CAF50, #45a049);
-        animation: successPulse 0.6s ease-out;
-    }
-
-        .custom-modal-icon.success::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            animation: ripple 0.6s ease-out 0.1s;
-        }
-
-        .custom-modal-icon.success::after {
-            content: '';
-            position: relative;
-            z-index: 1;
-            animation: checkmark-appear 0.5s ease-out 0.3s both;
-        }
-
-    /* Danger */
-    .custom-modal-icon.danger {
-        background: linear-gradient(135deg, #f44336, #d32f2f);
-        animation: dangerShake 0.6s ease-out;
-    }
-
-        .custom-modal-icon.danger::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 120%;
-            height: 120%;
-            background: rgba(244, 67, 54, 0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            animation: dangerPulse 0.8s ease-out 0.1s;
-        }
-
-        .custom-modal-icon.danger::after {
-            content: '';
-            position: relative;
-            z-index: 1;
-            animation: cross-rotate 0.5s ease-out 0.3s both;
-        }
-
-    /* Info */
-    .custom-modal-icon.info {
-        background: linear-gradient(135deg, #2196F3, #1976D2);
-        animation: infoBounce 0.7s ease-out;
-    }
-
-        .custom-modal-icon.info::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.3));
-            border-radius: 50%;
-            animation: infoShimmer 1s ease-in-out 0.2s;
-        }
-
-        .custom-modal-icon.info::after {
-            content: '';
-            position: relative;
-            z-index: 1;
-            font-style: italic;
-            animation: info-fade-in 0.5s ease-out 0.4s both;
-        }
-
-    /* warning */
-    .custom-modal-icon.warning {
-        background: linear-gradient(135deg, #FF9800, #F57C00);
-        animation: warningGlow 0.8s ease-out;
-    }
-
-        .custom-modal-icon.warning::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            background: radial-gradient(circle, rgba(255, 152, 0, 0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            animation: warningPulseGlow 1s ease-in-out 0.2s;
-        }
-
-        .custom-modal-icon.warning::after {
-            content: '';
-            position: relative;
-            z-index: 1;
-            animation: warning-exclaim 0.6s ease-out 0.3s both;
-        }
-
-    /* Save Confirmation Modal */
-    .custom-modal-icon.confirm.save {
-        background: linear-gradient(135deg, #4CAF50, #45a049);
-        animation: confirmSpin 0.8s ease-out;
-    }
-
-        .custom-modal-icon.confirm.save::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: rgba(60, 150, 63, 0.3);
-            animation: confirmOrbit 1s linear 0.2s;
-        }
-
-        .custom-modal-icon.confirm.save::after {
-            content: '';
-            position: relative;
-            z-index: 1;
-            animation: confirm-question 0.6s ease-out 0.4s both;
-        }
-
-    /* Delete Confirmation Modal */
-    .custom-modal-icon.confirm.delete {
-        background: linear-gradient(135deg,#f44336,#d32f2f);
-        animation: confirmSpin 0.8s ease-out;
-    }
-
-        .custom-modal-icon.confirm.delete::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: rgba(244, 67, 54, 0.3);
-            animation: confirmOrbit 1s linear 0.2s;
-        }
-
-        .custom-modal-icon.confirm.delete::after {
-            content: '';
-            position: relative;
-            z-index: 1;
-            animation: confirm-question 0.6s ease-out 0.4s both;
-        }
-
-/* Animations */
-@keyframes successPulse {
-    0% {
-        transform: scale(0);
-        opacity: 0;
-    }
-
-    50% {
-        transform: scale(1.15);
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+.swal-custom-title {
+    font-size: 22px !important;
+    color: #333 !important;
+    font-weight: 600 !important;
+    padding: 0 25px !important;
+    margin: 0 !important;
 }
 
-@keyframes ripple {
-    0% {
-        transform: translate(-50%, -50%) scale(0);
-        opacity: 1;
-    }
-
-    100% {
-        transform: translate(-50%, -50%) scale(1.2);
-        opacity: 0;
-    }
+.swal-custom-body {
+    padding: 25px !important;
+    text-align: center !important;
+    color: #666 !important;
+    font-size: 16px !important;
+    line-height: 1.6 !important;
 }
 
-@keyframes checkmark-appear {
-    0% {
-        transform: scale(0) rotate(-45deg);
-        opacity: 0;
-    }
-
-    50% {
-        transform: scale(1.2) rotate(-15deg);
-    }
-
-    100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
+.swal-custom-popup .swal2-actions {
+    padding: 25px !important;
+    border-top: 1px solid #f0f0f0 !important;
+    margin: 0 !important;
+    width: 100%;
 }
 
-@keyframes dangerShake {
-    0% {
-        transform: scale(0) rotate(0deg);
-    }
-
-    25% {
-        transform: scale(1.1) rotate(-5deg);
-    }
-
-    50% {
-        transform: scale(1.05) rotate(5deg);
-    }
-
-    75% {
-        transform: scale(1.02) rotate(-2deg);
-    }
-
-    100% {
-        transform: scale(1) rotate(0deg);
-    }
+.swal-custom-close {
+    color: #999 !important;
+    font-size: 24px !important;
+    transition: all 0.2s ease !important;
 }
 
-@keyframes dangerPulse {
-    0% {
-        transform: translate(-50%, -50%) scale(0);
-        opacity: 0.8;
+    .swal-custom-close:hover {
+        color: #666 !important;
     }
 
-    100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0;
-    }
+.swal-custom-btn {
+    border: none !important;
+    padding: 12px 30px !important;
+    border-radius: 0.5rem !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    color: white !important;
+    margin: 0 8px !important;
 }
 
-@keyframes cross-rotate {
-    0% {
-        transform: scale(0) rotate(180deg);
-        opacity: 0;
+    .swal-custom-btn:hover {
+        transform: translateY(-2px);
     }
 
-    50% {
-        transform: scale(1.3) rotate(90deg);
-    }
-
-    100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-}
-
-@keyframes infoBounce {
-    0% {
-        transform: scale(0) translateY(50px);
-        opacity: 0;
-    }
-
-    60% {
-        transform: scale(1.2) translateY(-20px);
-        opacity: 0.8;
-    }
-
-    80% {
-        transform: scale(0.9) translateY(5px);
-        opacity: 0.9;
-    }
-
-    100% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes infoShimmer {
-    0% {
-        opacity: 0;
-        transform: rotate(0deg);
-    }
-
-    50% {
-        opacity: 1;
-        transform: rotate(180deg);
-    }
-
-    100% {
-        opacity: 0;
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes info-fade-in {
-    0% {
-        opacity: 0;
-        transform: scale(0.5);
-    }
-
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes warningGlow {
-    0% {
-        transform: scale(0);
-        box-shadow: 0 0 0 rgba(255, 152, 0, 0);
-    }
-
-    50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
-    }
-
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
-    }
-}
-
-@keyframes warningPulseGlow {
-
-    0%, 100% {
-        opacity: 0.3;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
-}
-
-@keyframes warning-exclaim {
-    0% {
-        transform: scale(0) translateY(20px);
-        opacity: 0;
-    }
-
-    40% {
-        transform: scale(1.4) translateY(-10px);
-        opacity: 0.7;
-    }
-
-    60% {
-        transform: scale(0.8) translateY(5px);
-        opacity: 0.9;
-    }
-
-    100% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes confirmSpin {
-    0% {
-        transform: scale(0) rotate(0deg);
-        opacity: 0;
-    }
-
-    50% {
-        transform: scale(1.1) rotate(180deg);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: scale(1) rotate(360deg);
-        opacity: 1;
-    }
-}
-
-@keyframes confirmOrbit {
-    0% {
-        transform: rotate(0deg) scale(1);
-        opacity: 0;
-    }
-
-    50% {
-        opacity: 1;
-    }
-
-    100% {
-        transform: rotate(360deg) scale(1.1);
-        opacity: 0;
-    }
-}
-
-@keyframes confirm-question {
-    0% {
-        transform: scale(0) rotateY(180deg);
-        opacity: 0;
-    }
-
-    50% {
-        transform: scale(1.3) rotateY(90deg);
-        opacity: 0.7;
-    }
-
-    100% {
-        transform: scale(1) rotateY(0deg);
-        opacity: 1;
-    }
-}
-
-@keyframes cancelSpin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(90deg);
-    }
-}
-
-@keyframes cancelOrbit {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes cancel-cross {
-    0% {
-        opacity: 0;
-        transform: scale(0.5) rotate(-30deg);
-    }
-
-    100% {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
-    }
-}
-
-.custom-modal-title {
-    margin: 0;
-    font-size: 22px;
-    color: #333;
-    font-weight: 600;
-}
-
-.custom-modal-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #999;
-    cursor: pointer;
-    padding: 5px;
-    line-height: 1;
-    transition: all 0.2s ease;
-    border-radius: 50%;
-    width: 35px;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-    .custom-modal-close:hover {
-        color: #666;
-        background: rgba(0, 0, 0, 0.05);
-    }
-
-.custom-modal-body {
-    padding: 25px;
-    text-align: center;
-}
-
-    .custom-modal-body p {
-        margin: 0;
-        color: #666;
-        font-size: 16px;
-        line-height: 1.6;
-    }
-
-.custom-modal-footer {
-    padding: 25px;
-    text-align: center;
-    border-top: 1px solid #f0f0f0;
-}
-
-.custom-btn-modal {
-    border: none;
-    padding: 12px 30px;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    color: white;
-}
-
-    .custom-btn-modal.success {
-        background: linear-gradient(135deg, #4CAF50, #45a049);
-        box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
-    }
-
-        .custom-btn-modal.success:hover {
-            background: linear-gradient(135deg, #45a049, #4CAF50);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-        }
-
-    .custom-btn-modal.danger {
-        background: linear-gradient(135deg, #f44336, #d32f2f);
-        box-shadow: 0 2px 10px rgba(244, 67, 54, 0.3);
-    }
-
-        .custom-btn-modal.danger:hover {
-            background: linear-gradient(135deg, #d32f2f, #f44336);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
-        }
-
-    .custom-btn-modal.info {
-        background: linear-gradient(135deg, #2196F3, #1976D2);
-        box-shadow: 0 2px 10px rgba(33, 150, 243, 0.3);
-    }
-
-        .custom-btn-modal.info:hover {
-            background: linear-gradient(135deg, #1976D2, #2196F3);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
-        }
-
-    .custom-btn-modal.warning {
-        background: linear-gradient(135deg, #FF9800, #F57C00);
-        box-shadow: 0 2px 10px rgba(255, 152, 0, 0.3);
-    }
-
-        .custom-btn-modal.warning:hover {
-            background: linear-gradient(135deg, #F57C00, #FF9800);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-        }
-
-    .custom-btn-modal.confirm.save {
-        background: linear-gradient(135deg, #4CAF50, #45a049);
-        box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
-    }
-
-        .custom-btn-modal.confirm.save:hover {
-            background: linear-gradient(135deg, #45a049, #4CAF50);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-        }
-
-    .custom-btn-modal.confirm.delete {
-        background: linear-gradient(135deg, #f44336, #d32f2f);
-        box-shadow: 0 2px 10px rgba(244, 67, 54, 0.3);
-    }
-
-        .custom-btn-modal.confirm.delete:hover {
-            background: linear-gradient(135deg, #d32f2f, #f44336);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
-        }
-
-    .custom-btn-modal.cancel {
-        background: linear-gradient(135deg, #78909C, #546E7A);
-        box-shadow: 0 2px 10px rgba(84, 110, 122, 0.3);
-    }
-
-        .custom-btn-modal.cancel:hover {
-            background: linear-gradient(135deg, #90A4AE, #607D8B);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(84, 110, 122, 0.4);
-        }
-
-    .custom-btn-modal:active {
+    .swal-custom-btn:active {
         transform: translateY(0);
+    }
+
+.swal-custom-btn-success {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+    box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3) !important;
+}
+
+    .swal-custom-btn-success:hover {
+        background: linear-gradient(135deg, #45a049, #4CAF50) !important;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4) !important;
+    }
+
+.swal-custom-btn-danger {
+    background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+    box-shadow: 0 2px 10px rgba(244, 67, 54, 0.3) !important;
+}
+
+    .swal-custom-btn-danger:hover {
+        background: linear-gradient(135deg, #d32f2f, #f44336) !important;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4) !important;
+    }
+
+.swal-custom-btn-info {
+    background: linear-gradient(135deg, #2196F3, #1976D2) !important;
+    box-shadow: 0 2px 10px rgba(33, 150, 243, 0.3) !important;
+}
+
+    .swal-custom-btn-info:hover {
+        background: linear-gradient(135deg, #1976D2, #2196F3) !important;
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4) !important;
+    }
+
+.swal-custom-btn-warning {
+    background: linear-gradient(135deg, #FF9800, #F57C00) !important;
+    box-shadow: 0 2px 10px rgba(255, 152, 0, 0.3) !important;
+}
+
+    .swal-custom-btn-warning:hover {
+        background: linear-gradient(135deg, #F57C00, #FF9800) !important;
+        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4) !important;
+    }
+
+.swal-custom-btn-confirm {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+    box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3) !important;
+}
+
+    .swal-custom-btn-confirm:hover {
+        background: linear-gradient(135deg, #45a049, #4CAF50) !important;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4) !important;
+    }
+
+.swal-custom-btn-delete {
+    background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+    box-shadow: 0 2px 10px rgba(244, 67, 54, 0.3) !important;
+}
+
+    .swal-custom-btn-delete:hover {
+        background: linear-gradient(135deg, #d32f2f, #f44336) !important;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4) !important;
+    }
+
+.swal-custom-btn-cancel {
+    background: linear-gradient(135deg, #78909C, #546E7A) !important;
+    box-shadow: 0 2px 10px rgba(84, 110, 122, 0.3) !important;
+}
+
+    .swal-custom-btn-cancel:hover {
+        background: linear-gradient(135deg, #90A4AE, #607D8B) !important;
+        box-shadow: 0 4px 15px rgba(84, 110, 122, 0.4) !important;
     }
 
 /*custom color*/
@@ -824,7 +327,7 @@ body {
         box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
     }
 
-/* CSS ÊÓËÃÑº Image Zoom on Hover */
+/* CSS ï¿½ï¿½ï¿½ï¿½Ñº Image Zoom on Hover */
 .image-zoom-container {
     position: relative;
     display: inline-block;

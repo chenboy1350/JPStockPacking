@@ -1,120 +1,134 @@
-﻿
-async function showModalAsync(modalId, message = null, title = null) {
-    return new Promise((resolve) => {
-        const modal = document.getElementById(modalId);
-        if (!modal) return resolve(false);
+﻿var ToastThemes = {
+  success: { background: "#10b981", color: "#ffffff", iconColor: "#ffffff" },
+  info: { background: "#1e40af", color: "#ffffff", iconColor: "#ffffff" },
+  error: { background: "#ef4444", color: "#ffffff", iconColor: "#ffffff" },
+  warning: { background: "#f59e0b", color: "#ffffff", iconColor: "#ffffff" },
+  question: { background: "#f59e0b", color: "#ffffff", iconColor: "#ffffff" },
+};
 
-        if (message) {
-            const el = modal.querySelector(`#${modalId.replace('Modal', 'Message')}`);
-            if (el) el.textContent = message;
-        }
-        if (title) {
-            const t = modal.querySelector('.custom-modal-title');
-            if (t) t.textContent = title;
-        }
-
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-
-        const clear = () => {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-        };
-
-        const btnConfirm = modal.querySelector('#saveConfirmBtn');
-        const btnCancel = modal.querySelector('.custom-btn-modal.cancel');
-
-        const onConfirm = () => {
-            cleanup();
-            resolve(true);
-        };
-        const onCancel = () => {
-            cleanup();
-            resolve(false);
-        };
-
-        const cleanup = () => {
-            btnConfirm?.removeEventListener('click', onConfirm);
-            btnCancel?.removeEventListener('click', onCancel);
-            clear();
-        };
-
-        btnConfirm?.addEventListener('click', onConfirm);
-        btnCancel?.addEventListener('click', onCancel);
-    });
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-
-    if (modalId === 'confirmModal') {
-        document.getElementById('confirmBtn').onclick = null;
+var ToastBase = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    padding: '1.5em',
+    width: '380px',
+    customClass: {
+        popup: 'shadow-lg rounded-3'
+    },
+    didOpen: function (toast) {
+        var title = toast.querySelector('.swal2-title');
+        if (title) title.style.color = 'inherit';
     }
+});
 
-    window.dispatchEvent(new CustomEvent('modalClosed', { detail: { modalId } }));
+var Toast = {
+    fire: function (opts) {
+        var theme = ToastThemes[opts.icon] || {};
+        return ToastBase.fire(Object.assign({}, theme, opts));
+    }
+};
+
+// ===== SweetAlert2 Toast Functions =====
+function swalToastSuccess(message) {
+    return Toast.fire({ icon: 'success', title: message || 'Operation completed successfully!' });
 }
 
-function showSuccess(message = 'Operation completed successfully!', title = 'Success') {
-    return showModalAsync('successModal', message, title);
+function swalToastError(message) {
+    return Toast.fire({ icon: 'error', title: message || 'An error occurred.' });
 }
 
-function showError(message = 'An error occurred. Please try again.', title = 'Error') {
-    return showModalAsync('errorModal', message, title);
+function swalToastInfo(message) {
+    return Toast.fire({ icon: 'info', title: message || 'Here is some information.' });
 }
 
-function showInfo(message = 'Here is some important information.', title = 'Information') {
-    return showModalAsync('infoModal', message, title);
+function swalToastWarning(message) {
+    return Toast.fire({ icon: 'warning', title: message || 'Please be aware of this warning.' });
 }
 
-function showWarning(message = 'Please be aware of this warning.', title = 'Warning') {
-    return showModalAsync('warningModal', message, title);
+// ===== SweetAlert2 Alert Functions (styled like custom modal) =====
+var swalBase = {
+    customClass: {
+        popup: 'swal-custom-popup',
+        title: 'swal-custom-title',
+        htmlContainer: 'swal-custom-body',
+        confirmButton: 'swal-custom-btn',
+        cancelButton: 'swal-custom-btn swal-custom-btn-cancel',
+        closeButton: 'swal-custom-close'
+    },
+    showCloseButton: true,
+    buttonsStyling: false
+};
+
+function swalSuccess(message, title) {
+    return Swal.fire(Object.assign({}, swalBase, {
+        icon: 'success', title: title || 'Success', text: message || 'Operation completed successfully!',
+        customClass: Object.assign({}, swalBase.customClass, { confirmButton: 'swal-custom-btn swal-custom-btn-success' })
+    }));
 }
 
-async function showSaveConfirm(
-    message = "Are you sure you want to proceed?",
-    title = "Confirm Action",
-    onConfirm = null
-) {
-    const confirmed = await showModalAsync("saveConfirmModal", message, title);
+function swalError(message, title) {
+    return Swal.fire(Object.assign({}, swalBase, {
+        icon: 'error', title: title || 'Error', text: message || 'An error occurred. Please try again.',
+        customClass: Object.assign({}, swalBase.customClass, { confirmButton: 'swal-custom-btn swal-custom-btn-danger' })
+    }));
+}
 
-    if (confirmed && typeof onConfirm === "function") {
+function swalInfo(message, title) {
+    return Swal.fire(Object.assign({}, swalBase, {
+        icon: 'info', title: title || 'Information', text: message || 'Here is some important information.',
+        customClass: Object.assign({}, swalBase.customClass, { confirmButton: 'swal-custom-btn swal-custom-btn-info' })
+    }));
+}
+
+function swalWarning(message, title) {
+    return Swal.fire(Object.assign({}, swalBase, {
+        icon: 'warning', title: title || 'Warning', text: message || 'Please be aware of this warning.',
+        customClass: Object.assign({}, swalBase.customClass, { confirmButton: 'swal-custom-btn swal-custom-btn-warning' })
+    }));
+}
+
+async function swalConfirm(message, title, onConfirm) {
+    var result = await Swal.fire(
+      Object.assign({}, swalBase, {
+        icon: "question",
+        title: title || "Confirm Action",
+        text: message || "Are you sure you want to proceed?",
+        showCancelButton: true,
+        confirmButtonText: "Confirm",
+        cancelButtonText: "Cancel",
+        customClass: Object.assign({}, swalBase.customClass, {
+          confirmButton: "swal-custom-btn swal-custom-btn-success",
+        }),
+      }),
+    );
+    if (result.isConfirmed && typeof onConfirm === 'function') {
         await onConfirm();
     }
+    return result.isConfirmed;
 }
 
-function showDeleteConfirm(
-    message = "Are you sure you want to proceed?",
-    onConfirm = null,
-    title = "Confirm Action"
-) {
-    showModal("deleteConfirmModal", message, title);
-
-    if (onConfirm && typeof onConfirm === "function") {
-        document.getElementById("deleteConfirmBtn").onclick = function () {
-            onConfirm();
-            closeModal("deleteConfirmModal");
-        };
+async function swalDeleteConfirm(message, onConfirm, title) {
+    var result = await Swal.fire(
+      Object.assign({}, swalBase, {
+        icon: "warning",
+        title: title || "Confirm Delete",
+        text:
+          message || "Are you sure you want to delete? This cannot be undone.",
+        showCancelButton: true,
+        confirmButtonText: "Confirm",
+        cancelButtonText: "Cancel",
+        customClass: Object.assign({}, swalBase.customClass, {
+          confirmButton: "swal-custom-btn swal-custom-btn-delete",
+        }),
+      }),
+    );
+    if (result.isConfirmed && typeof onConfirm === 'function') {
+        await onConfirm();
     }
+    return result.isConfirmed;
 }
-
-document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('custom-modal-overlay')) {
-        closeModal(e.target.id);
-    }
-});
-
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-        const openModals = document.querySelectorAll('.custom-modal-overlay.show');
-        openModals.forEach(modal => {
-            closeModal(modal.id);
-        });
-    }
-});
 
 // ===== Helper Functions =====
 function html(s) {

@@ -4,29 +4,7 @@
 let isSentMode = false;
 
 // ข้อมูลจำลองออเดอร์ (โครงสร้างตาม OrderPlanModel)
-let ordersData = [
-    { orderNo: '25000001', custCode: 'C001', customerGroup: 1, article: 'CCJ82-C', qty: 30000, sendToPackQty: 20000, operateDay: 1.12, sendToPackOperateDay: 0.75, dueDate: '2025-12-25', prodType: 'TypeA', baseTime: 0.6 },
-    { orderNo: '25000002', custCode: 'C001', customerGroup: 1, article: 'CCJ82-C', qty: 25000, sendToPackQty: 5000, operateDay: 0.93, sendToPackOperateDay: 0.19, dueDate: '2025-12-26', prodType: 'TypeA', baseTime: 0.6 },
-    { orderNo: '25000003', custCode: 'C002', customerGroup: 2, article: 'CCJ82-C', qty: 98000, sendToPackQty: 80000, operateDay: 3.66, sendToPackOperateDay: 2.99, dueDate: '2025-12-27', prodType: 'TypeA', baseTime: 0.6 },
-    { orderNo: '25000004', custCode: 'C002', customerGroup: 2, article: 'CCJ82-C', qty: 18000, sendToPackQty: 18000, operateDay: 0.67, sendToPackOperateDay: 0.67, dueDate: '2025-12-28', prodType: 'TypeA', baseTime: 0.6 },
-    { orderNo: '25000005', custCode: 'C003', customerGroup: 3, article: 'CCJ82-C', qty: 35000, sendToPackQty: 34999, operateDay: 1.31, sendToPackOperateDay: 1.31, dueDate: '2025-12-29', prodType: 'TypeA', baseTime: 0.6 },
-    { orderNo: '25000006', custCode: 'C003', customerGroup: 3, article: 'CCJ82-C', qty: 50000, sendToPackQty: 5000, operateDay: 1.87, sendToPackOperateDay: 0.19, dueDate: '2025-12-30', prodType: 'TypeB', baseTime: 0.6 },
-    { orderNo: '25000007', custCode: 'C004', customerGroup: 4, article: 'CCJ82-C', qty: 45000, sendToPackQty: 12999, operateDay: 1.68, sendToPackOperateDay: 0.49, dueDate: '2025-12-26', prodType: 'TypeB', baseTime: 0.6 },
-    { orderNo: '25000008', custCode: 'C004', customerGroup: 4, article: 'CCJ82-C', qty: 30000, sendToPackQty: 26400, operateDay: 1.12, sendToPackOperateDay: 0.99, dueDate: '2025-12-27', prodType: 'TypeB', baseTime: 0.6 },
-    { orderNo: '25000009', custCode: 'C005', customerGroup: 5, article: 'CCJ82-C', qty: 25000, sendToPackQty: 1200, operateDay: 0.93, sendToPackOperateDay: 0.04, dueDate: '2025-12-28', prodType: 'TypeB', baseTime: 0.6 },
-    { orderNo: '25000010', custCode: 'C005', customerGroup: 5, article: 'CCJ82-C', qty: 98000, sendToPackQty: 98000, operateDay: 3.66, sendToPackOperateDay: 3.66, dueDate: '2025-12-29', prodType: 'TypeB', baseTime: 0.6 },
-    { orderNo: '25000011', custCode: 'C006', customerGroup: 2, article: 'CCJ82-C', qty: 18000, sendToPackQty: 500, operateDay: 0.67, sendToPackOperateDay: 0.02, dueDate: '2025-12-25', prodType: 'TypeC', baseTime: 0.6 },
-    { orderNo: '25000012', custCode: 'C006', customerGroup: 2, article: 'CCJ82-C', qty: 35000, sendToPackQty: 20000, operateDay: 1.31, sendToPackOperateDay: 0.75, dueDate: '2025-12-26', prodType: 'TypeC', baseTime: 0.6 },
-    { orderNo: '25000013', custCode: 'C007', customerGroup: 5, article: 'CCJ82-C', qty: 50000, sendToPackQty: 200, operateDay: 1.87, sendToPackOperateDay: 0.01, dueDate: '2025-12-27', prodType: 'TypeC', baseTime: 0.6 },
-    { orderNo: '25000014', custCode: 'C007', customerGroup: 5, article: 'CCJ82-C', qty: 45000, sendToPackQty: 37000, operateDay: 1.68, sendToPackOperateDay: 1.38, dueDate: '2025-12-30', prodType: 'TypeC', baseTime: 0.6 },
-    { orderNo: '25000015', custCode: 'C008', customerGroup: 1, article: 'CCJ82-C', qty: 30000, sendToPackQty: 24999, operateDay: 1.12, sendToPackOperateDay: 0.93, dueDate: '2025-12-31', prodType: 'TypeD', baseTime: 0.6 },
-    { orderNo: '25000016', custCode: 'C008', customerGroup: 3, article: 'CCJ82-C', qty: 25000, sendToPackQty: 25000, operateDay: 0.93, sendToPackOperateDay: 0.93, dueDate: '2025-12-27', prodType: 'TypeD', baseTime: 0.6 },
-    { orderNo: '25000017', custCode: 'C009', customerGroup: 1, article: 'CCJ82-C', qty: 98000, sendToPackQty: 16800, operateDay: 3.66, sendToPackOperateDay: 0.63, dueDate: '2025-12-28', prodType: 'TypeD', baseTime: 0.6 },
-    { orderNo: '25000018', custCode: 'C009', customerGroup: 3, article: 'CCJ82-C', qty: 18000, sendToPackQty: 18000, operateDay: 0.67, sendToPackOperateDay: 0.67, dueDate: '2025-12-29', prodType: 'TypeD', baseTime: 0.6 },
-    { orderNo: '25000019', custCode: 'C010', customerGroup: 4, article: 'CCJ82-C', qty: 35000, sendToPackQty: 6900, operateDay: 1.31, sendToPackOperateDay: 0.26, dueDate: '2025-12-30', prodType: 'TypeE', baseTime: 0.6 },
-    { orderNo: '25000020', custCode: 'C010', customerGroup: 5, article: 'CCJ82-C', qty: 50000, sendToPackQty: 9800, operateDay: 1.87, sendToPackOperateDay: 0.37, dueDate: '2025-12-31', prodType: 'TypeE', baseTime: 0.6 },
-    { orderNo: '25000021', custCode: 'C010', customerGroup: 5, article: 'CCJ82-C', qty: 45000, sendToPackQty: 45000, operateDay: 1.68, sendToPackOperateDay: 1.68, dueDate: '2025-12-31', prodType: 'TypeE', baseTime: 0.6 }
-];
+let ordersData = [];
 
 // Animation timers
 const animationTimers = {};
@@ -80,12 +58,12 @@ $(document).ready(function () {
 
     // ตัวอย่างเพิ่มเติมสำหรับ click events (ถ้ามีปุ่มในอนาคต)
     $(document).on('click', '#calculateBtn', async function () {
-        //await fetchOrdersData()
+        await fetchOrdersData()
         filterAndCalculate();
     });
 
     $(document).on('click', '#modeToggle', async function () {
-        //await fetchOrdersData()
+        await fetchOrdersData()
         toggleMode();
     });
 });
@@ -113,13 +91,13 @@ function calculateRequiredWorkers(totalQty, availableDays, currentWorkers, baseT
     return { requiredWorkers, additionalWorkers: requiredWorkers - currentWorkers, actualDays: plan.actualDays };
 }
 
-// คำนวณจำนวนวันที่เหลือจนถึง duedate
-function calculateDaysUntil(duedate) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+// คำนวณจำนวนวันที่เหลือจนถึง duedate (จาก fromDate)
+function calculateDaysUntil(duedate, fromDate) {
+    const startDate = new Date(fromDate);
+    startDate.setHours(0, 0, 0, 0);
     const targetDate = new Date(duedate);
     targetDate.setHours(0, 0, 0, 0);
-    const diffTime = targetDate - today;
+    const diffTime = targetDate - startDate;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays >= 0 ? diffDays + 1 : 1;
 }
@@ -129,7 +107,11 @@ function getEarliestDueDate(filteredOrders) {
     if (filteredOrders.length === 0) return null;
     const duedates = filteredOrders.map(order => new Date(order.dueDate));
     const earliestDate = new Date(Math.min(...duedates));
-    return earliestDate.toISOString().split('T')[0];
+    // ใช้ local date แทน toISOString เพื่อหลีกเลี่ยงปัญหา timezone
+    const year = earliestDate.getFullYear();
+    const month = String(earliestDate.getMonth() + 1).padStart(2, '0');
+    const day = String(earliestDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 // แปลงวันที่เป็นรูปแบบไทย
@@ -150,7 +132,8 @@ function updateWorkStatus(totalQty, earliestDueDate, currentWorkers, daysCount, 
     const $statusDescription = $('#statusDescription');
     const $workerInfo = $('#workerInfo');
 
-    const availableDays = calculateDaysUntil(earliestDueDate);
+    const fromDate = $('#fromDate').val();
+    const availableDays = calculateDaysUntil(earliestDueDate, fromDate);
     $statusCard.removeClass('ops-hidden');
 
     if (daysCount > availableDays) {

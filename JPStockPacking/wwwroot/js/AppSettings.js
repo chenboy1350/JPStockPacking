@@ -15,14 +15,14 @@
             contentType: "application/json; charset=utf-8",
             success: async function (res) {
                 if (res.isSuccess) {
-                    await showSuccess(`บันทึกการตั้งค่าแล้ว`);
+                    await swalSuccess(`บันทึกการตั้งค่าแล้ว`);
                     $('#modal-add-user').modal('hide');
                 } else {
-                    await showWarning(`เกิดข้อผิดพลาดในการบันทึก (${res.code}) ${res.message})`);
+                    await swalWarning(`เกิดข้อผิดพลาดในการบันทึก (${res.code}) ${res.message})`);
                 }
             },
             error: async function (xhr) {
-                await showWarning(`เกิดข้อผิดพลาดในการบันทึก (${xhr.status})`);
+                await swalWarning(`เกิดข้อผิดพลาดในการบันทึก (${xhr.status})`);
             }
         });
     });

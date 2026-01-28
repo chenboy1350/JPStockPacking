@@ -39,7 +39,7 @@ $(document).ready(function () {
     });
 
     $(document).on('click', '#btnSubmitOrderToSend', async function () {
-        await showSaveConfirm(
+        await swalConfirm(
             "ยืนยันการแจ้งยอดใช่หรือไม่?", "ยืนยันการแจ้งยอด", async () => {
                 const orderNo = $('#txtFindOrderNoToSendQty').val();
                 const lots = [];
@@ -78,12 +78,12 @@ $(document).ready(function () {
                 });
 
                 if (!hasAnyQty) {
-                    await showWarning("มีรายการที่ยังไม่แจ้งยอด");
+                    await swalWarning("มีรายการที่ยังไม่แจ้งยอด");
                     return;
                 }
 
                 if (!orderNo || lots.length === 0) {
-                    await showWarning("ไม่มีข้อมูลที่จะแจ้งยอด");
+                    await swalWarning("ไม่มีข้อมูลที่จะแจ้งยอด");
                     return;
                 }
 
@@ -115,14 +115,14 @@ $(document).ready(function () {
                     processData: false,
                     data: formData,
                     success: async function () {
-                        await showSuccess("บันทึกข้อมูลเรียบร้อยแล้ว");
+                        await swalSuccess("บันทึกข้อมูลเรียบร้อยแล้ว");
                         FindOrderToSendQty();
                     },
                     error: async function (xhr) {
                         if (xhr.status === 400 && xhr.responseText.includes("ไม่มีข้อมูลที่เปลี่ยนแปลง")) {
-                            await showWarning("ไม่มีข้อมูลที่เปลี่ยนแปลง");
+                            await swalWarning("ไม่มีข้อมูลที่เปลี่ยนแปลง");
                         } else {
-                            await showError(`เกิดข้อผิดพลาดในการบันทึก (${xhr.status})`);
+                            await swalError(`เกิดข้อผิดพลาดในการบันทึก (${xhr.status})`);
                         }
                     }
                 });
@@ -249,7 +249,7 @@ $(document).ready(function () {
         const userId = $('#hddUserID').val();
 
         if ($('#hddUserID').val() === '' || $('#hddUserID').val() === '0') {
-            await showWarning('กรุณายืนยันสิทธิการแจ้งยอดแบบกำหนดเอง');
+            await swalWarning('กรุณายืนยันสิทธิการแจ้งยอดแบบกำหนดเอง');
             return;
         }
 
@@ -302,7 +302,7 @@ $(document).ready(function () {
             }, 1000);
         }
         else {
-            await showWarning('ไม่พบ input ที่ต้องการปรับยอด');
+            await swalWarning('ไม่พบ input ที่ต้องการปรับยอด');
             return;
         }
 
@@ -487,12 +487,12 @@ async function FindOrderToSendQty() {
             },
             error: async function (xhr) {
                 $('#loadingIndicator').hide();
-                await showError(`เกิดข้อผิดพลาดในการค้นหา (${xhr.status})`);
+                await swalError(`เกิดข้อผิดพลาดในการค้นหา (${xhr.status})`);
             }
         });
     } else {
         $('#loadingIndicator').hide();
-        await showWarning("กรุณากรอกเลขคำสั่งซื้อ");
+        await swalWarning("กรุณากรอกเลขคำสั่งซื้อ");
     }
 
 }
@@ -500,7 +500,7 @@ async function FindOrderToSendQty() {
 function printToPDF(printTo) {
     const orderNo = $('#txtFindOrderNoToSendQty').val();
     if (!orderNo) {
-        showWarning('กรุณาเลือก Order No');
+        swalWarning('กรุณาเลือก Order No');
         return;
     }
 
@@ -525,7 +525,7 @@ function printToPDF(printTo) {
                 pdfWindow.close();
             }
 
-            showError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
+            swalError("ไม่สามารถดึงรายงานได้ " + xhr.statusText);
         }
     });
 }
@@ -615,7 +615,7 @@ function ShowForceSendSizeQtyModal(event) {
     const $input = $btn.siblings('input.sizeQtyInput');
 
     if ($input.length === 0) {
-        showWarning('ไม่พบ input ขนาดที่เลือก');
+        swalWarning('ไม่พบ input ขนาดที่เลือก');
         return;
     }
 

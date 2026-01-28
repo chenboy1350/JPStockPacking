@@ -68,14 +68,19 @@ $(document).ready(function () {
             success: async function (res) {
 
                 if (res.isSuccess) {
-                    FindOrderToStore();
-                    await showSuccess(`บันทึกสำเร็จ`);
+                    swalToastSuccess(`บันทึกสำเร็จ`);
                 } else {
-                    await showWarning(`เกิดข้อผิดพลาด (${res.code}) ${res.message})`);
+                    swalToastWarning(
+                      `เกิดข้อผิดพลาด (${res.code}) ${res.message})`,
+                    );
                 }
             },
             error: async function (xhr) {
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+                swalToastWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+            }
+        }).done(function (res) {
+            if (res.isSuccess) {
+                reloadRow(lotNo);
             }
         });
     });
@@ -164,7 +169,7 @@ $(document).ready(function () {
         const max = parseFloat($('#modalStoreMaxQty').val()) || 0;
 
         if (draft > max) {
-            showWarning(`เกินยอดที่สามารถเก็บได้ (${max})`);
+            swalWarning(`เกินยอดที่สามารถเก็บได้ (${max})`);
             return;
         }
 
@@ -195,15 +200,15 @@ $(document).ready(function () {
         const reasonId = $('#modalMeltReasonId').val();
 
         if (draft > max) {
-            showWarning(`เกินยอดที่สามารถหลอมได้ (${max})`);
+            swalWarning(`เกินยอดที่สามารถหลอมได้ (${max})`);
             return;
         }
         if (draft > 0 && wg === 0) {
-            showWarning(`กรุณากรอกน้ำหนัก`);
+            swalWarning(`กรุณากรอกน้ำหนัก`);
             return;
         }
         if (draft > 0 && !reasonId) {
-            showWarning(`กรุณาเลือกสาเหตุ`);
+            swalWarning(`กรุณาเลือกสาเหตุ`);
             return;
         }
 
@@ -239,7 +244,7 @@ $(document).ready(function () {
         const max = parseFloat($('#modalLostMaxQty').val()) || 0;
 
         if (draft > max) {
-            showWarning(`เกินยอดที่สามารถหายได้ (${max})`);
+            swalWarning(`เกินยอดที่สามารถหายได้ (${max})`);
             return;
         }
 
@@ -270,7 +275,7 @@ $(document).ready(function () {
         const max = parseFloat($('#modalExportMaxQty').val()) || 0;
 
         if (draft > max) {
-            showWarning(`เกินยอดที่สามารถส่งออกได้ (${max})`);
+            swalWarning(`เกินยอดที่สามารถส่งออกได้ (${max})`);
             return;
         }
 
@@ -461,7 +466,7 @@ $(document).ready(function () {
 
     $(document).on('click', '#btnSubmitForceSendToExport', function (e) {
         if (!currentForceRow || currentForceRow.length === 0) {
-            showWarning('ไม่พบแถวที่จะอัปเดต');
+            swalWarning('ไม่พบแถวที่จะอัปเดต');
             return;
         }
 
@@ -470,12 +475,12 @@ $(document).ready(function () {
         const qty = parseFloat(qtyRaw);
 
         if (!userId) {
-            showWarning('กรุณาตรวจสอบสิทธิ์ก่อน (ตรวจสอบผู้ใช้และรหัสผ่าน)');
+            swalWarning('กรุณาตรวจสอบสิทธิ์ก่อน (ตรวจสอบผู้ใช้และรหัสผ่าน)');
             return;
         }
 
         if (isNaN(qty) || qty < 0) {
-            showWarning('กรุณากรอกจำนวนที่ถูกต้อง');
+            swalWarning('กรุณากรอกจำนวนที่ถูกต้อง');
             return;
         }
 
@@ -711,6 +716,147 @@ function FindOrderToStore() {
         });
 }
 
+function updateRowData(tr, item, keepChecked) {
+    const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
+    const rowIndex = $(tr).find('td:first').text();
+
+    tr.setAttribute('data-ttwg', item.ttWg || 0);
+    tr.setAttribute('data-percentage', item.percentage || 0);
+    tr.setAttribute('data-sendtopack-qty', item.sendToPack_Qty || 0);
+
+    tr.setAttribute('data-store-fixed-qty', item.store_FixedQty || 0);
+    tr.setAttribute('data-store-fixed-wg', item.store_FixedWg || 0);
+    tr.setAttribute('data-store-draft-qty', item.store_Qty || 0);
+    tr.setAttribute('data-store-wg', item.store_Wg || 0);
+
+    tr.setAttribute('data-melt-fixed-qty', item.melt_FixedQty || 0);
+    tr.setAttribute('data-melt-fixed-wg', item.melt_FixedWg || 0);
+    tr.setAttribute('data-melt-draft-qty', item.melt_Qty || 0);
+    tr.setAttribute('data-melt-wg', item.melt_Wg || 0);
+    tr.setAttribute('data-melt-des', item.breakDescriptionId || '');
+
+    tr.setAttribute('data-export-fixed-qty', item.export_FixedQty || 0);
+    tr.setAttribute('data-export-fixed-wg', item.export_FixedWg || 0);
+    tr.setAttribute('data-export-draft-qty', item.export_Qty || 0);
+    tr.setAttribute('data-export-wg', item.export_Wg || 0);
+
+    tr.setAttribute('data-lost-fixed-qty', item.lost_FixedQty || 0);
+    tr.setAttribute('data-lost-fixed-wg', item.lost_FixedWg || 0);
+    tr.setAttribute('data-lost-draft-qty', item.lost_Qty || 0);
+    tr.setAttribute('data-lost-wg', item.lost_Wg || 0);
+
+    tr.setAttribute('data-available-qty', available_qty);
+    tr.setAttribute('data-bs-title', `${item.article || '-'} / ${item.listNo || '-'}`);
+
+    tr.innerHTML = `
+        <td class="text-center">${rowIndex}</td>
+        <td class="text-start"><strong>${html(item.article)}</strong></br><small>${html(item.custCode)}/${html(item.orderNo)}</small></td>
+        <td class="text-center">${html(item.listNo)}</td>
+        <td class="text-end">${item.ttQty != 0 ? numRaw(item.ttQty) : '-'}</td>
+        <td class="text-end">${item.si != 0 ? numRaw(item.si) : '-'}</td>
+        <td class="text-end">${item.sendPack_Qty != 0 ? numRaw(item.sendPack_Qty) : '-'}</td>
+        <td class="text-end">${item.sendToPack_Qty != 0 ? numRaw(item.sendToPack_Qty) : '-'}</td>
+        <td class="text-end col-packed">${item.packed_Qty != 0 ? numRaw(item.packed_Qty) : '-'}</td>
+
+        <td class="text-center col-available fs-5"><strong>${available_qty != 0 ? numRaw(available_qty) : '-'}</strong></td>
+
+        <td class="text-end">
+            <div class="d-flex flex-column align-items-end">
+                <div class="d-flex justify-content-between align-content-center gap-2 w-100">
+                    <input class="form-control text-center qty-input store_qty fw-bold fs-5"
+                           type="number"
+                           min="0"
+                           step="any"
+                           value="${numRaw(item.store_Qty + item.store_FixedQty)}"
+                           readonly />
+
+                    <button class="btn btn-default btn-edit-qty d-none" data-type="store">
+                        <i class="fas fa-plus"></i>
+                    </button>
+
+                </div>
+                <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.store_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.store_Qty)}</strong></small>
+            </div>
+        </td>
+
+        <td class="text-end">
+            <div class="d-flex flex-column align-items-end">
+                <div class="d-flex justify-content-between align-content-center gap-2 w-100">
+                    <input class="form-control text-center qty-input melt_qty fw-bold fs-5"
+                           type="number"
+                           min="0"
+                           step="any"
+                           value="${numRaw(item.melt_Qty + item.melt_FixedQty)}"
+                           readonly />
+
+                    <button class="btn btn-default btn-edit-qty d-none" data-type="melt">
+                        <i class="fas fa-plus"></i>
+                    </button>
+
+                </div>
+                <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.melt_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.melt_Qty)}</strong></small>
+            </div>
+        </td>
+
+        <td class="text-end">
+            <div class="d-flex flex-column align-items-end">
+                <div class="d-flex justify-content-between align-content-center gap-2 w-100">
+                    <input class="form-control text-center qty-input lost_qty fw-bold fs-5"
+                           type="number"
+                           min="0"
+                           step="any"
+                           value="${numRaw(item.lost_Qty + item.lost_FixedQty)}"
+                           readonly />
+
+                    <button class="btn btn-default btn-edit-qty d-none" data-type="lost">
+                        <i class="fas fa-plus"></i>
+                    </button>
+
+                </div>
+                <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.lost_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.lost_Qty)}</strong></small>
+            </div>
+        </td>
+
+        <td class="text-end">
+            <div class="d-flex flex-column align-items-end">
+                <div class="d-flex justify-content-between align-content-center gap-2 w-100">
+                    <input class="form-control text-center qty-input export_qty fw-bold fs-5"
+                           type="number"
+                           min="0"
+                           step="any"
+                           value="${numRaw(item.export_Qty + item.export_FixedQty)}"
+                           readonly />
+
+                    <button class="btn btn-default btn-edit-qty d-none" data-type="export">
+                        <i class="fas fa-plus"></i>
+                    </button>
+
+                </div>
+                <small class="text-muted pe-1"><i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.export_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.export_Qty)}</strong></small>
+            </div>
+        </td>
+
+        <td class="text-center">
+            <div class="d-flex gap-1 justify-content-center">
+                <button class="btn btn-sm btn-warning btn-edit${keepChecked ? ' d-none' : ''}"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-success btn-save d-none"><i class="fas fa-save"></i></button>
+                <button class="btn btn-sm btn-danger btn-cancel d-none"><i class="fas fa-times"></i></button>
+                <div id="${item.lotNo}_ss${rowIndex}" class="chk-wrapper${keepChecked ? '' : ' d-none'}">
+                    <div class="icheck-primary d-inline">
+                        <input type="checkbox" id="${item.lotNo}_rt${rowIndex}" class="chk-row"${keepChecked ? ' checked' : ''}>
+                        <label for="${item.lotNo}_rt${rowIndex}"></label>
+                    </div>
+                </div>
+            </div>
+        </td>
+    `;
+
+    // re-init tooltip for this row
+    const existingTooltip = bootstrap.Tooltip.getInstance(tr);
+    if (existingTooltip) existingTooltip.dispose();
+    new bootstrap.Tooltip(tr);
+}
+
 async function confirmSendToStore() {
     const uid = $('#hddUserID').val();
     const selectedLots = [];
@@ -732,13 +878,22 @@ async function confirmSendToStore() {
         beforeSend: async () => $('#loadingIndicator').show(),
         success: async (res) => {
             $('#loadingIndicator').hide();
-            FindOrderToStore();
-            await showSuccess(`${res.message}`);
+
+            if (res.data && res.data.length > 0) {
+                res.data.forEach(item => {
+                    const tr = $(`#tbl-sendToStore-body tr[data-lot-no="${item.lotNo}"]`);
+                    if (tr.length) {
+                        updateRowData(tr[0], item, true);
+                    }
+                });
+            }
+
+            await swalSuccess(`${res.message}`);
         },
         error: async (xhr) => {
             $('#loadingIndicator').hide();
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -786,7 +941,7 @@ async function printSendToStore() {
             }
 
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -849,7 +1004,7 @@ function updateAvailableQty($row) {
 
 function ShowForceSendToModal(button) {
     if (!currentForceRow || currentForceRow.length === 0) {
-        showWarning('ไม่พบแถวที่จะทำการส่งออกแบบกำหนดเอง กรุณาเปิด modal จากแถวที่ต้องการก่อน');
+        swalWarning('ไม่พบแถวที่จะทำการส่งออกแบบกำหนดเอง กรุณาเปิด modal จากแถวที่ต้องการก่อน');
         return;
     }
 
@@ -883,7 +1038,7 @@ function ShowForceSendToModal(button) {
 function ClearSearch() {
     $('#txtOrderNo').val('');
     const tbody = $('#tbl-sendToStore-body');
-    tbody.empty().append('<tr><td colspan="13" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td></tr>');
+    tbody.empty().append('<tr><td colspan="14" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td></tr>');
 
     $("#btnConfirmSendToStore").addClass("d-none");
     $("#btnPrintSendToStore").addClass("d-none");
@@ -935,6 +1090,88 @@ function calculateAvailable($row) {
 
     const available = packed - (sFix + mFix + eFix + lFix + sDrf + mDrf + eDrf + lDrf);
     return available;
+}
+
+function reloadRow(lotNo) {
+    $.ajax({
+        url: urlGetOrderToStoreByLot,
+        method: 'GET',
+        data: { lotNo: lotNo },
+        dataType: 'json',
+        success: function (item) {
+            if (!item) return;
+
+            const $row = $(`#tbl-sendToStore-body tr[data-lot-no="${lotNo}"]`);
+            if ($row.length === 0) return;
+
+            const available_qty = item.packed_Qty
+                - (item.store_FixedQty + item.store_Qty)
+                - (item.melt_FixedQty + item.melt_Qty)
+                - (item.lost_FixedQty + item.lost_Qty)
+                - (item.export_FixedQty + item.export_Qty);
+
+            $row.attr('data-ttwg', item.ttWg || 0);
+            $row.attr('data-percentage', item.percentage || 0);
+            $row.attr('data-sendtopack-qty', item.sendToPack_Qty || 0);
+
+            $row.attr('data-store-fixed-qty', item.store_FixedQty || 0);
+            $row.attr('data-store-fixed-wg', item.store_FixedWg || 0);
+            $row.attr('data-store-draft-qty', item.store_Qty || 0);
+            $row.attr('data-store-wg', item.store_Wg || 0);
+
+            $row.attr('data-melt-fixed-qty', item.melt_FixedQty || 0);
+            $row.attr('data-melt-fixed-wg', item.melt_FixedWg || 0);
+            $row.attr('data-melt-draft-qty', item.melt_Qty || 0);
+            $row.attr('data-melt-wg', item.melt_Wg || 0);
+            $row.attr('data-melt-des', item.breakDescriptionId || '');
+
+            $row.attr('data-export-fixed-qty', item.export_FixedQty || 0);
+            $row.attr('data-export-fixed-wg', item.export_FixedWg || 0);
+            $row.attr('data-export-draft-qty', item.export_Qty || 0);
+            $row.attr('data-export-wg', item.export_Wg || 0);
+
+            $row.attr('data-lost-fixed-qty', item.lost_FixedQty || 0);
+            $row.attr('data-lost-fixed-wg', item.lost_FixedWg || 0);
+            $row.attr('data-lost-draft-qty', item.lost_Qty || 0);
+            $row.attr('data-lost-wg', item.lost_Wg || 0);
+
+            $row.attr('data-available-qty', available_qty);
+
+            // Update jQuery .data() cache
+            $row.data('store-draft-qty', item.store_Qty || 0);
+            $row.data('melt-draft-qty', item.melt_Qty || 0);
+            $row.data('export-draft-qty', item.export_Qty || 0);
+            $row.data('lost-draft-qty', item.lost_Qty || 0);
+
+            // Update display values
+            $row.find('td:eq(3)').html(item.ttQty != 0 ? numRaw(item.ttQty) : '-');
+            $row.find('td:eq(4)').html(item.si != 0 ? numRaw(item.si) : '-');
+            $row.find('td:eq(5)').html(item.sendPack_Qty != 0 ? numRaw(item.sendPack_Qty) : '-');
+            $row.find('td:eq(6)').html(item.sendToPack_Qty != 0 ? numRaw(item.sendToPack_Qty) : '-');
+            $row.find('.col-packed').html(item.packed_Qty != 0 ? numRaw(item.packed_Qty) : '-');
+            $row.find('.col-available strong').html(available_qty != 0 ? numRaw(available_qty) : '-');
+
+            // Update qty inputs
+            $row.find('input.store_qty').val(numRaw(item.store_Qty + item.store_FixedQty));
+            $row.find('input.melt_qty').val(numRaw(item.melt_Qty + item.melt_FixedQty));
+            $row.find('input.lost_qty').val(numRaw(item.lost_Qty + item.lost_FixedQty));
+            $row.find('input.export_qty').val(numRaw(item.export_Qty + item.export_FixedQty));
+
+            // Update fixed/draft labels
+            $row.find('input.store_qty').closest('td').find('small').html(
+                `<i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.store_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.store_Qty)}</strong>`
+            );
+            $row.find('input.melt_qty').closest('td').find('small').html(
+                `<i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.melt_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.melt_Qty)}</strong>`
+            );
+            $row.find('input.lost_qty').closest('td').find('small').html(
+                `<i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.lost_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.lost_Qty)}</strong>`
+            );
+            $row.find('input.export_qty').closest('td').find('small').html(
+                `<i class="fas fa-download"></i> : <strong class="text-info">${numRaw(item.export_FixedQty)}</strong> / <i class="fas fa-marker"></i> : <strong class="text-warning">${numRaw(item.export_Qty)}</strong>`
+            );
+        }
+    });
 }
 
 function calculateMaxQty($row, type) {

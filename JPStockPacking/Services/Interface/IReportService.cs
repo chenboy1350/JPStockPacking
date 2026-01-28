@@ -14,5 +14,6 @@ namespace JPStockPacking.Services.Interface
         byte[] GenerateLostReport(List<LostAndRepairModel> model, UserModel userModel);
         byte[] GenerateSenToReport(List<TempPack> model);
         byte[] GenerateComparedInvoiceReport(ComparedInvoiceFilterModel comparedInvoiceFilterModel,List<ComparedInvoiceModel> model, InvoiceType invoiceType);
+        byte[] GenerateUnallocatedInvoiceReport(ComparedInvoiceFilterModel comparedInvoiceFilterModel, List<UnallocatedQuantityModel> model);
     }
 }

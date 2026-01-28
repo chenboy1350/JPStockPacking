@@ -48,7 +48,7 @@
     });
 
     $(document).on("click", "#btnConfirmAddUser", async function () {
-        await showSaveConfirm(
+        await swalConfirm(
             "ยืนยันการลงทะเบียน?", "ยืนยันการลงทะเบียน", async () => {
                 let empId = $("#ddlEmp").val();
                 let username = $("#txtAddUsername").val();
@@ -56,7 +56,7 @@
                 let confirmPassword = $("#txtAddConfirmPassword").val();
 
                 if (password !== confirmPassword) {
-                    await showWarning("รหัสผ่านไม่ตรงกัน");
+                    await swalWarning("รหัสผ่านไม่ตรงกัน");
                     return;
                 }
 
@@ -75,16 +75,16 @@
                         if (res.isSuccess) {
                             $('#modal-add-user').modal('hide');
                             reloadUserList();
-                            await showSuccess(`ลงทะเบียนผู้ใช้ใหม่เรียบร้อยแล้ว (${res.code})`);
+                            await swalSuccess(`ลงทะเบียนผู้ใช้ใหม่เรียบร้อยแล้ว (${res.code})`);
                         } else {
                             $('#modal-add-user').modal('hide');
-                            await showWarning(`เกิดข้อผิดพลาดในการลงทะเบียน (${res.code}) ${res.message})`);
+                            await swalWarning(`เกิดข้อผิดพลาดในการลงทะเบียน (${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
                         $('#modal-add-user').modal('hide');
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -92,7 +92,7 @@
     });
 
     $(document).on("click", "#btnConfirmEditUser", async function () {
-        await showSaveConfirm(
+        await swalConfirm(
             "ยืนยันการแก้ไขบัญชีผู้ใช้?", "ยืนยันการแก้ไข", async () => {
                 let userId = $("#hddUserId").val();
                 let empId = $("#ddlEditEmp").val();
@@ -104,7 +104,7 @@
 
                 if (password !== confirmPassword)
                 {
-                    await showWarning("รหัสผ่านไม่ตรงกัน");
+                    await swalWarning("รหัสผ่านไม่ตรงกัน");
                     return;
                 }
 
@@ -124,16 +124,16 @@
                         if (res.isSuccess) {
                             $('#modal-add-user').modal('hide');
                             reloadUserList();
-                            await showSuccess(`แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว (${res.code})`);
+                            await swalSuccess(`แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว (${res.code})`);
                         } else {
                             $('#modal-add-user').modal('hide');
-                            await showWarning(`เกิดข้อผิดพลาดในการแก้ไข(${res.code}) ${res.message})`);
+                            await swalWarning(`เกิดข้อผิดพลาดในการแก้ไข(${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
                         $('#modal-add-user').modal('hide');
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -249,31 +249,39 @@ async function reloadUserList() {
 
     } catch (xhr) {
         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
     }
 }
 
 async function toggleUserStatus(userId, isActive) {
     let action = isActive ? "เปิดใช้งาน" : "ปิดใช้งาน";
-    await showSaveConfirm(
-        `ยืนยันการ ${action} บัญชีผู้ใช้?`, `ยืนยันการ ${action}`, async () => {
-            try {
-                const res = await $.ajax({
-                    url: urlToggleUserStatus,
-                    type: "PATCH",
-                    data: JSON.stringify({ UserID: userId, IsActive: isActive }),
-                    contentType: "application/json; charset=utf-8"
-                });
-                if (res.isSuccess) {
-                    reloadUserList();
-                    await showSuccess(`เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว (${res.code})`);
-                } else {
-                    await showWarning(`เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้ (${res.code}) ${res.message})`);
-                }
-            } catch (xhr) {
-                let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
-            }
+    await swalConfirm(
+      `ยืนยันการ ${action} บัญชีผู้ใช้?`,
+      `ยืนยันการ ${action}`,
+      async () => {
+        try {
+          const res = await $.ajax({
+            url: urlToggleUserStatus,
+            type: "PATCH",
+            data: JSON.stringify({ UserID: userId, IsActive: isActive }),
+            contentType: "application/json; charset=utf-8",
+          });
+          if (res.isSuccess) {
+              reloadUserList();
+              swalSuccess(`เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว (${res.code})`);
+            //await swalSuccess(`เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว (${res.code})`);
+          } else {
+            await swalWarning(
+              `เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้ (${res.code}) ${res.message})`,
+            );
+          }
+        } catch (xhr) {
+          let msg =
+            xhr.responseJSON?.message ||
+            xhr.responseText ||
+            "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
+          await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
+      },
     );
 }

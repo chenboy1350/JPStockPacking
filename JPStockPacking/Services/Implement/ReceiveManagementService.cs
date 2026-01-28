@@ -198,6 +198,7 @@ namespace JPStockPacking.Services.Implement
 
                     lot.ReceivedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
                     lot.UpdateDate = now;
+                    lot.IsSuccess = false;
                 }
 
                 await _sPDbContext.SaveChangesAsync();
@@ -257,6 +258,11 @@ namespace JPStockPacking.Services.Implement
 
                     lot.ReceivedQty = newQty;
                     lot.UpdateDate = now;
+
+                    if(lot.Unallocated <= 0)
+                    {
+                        lot.IsSuccess = true;
+                    }
                 }
 
                 _sPDbContext.Received.RemoveRange(receivedList);

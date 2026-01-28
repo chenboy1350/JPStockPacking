@@ -65,7 +65,7 @@ function FindInvoice() {
             }
 
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -73,7 +73,7 @@ function FindInvoice() {
 async function FindConfirmedInvoice() {
     var txtInvoice = $('#txtInvoice').val().trim();
 
-    if (!txtInvoice) return await showWarning('กรุณาใส่เลขที่ใบแจ้งหนี้');
+    if (!txtInvoice) return await swalWarning('กรุณาใส่เลขที่ใบแจ้งหนี้');
 
     let model = {
         InvoiceNo: txtInvoice,
@@ -108,7 +108,7 @@ async function FindConfirmedInvoice() {
             }
 
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -117,7 +117,7 @@ async function MarkInvoiceAsRead() {
     var txtInvoice = $('#txtInvoice').val().trim();
     const uid = $('#hddUserID').val();
 
-    if (!txtInvoice) return await showWarning('กรุณาใส่เลขที่ใบแจ้งหนี้');
+    if (!txtInvoice) return await swalWarning('กรุณาใส่เลขที่ใบแจ้งหนี้');
 
     const formData = new FormData();
     formData.append("InvoiceNo", txtInvoice);
@@ -135,16 +135,16 @@ async function MarkInvoiceAsRead() {
             CloseModal();
             CheckIsMarked();
             if (res.isSuccess) {
-                await showSuccess(res.message);
+                await swalSuccess(res.message);
             }
             else {
-                await showWarning(res.message);
+                await swalWarning(res.message);
             }
         },
         error: async (xhr) => {
             $('#loadingIndicator').hide();
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -182,7 +182,7 @@ function FindUnalocateLot() {
     var dtInvFromDate = $('#dtLocFromDate').val();
     var dtInvToDate = $('#dtLocToDate').val();
 
-    if (!dtInvFromDate || !dtInvToDate) return showWarning('กรุณาเลือกวันที่ให้ครบถ้วน');
+    if (!dtInvFromDate || !dtInvToDate) return swalWarning('กรุณาเลือกวันที่ให้ครบถ้วน');
 
     let model = {
         FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
@@ -219,12 +219,18 @@ function FindUnalocateLot() {
             }
 
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 
 }
 
+function ClearLocInput() {
+    $('#txtLocOrderNo').val('');
+
+    $('#dtLocToDate').val(null);
+    $('#dtLocFromDate').val(null);
+}
 
 function ClearInvoice(){
     $('#txtInvoice').val('');

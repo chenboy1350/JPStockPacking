@@ -69,7 +69,6 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> PackingPlaning()
         {
-            await _productionPlanningService.GetOperateOrderToPlan(DateTime.UtcNow, DateTime.UtcNow.AddDays(7));
             return PartialView("~/Views/Partial/_PackingPlaning.cshtml");
         }
 
@@ -204,7 +203,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> UpdateLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("¢éÍÁÙÅäÁè¤Ãº¶éÇ¹");
+                return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãºï¿½ï¿½Ç¹");
 
             try
             {
@@ -222,7 +221,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> CancelUpdateLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("¢éÍÁÙÅäÁè¤Ãº¶éÇ¹");
+                return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãºï¿½ï¿½Ç¹");
 
             try
             {
@@ -239,7 +238,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateLotByRevNoItems([FromForm] string receiveNo)
         {
-            if (string.IsNullOrWhiteSpace(receiveNo)) return BadRequest("¢éÍÁÙÅäÁè¤Ãº¶éÇ¹");
+            if (string.IsNullOrWhiteSpace(receiveNo)) return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãºï¿½ï¿½Ç¹");
 
             try
             {
@@ -291,7 +290,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> UpdateSampleLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("¢éÍÁÙÅäÁè¶Ù¡µéÍ§");
+                return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¡ï¿½ï¿½Í§");
 
             try
             {
@@ -309,7 +308,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> CancelUpdateSampleLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("¢éÍÁÙÅäÁè¶Ù¡µéÍ§");
+                return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¡ï¿½ï¿½Í§");
 
             try
             {
@@ -326,7 +325,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds, [FromForm] bool hasPartTime, [FromForm] int workerNumber)
         {
-            if (string.IsNullOrWhiteSpace(lotNo)) return BadRequest("¢éÍÁÙÅäÁè¤Ãº¶éÇ¹");
+            if (string.IsNullOrWhiteSpace(lotNo)) return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãºï¿½ï¿½Ç¹");
             await _assignmentService.SyncAssignmentsForTableAsync(lotNo, int.Parse(tableId), receivedIDs, memberIds, hasPartTime, workerNumber);
             return Ok();
         }
@@ -383,12 +382,12 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> DefineToPack([FromForm] DefineToPackRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.OrderNo) || request.Lots == null || request.Lots.Count == 0)
-                return BadRequest("¢éÍÁÙÅäÁè¤Ãº¶éÇ¹");
+                return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãºï¿½ï¿½Ç¹");
 
             try
             {
                 await _checkQtyToSendService.DefineToPackAsync(request.OrderNo, request.Lots, User.GetUserId());
-                return Ok("ºÑ¹·Ö¡¢éÍÁÙÅàÃÕÂºÃéÍÂ");
+                return Ok("ï¿½Ñ¹ï¿½Ö¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âºï¿½ï¿½ï¿½ï¿½");
             }
             catch (Exception ex)
             {
@@ -472,7 +471,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> CheckUser([FromForm] string username, [FromForm] string password)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-                return BadRequest("¢éÍÁÙÅäÁè¤Ãº¶éÇ¹");
+                return BadRequest("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãºï¿½ï¿½Ç¹");
 
             try
             {
@@ -667,6 +666,15 @@ namespace JPStockPacking.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetOrderToStoreByLot(string lotNo)
+        {
+            var result = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> SendToStore([FromBody] SendStockInput sendStockInput)
@@ -693,25 +701,31 @@ namespace JPStockPacking.Controllers
                 var c = await _packedMangementService.ConfirmToSendExportAsync(lotNos, userId);
                 var d = await _packedMangementService.ConfirmToSendLostAsync(lotNos, userId);
 
+                var updatedLots = new List<OrderToStoreModel>();
+                foreach (var lotNo in lotNos)
+                {
+                    var lot = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+                    if (lot != null) updatedLots.Add(lot);
+                }
+
                 string message = $"Store: {(a.IsSuccess ? "O" : "X")}\n" +
                                  $"Melt: {(b.IsSuccess ? "O" : "X")}\n" +
                                  $"Export: {(c.IsSuccess ? "O" : "X")}\n" +
                                  $"Lost: {(d.IsSuccess ? "O" : "X")}";
 
-                BaseResponseModel responseModel = new()
+                return Ok(new
                 {
                     IsSuccess = a.IsSuccess || b.IsSuccess || c.IsSuccess || d.IsSuccess,
-                    Message = message
-                };
-
-                return Ok(responseModel);
+                    Message = message,
+                    Data = updatedLots
+                });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new BaseResponseModel
                 {
                     IsSuccess = false,
-                    Message = $"à¡Ô´¢éÍ¼Ô´¾ÅÒ´: {ex.Message}"
+                    Message = $"ï¿½Ô´ï¿½ï¿½Í¼Ô´ï¿½ï¿½Ò´: {ex.Message}"
                 });
             }
         }
@@ -798,14 +812,13 @@ namespace JPStockPacking.Controllers
         {
             try
             {
-                var a = await _auditService.GetUnallocatedQuentityToStore(comparedInvoiceFilterModel);
-                //byte[] pdfBytes = _reportService.GenerateComparedInvoiceReport(comparedInvoiceFilterModel, result, comparedInvoiceFilterModel.InvoiceType);
+                var result = await _auditService.GetUnallocatedQuentityToStore(comparedInvoiceFilterModel);
+                byte[] pdfBytes = _reportService.GenerateUnallocatedInvoiceReport(comparedInvoiceFilterModel, result);
 
-                //string contentDisposition = $"inline; filename=ComINV{DateTime.Now:yyyyMMdd}.pdf";
-                //Response.Headers.Append("Content-Disposition", contentDisposition);
+                string contentDisposition = $"inline; filename=ComINV{DateTime.Now:yyyyMMdd}.pdf";
+                Response.Headers.Append("Content-Disposition", contentDisposition);
 
-                //return File(pdfBytes, "application/pdf");
-                return Ok();
+                return File(pdfBytes, "application/pdf");
             }
             catch (Exception ex)
             {
@@ -865,7 +878,7 @@ namespace JPStockPacking.Controllers
                     return Ok(new BaseResponseModel
                     {
                         IsSuccess = false,
-                        Message = "äÁè¾º¢éÍÁÙÅ¾¹Ñ¡§Ò¹"
+                        Message = "ï¿½ï¿½è¾ºï¿½ï¿½ï¿½ï¿½ï¿½Å¾ï¿½Ñ¡ï¿½Ò¹"
                     });
                 }
 
@@ -954,7 +967,7 @@ namespace JPStockPacking.Controllers
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
             if (!System.IO.File.Exists(filePath))
-                return NotFound($"äÁè¾ºä¿Åì {fileName}");
+                return NotFound($"ï¿½ï¿½è¾ºï¿½ï¿½ï¿½ {fileName}");
 
             try
             {
@@ -985,7 +998,7 @@ namespace JPStockPacking.Controllers
                 return Ok(new BaseResponseModel
                 {
                     IsSuccess = true,
-                    Message = $"ÍÑ»à´µ {fileName} ÊÓàÃç¨ (Environment: {environmentName})"
+                    Message = $"ï¿½Ñ»à´µ {fileName} ï¿½ï¿½ï¿½ï¿½ï¿½ (Environment: {environmentName})"
                 });
             }
             catch (Exception ex)
@@ -993,7 +1006,7 @@ namespace JPStockPacking.Controllers
                 return BadRequest(new BaseResponseModel
                 {
                     IsSuccess = false,
-                    Message = $"à¡Ô´¢éÍ¼Ô´¾ÅÒ´: {ex.Message}"
+                    Message = $"ï¿½Ô´ï¿½ï¿½Í¼Ô´ï¿½ï¿½Ò´: {ex.Message}"
                 });
             }
         }

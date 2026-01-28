@@ -1,6 +1,6 @@
 ﻿$(document).ready(function () {
     $(document).on("click", "#btnConfirmAddEmployee", async function () {
-        await showSaveConfirm(
+        await swalConfirm(
             "ยืนยันการเพิ่มพนักงาน?", "ยืนยันการเพิ่มพนักงาน", async () => {
                 let ddlAddDept = $("#ddlAddDept").val();
                 let txtAddFirstName = $("#txtAddFirstName").val();
@@ -9,7 +9,7 @@
 
                 if (!txtAddFirstName || !txtAddLastName || !ddlAddDept) {
                     return;
-                    await showWarning("กรุณากรอกข้อมูลให้ครบถ้วน");
+                    await swalWarning("กรุณากรอกข้อมูลให้ครบถ้วน");
                 }
 
                 let model = {
@@ -28,16 +28,16 @@
                         if (res.isSuccess) {
                             $('#modal-add-user').modal('hide');
                             reloadEmployeeList();
-                            await showSuccess(`เพิ่มพนักงานเรียบร้อยแล้ว (${res.code})`);
+                            await swalSuccess(`เพิ่มพนักงานเรียบร้อยแล้ว (${res.code})`);
                         } else {
                             $('#modal-add-user').modal('hide');
-                            await showWarning(`เกิดข้อผิดพลาดในการเพิ่มพนักงาน (${res.code}) ${res.message})`);
+                            await swalWarning(`เกิดข้อผิดพลาดในการเพิ่มพนักงาน (${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
                         $('#modal-add-user').modal('hide');
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -45,7 +45,7 @@
     });
 
     $(document).on("click", "#btnConfirmEditEmployee", async function () {
-        await showSaveConfirm(
+        await swalConfirm(
             "ยืนยันการแก้ไขข้อมูลพนักงาน?", "ยืนยันการแก้ไขข้อมูลพนักงาน", async () => {
                 let hddEmpID = $("#hddEmpID").val();
                 let ddlEditDept = $("#ddlEditDept").val();
@@ -55,7 +55,7 @@
 
                 if (!txtEditFirstName || !txtEditLastName || !ddlEditDept) {
                     return;
-                    await showWarning("กรุณากรอกข้อมูลให้ครบถ้วน");
+                    await swalWarning("กรุณากรอกข้อมูลให้ครบถ้วน");
                 }
 
                 let model = {
@@ -75,16 +75,16 @@
                         if (res.isSuccess) {
                             $('#modal-edit-user').modal('hide');
                             reloadEmployeeList();
-                            await showSuccess(`แก้ไขข้อมูลพนักงานเรียบร้อยแล้ว (${res.code})`);
+                            await swalSuccess(`แก้ไขข้อมูลพนักงานเรียบร้อยแล้ว (${res.code})`);
                         } else {
                             $('#modal-edit-user').modal('hide');
-                            await showWarning(`เกิดข้อผิดพลาดในการแก้ไขข้อมูลพนักงาน (${res.code}) ${res.message})`);
+                            await swalWarning(`เกิดข้อผิดพลาดในการแก้ไขข้อมูลพนักงาน (${res.code}) ${res.message})`);
                         }
                     },
                     error: async function (xhr) {
                         $('#modal-edit-user').modal('hide');
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -135,7 +135,7 @@ function reloadEmployeeList() {
         },
         error: async function (xhr) {
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`โหลดข้อมูลล้มเหลว (${xhr.status} ${msg})`);
+            await swalWarning(`โหลดข้อมูลล้มเหลว (${xhr.status} ${msg})`);
         }
     });
 }
@@ -178,7 +178,7 @@ async function showEditEmployeeModal(employeeID) {
         },
         error: async function (xhr) {
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -186,7 +186,7 @@ async function showEditEmployeeModal(employeeID) {
 async function toggleEmployeeStatus(empID, isActive) {
     let action = isActive ? "เปิดใช้งาน" : "ปิดใช้งาน";
 
-    await showSaveConfirm(
+    await swalConfirm(
         `ยืนยันการ ${action} พนักงาน?`, `ยืนยันการ ${action}`, async () => {
             let model = {
                 EmployeeID: empID,
@@ -200,14 +200,14 @@ async function toggleEmployeeStatus(empID, isActive) {
                 success: async function (res) {
                     if (res.isSuccess) {
                         reloadEmployeeList()
-                        await showSuccess(`เปลี่ยนสถานะพนักงานเรียบร้อยแล้ว (${res.code})`);
+                        await swalSuccess(`เปลี่ยนสถานะพนักงานเรียบร้อยแล้ว (${res.code})`);
                     } else {
-                        await showWarning(`เกิดข้อผิดพลาดในการเปลี่ยนสถานะพนักงาน (${res.code}) ${res.message})`);
+                        await swalWarning(`เกิดข้อผิดพลาดในการเปลี่ยนสถานะพนักงาน (${res.code}) ${res.message})`);
                     }
                 },
                 error: async function (xhr) {
                     let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                    await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                    await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                 }
             });
         }

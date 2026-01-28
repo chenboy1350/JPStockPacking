@@ -307,7 +307,6 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        //in progress
         public async Task<List<UnallocatedQuantityModel>> GetUnallocatedQuentityToStore(ComparedInvoiceFilterModel comparedInvoiceFilterModel)
         {
             DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;
@@ -352,21 +351,51 @@ namespace JPStockPacking.Services.Implement
 
             List<UnallocatedQuantityModel> unallocatedQuantityModels = [];
 
+            var cutoffDate = DateTime.Now.AddDays(-30);
+
             foreach (var lotNo in JPExDminvLots)
             {
-                var cutoffDate = DateTime.Now.AddDays(-30);
-
                 var lot = await _sPDbContext.Lot.Where(x => x.LotNo == lotNo).FirstOrDefaultAsync();
-                if (lot != null)
-                {
-                    var spexlot = await _sPDbContext.Export.Where(x => x.LotNo == lot.LotNo).ToListAsync();
-                    if (spexlot != null && spexlot.Count > 0)
-                    {
-                        var sumExTtQty = spexlot.Sum(x => x.TtQty);
-                        var unallocatedQty = lot.ReturnedQty - sumExTtQty;
-                        if (sumExTtQty > lot.ReturnedQty)
-                        {
 
+                // แสดงเฉพาะ lot ที่ยังมี Unallocated คงเหลือ
+                if (lot != null && lot.Unallocated > 0)
+                {
+                    // ดึงข้อมูล Export ย้อนหลัง 30 วัน
+                    var exportList = await _sPDbContext.Export
+                        .Where(x => x.LotNo == lotNo && x.CreateDate >= cutoffDate)
+                        .ToListAsync();
+
+                    if(exportList.Count > 0)
+                    {
+                        // ดึงข้อมูล Store
+                        var storeList = await _sPDbContext.Store
+                            .Where(x => x.LotNo == lotNo)
+                            .ToListAsync();
+
+                        // ดึงข้อมูล Melt
+                        var meltList = await _sPDbContext.Melt
+                            .Where(x => x.LotNo == lotNo)
+                            .ToListAsync();
+
+                        // คำนวณจำนวนแต่ละประเภท
+                        decimal exportedQty = exportList.Sum(x => x.TtQty);
+                        decimal storedQty = storeList.Sum(x => x.TtQty);
+                        decimal meltedQty = meltList.Sum(x => x.TtQty);
+
+                        // เพิ่มข้อมูลลง list เฉพาะที่มี Export เกิดขึ้นในช่วง 30 วัน
+                        if (exportList.Count > 0)
+                        {
+                            unallocatedQuantityModels.Add(new UnallocatedQuantityModel
+                            {
+                                LotNo = lotNo ?? string.Empty,
+                                OrderNo = lot.OrderNo ?? string.Empty,
+                                ListNo = lot.ListNo ?? string.Empty,
+                                Article = lot.Article ?? string.Empty,
+                                ExportedQty = exportedQty,
+                                StoredQty = storedQty,
+                                MeltedQty = meltedQty,
+                                UnallocatedQty = lot.Unallocated ?? 0
+                            });
                         }
                     }
                 }
@@ -378,11 +407,14 @@ namespace JPStockPacking.Services.Implement
 
     public class UnallocatedQuantityModel
     {
+        public string OrderNo { get; set; } = string.Empty;
         public string LotNo { get; set; } = string.Empty;
+        public string ListNo { get; set; } = string.Empty;
+        public string Article { get; set; } = string.Empty;
         public decimal ExportedQty { get; set; } = 0;
         public decimal StoredQty { get; set; } = 0;
         public decimal MeltedQty { get; set; } = 0;
-        public decimal UnallocatedQty { get; set; }
+        public decimal UnallocatedQty { get; set; } = 0;
     }
 }
 

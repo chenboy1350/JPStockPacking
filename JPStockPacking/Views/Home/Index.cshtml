@@ -38,7 +38,7 @@
                     {
                         <li class="nav-item">
                             <a href="#" class="nav-link" data-action="@Url.Action("PackingPlaning", "Home")">
-                                <i class="nav-icon fas fa-receipt"></i>
+                                <i class="nav-icon fas fa-calendar-alt"></i>
                                 <p>วางแผนการแพ็ค</p>
                             </a>
                         </li>
@@ -48,7 +48,7 @@
                     {
                         <li class="nav-item">
                             <a href="#" class="nav-link" data-action="@Url.Action("ReceiveManagement", "Home")">
-                                <i class="nav-icon fas fa-receipt"></i>
+                                <i class="nav-icon fas fa-file-invoice"></i>
                                 <p>ใบรับสินค้า (ลงบิล)</p>
                             </a>
                         </li>
@@ -58,7 +58,7 @@
                     {
                         <li class="nav-item">
                             <a href="#" class="nav-link" data-action="@Url.Action("SampleReceiveManagement", "Home")">
-                                <i class="nav-icon fas fa-receipt"></i>
+                                <i class="nav-icon fas fa-file-invoice"></i>
                                 <p>ใบรับสินค้าตัวอย่าง (ลงบิล)</p>
                             </a>
                         </li>
@@ -463,6 +463,7 @@
         window.urlGetBreak = '@Url.Action("GetBreak", "Home")';
         window.urlAddBreak = '@Url.Action("AddBreak", "Home")';
         window.urlGetOrderToStore = '@Url.Action("GetOrderToStore", "Home")';
+        window.urlGetOrderToStoreByLot = '@Url.Action("GetOrderToStoreByLot", "Home")';
         window.urlSendToStore = '@Url.Action("SendToStore", "Home")';
         window.urlConfirmToSendStore = '@Url.Action("ConfirmToSendStore", "Home")';
         window.urlUpdateAppSettings = '@Url.Action("UpdateAppSettings", "Home")';

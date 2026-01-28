@@ -34,7 +34,6 @@
         public decimal? BreakQty { get; set; }
         public decimal? LostQty { get; set; }
         public string BreakDescription { get; set; } = string.Empty;
-        public string CustCode { get; set; } = string.Empty;
         public string SeldDate1 { get; set; } = string.Empty;
         public decimal? PreviousQty { get; set; }
         public decimal? OrderQty { get; set; }

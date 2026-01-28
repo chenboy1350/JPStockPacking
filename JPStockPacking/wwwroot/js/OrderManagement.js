@@ -71,7 +71,7 @@ $(document).ready(function () {
             },
             error: async function (xhr) {
                 let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });
@@ -94,11 +94,6 @@ $(document).ready(function () {
             }
         });
 
-        //if (receivedIDs.length === 0) {
-        //    await showWarning('กรุณาเลือกใบนำเข้าที่จะมอบหมาย');
-        //    return;
-        //}
-
         const tmembody = $('#tblMembers');
         const memberIds = [];
 
@@ -109,11 +104,6 @@ $(document).ready(function () {
                 if (memberId) memberIds.push(memberId);
             }
         });
-
-        //if (memberIds.length === 0) {
-        //    await showWarning('กรุณาเลือกสมาชิกที่จะมอบหมาย');
-        //    return;
-        //}
 
         const formData = new FormData();
         formData.append("lotNo", lotNo);
@@ -134,14 +124,14 @@ $(document).ready(function () {
                 $('#loadingIndicator').hide();
                 CloseModal();
                 await updateLotRow(lotNo);
-                await showSuccess("มอบหมายงานสำเร็จ");
+                swalToastSuccess;('มอบหมายงานสำเร็จ');
 
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
                 fetchOrdersByDateRange();
                 let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
             }
         });
     });
@@ -246,7 +236,7 @@ $(document).ready(function () {
         });
 
         if (assignmentIDs.length === 0) {
-            await showWarning('กรุณาเลือกใบนำเข้าที่จะรับคืน');
+            await swalWarning('กรุณาเลือกใบนำเข้าที่จะรับคืน');
             return;
         }
 
@@ -266,14 +256,14 @@ $(document).ready(function () {
                 $('#loadingIndicator').hide();
                 CloseModal();
                 await updateLotRow(lotNo);
-                await showSuccess("คืนงานสำเร็จ");
+                swalToastSuccess('คืนงานสำเร็จ');
             },
             error: async (xhr) => {
                 $('#loadingIndicator').hide();
                 CloseModal();
                 fetchOrdersByDateRange();
                 let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                swalToastWarning(`คืนงานไม่สำเร็จ (${xhr.status} ${msg})`);
             }
         });
     });
@@ -288,7 +278,7 @@ $(document).ready(function () {
         if (txtAddBreakDes == '') {
             $('#txtAddBreakDes').show(); 
         } else {
-            await showSaveConfirm(
+            await swalConfirm(
                 `ต้องการเพิ่มอาการ "${txtAddBreakDes}" ใช่หรือไม่`, "ยืนยันการเพิ่มอาการใหม่", async () => {
                     const formData = new FormData();
                     formData.append("breakDescription", txtAddBreakDes);
@@ -310,12 +300,12 @@ $(document).ready(function () {
                             });
                             $('#ddlBreakDes').val(res[res.length - 1].breakDescriptionId);
 
-                            await showSuccess("เพิ่มอาการเรียบร้อย");
+                            swalToastSuccess("เพิ่มอาการเรียบร้อย");
                         },
                         error: async (xhr) => {
                             $('#loadingIndicator').hide();
                             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                         }
                     });
                 }
@@ -415,16 +405,16 @@ $(document).ready(function () {
 
         if (lostQty == '' || lostQty == 0)
         {
-            await showWarning('กรุณากรอกจำนวนหาย');
+            await swalWarning('กรุณากรอกจำนวนหาย');
             return;
         }
 
         if (leaderID == '' || leaderID == 0) {
-            await showWarning('กรุณาเลือกหัวหน้าโต๊ะ');
+            await swalWarning('กรุณาเลือกหัวหน้าโต๊ะ');
             return;
         }
 
-        await showSaveConfirm(
+        await swalConfirm(
             `ต้องการเพิ่ม รายการหาย จำนวน ${lostQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม รายการหาย", async () => {
                 const formData = new FormData();
                 formData.append("lotNo", lotNo);
@@ -441,12 +431,12 @@ $(document).ready(function () {
                         $('#loadingIndicator').hide();
                         CloseModal();
                         await updateLotRow(lotNo);
-                        await showSuccess("เพิ่ม รายการหาย เรียบร้อย");
+                        await swalSuccess("เพิ่ม รายการหาย เรียบร้อย");
                     },
                     error: async (xhr) => {
                         $('#loadingIndicator').hide();
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -460,16 +450,16 @@ $(document).ready(function () {
         const lotNo = $('#hddLotNo').val();
 
         if (breakQty == '' || breakQty == 0) {
-            await showWarning('กรุณากรอกจำนวน งานชำรุด');
+            await swalWarning('กรุณากรอกจำนวน งานชำรุด');
             return;
         }
 
         if (breakDes == '' || breakDes == 0) {
-            await showWarning('กรุณาเลือกอาการ');
+            await swalWarning('กรุณาเลือกอาการ');
             return;
         }
 
-        await showSaveConfirm(
+        await swalConfirm(
             `ต้องการเพิ่ม รายการชำรุด จำนวน ${breakQty} ชิ้น ใช่หรือไม่`, "ยืนยันการเพิ่ม รายการชำรุด", async () => {
                 const formData = new FormData();
                 formData.append("lotNo", lotNo);
@@ -486,12 +476,12 @@ $(document).ready(function () {
                         $('#loadingIndicator').hide();
                         CloseModal();
                         await updateLotRow(lotNo);
-                        await showSuccess("เพิ่ม รายการชำรุด เรียบร้อย");
+                        await swalSuccess("เพิ่ม รายการชำรุด เรียบร้อย");
                     },
                     error: async (xhr) => {
                         $('#loadingIndicator').hide();
                         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-                        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+                        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
                     }
                 });
             }
@@ -549,7 +539,7 @@ async function fetchOrdersByDateRange() {
         error: async function (xhr) {
             $('#loadingIndicator').hide();
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -831,7 +821,7 @@ async function showModalTableMember(assignedID) {
         },
         error: async function (xhr) {
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         },
     });
 }
@@ -917,7 +907,7 @@ function showModalAssign(lotNo) {
     })
     .fail(async function (xhr) {
         let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-        await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         tbody.empty().append(
             `<tr><td colspan="10" class="text-danger text-center">
                 ${msg}
@@ -972,7 +962,7 @@ async function showModalReturn(lotNo) {
         },
         error: async function (xhr) {
             select.empty().append('<option value="">โหลดข้อมูลไม่สำเร็จ</option>');
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status})`);
         },
         complete: function () {
             select.prop('disabled', false);
@@ -1007,7 +997,7 @@ async function showModalAddLost() {
         error: async (xhr) => {
             $('#loadingIndicator').hide();
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 
@@ -1073,7 +1063,7 @@ async function showModalLost(lotNo) {
         error: async function (xhr) {
             tbody.empty().append('<tr><td colspan="11" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1152,7 +1142,7 @@ async function showModalBreak(lotNo) {
         error: async function (xhr) {
             tbody.empty().append('<tr><td colspan="12" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1188,7 +1178,7 @@ async function printBreakToPDF() {
     });
 
     if (breakIDs.length === 0) {
-        await showWarning('กรุณาเลือก break ที่ต้องการพิมพ์');
+        await swalWarning('กรุณาเลือก break ที่ต้องการพิมพ์');
         return;
     }
 
@@ -1221,7 +1211,7 @@ async function printBreakToPDF() {
             }
 
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1244,7 +1234,7 @@ async function printLostToPDF() {
     });
 
     if (lostIDs.length === 0) {
-        await showWarning('กรุณาเลือก Lost ที่ต้องการพิมพ์');
+        await swalWarning('กรุณาเลือก Lost ที่ต้องการพิมพ์');
         return;
     }
 
@@ -1279,7 +1269,7 @@ async function printLostToPDF() {
             }
 
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-            await showWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
 }
@@ -1325,7 +1315,7 @@ async function goToOrderLot(keyword) {
         return;
     }
 
-    await showWarning("ไม่พบข้อมูล Lot หรือ Order ที่ค้นหา");
+    await swalWarning("ไม่พบข้อมูล Lot หรือ Order ที่ค้นหา");
 }
 
 function goToPage(page) {
