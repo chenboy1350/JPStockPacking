@@ -8,11 +8,12 @@ using System.Globalization;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class ReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService) : IReceiveManagementService
+    public class ReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, IProductionPlanningService productionPlanningService, IPackedMangementService packedMangementService) : IReceiveManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
         private readonly IProductionPlanningService _productionPlanningService = productionPlanningService;
+        private readonly IPackedMangementService _packedMangementService = packedMangementService;
 
         public async Task UpdateLotItemsAsync(string receiveNo, string[] orderNos, int[] receiveIds)
         {
@@ -199,6 +200,8 @@ namespace JPStockPacking.Services.Implement
                     lot.ReceivedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
                     lot.UpdateDate = now;
                     lot.IsSuccess = false;
+
+                    await _packedMangementService.UpdateOrderSuccessAsync(lot.OrderNo);
                 }
 
                 await _sPDbContext.SaveChangesAsync();
@@ -262,6 +265,8 @@ namespace JPStockPacking.Services.Implement
                     if(lot.Unallocated <= 0)
                     {
                         lot.IsSuccess = true;
+
+                        await _packedMangementService.UpdateOrderSuccessAsync(lot.OrderNo);
                     }
                 }
 

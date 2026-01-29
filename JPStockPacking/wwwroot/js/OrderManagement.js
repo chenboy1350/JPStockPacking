@@ -575,9 +575,6 @@ function renderOrderList(data) {
                                 <i class="fas fa-clipboard-check"></i> ${order.orderDate}
                                 <i class="fas fa-box-open"></i> ${order.seldDate1}
                             </div>
-                            <div class="col-md-2">
-                                <i class="fas fa-business-time"></i> ${order.startDateTH}
-                            </div>
                             <div class="col-md-1">
                                 <i class="fas fa-boxes"></i> ${order.completeLot}/${order.totalLot}
                             </div>

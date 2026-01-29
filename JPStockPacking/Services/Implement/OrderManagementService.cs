@@ -39,12 +39,6 @@ namespace JPStockPacking.Services.Implement
             if (!string.IsNullOrEmpty(custCode))
                 ordersQuery = ordersQuery.Where(o => o.CustCode!.Contains(custCode));
 
-            if (fromDate != DateTime.MinValue)
-                ordersQuery = ordersQuery.Where(o => o.PackStartDate >= fromDate);
-
-            if (toDate != DateTime.MinValue)
-                ordersQuery = ordersQuery.Where(o => o.PackStartDate <= toDate);
-
             int totalItems = await ordersQuery.CountAsync();
 
             var orders = await ordersQuery
@@ -210,8 +204,6 @@ namespace JPStockPacking.Services.Implement
                     SumTtQty = (int)relatedLots.Sum(l => l.TtQty ?? 0),
                     CompleteLot = relatedLots.Count(l => l.IsSuccess),
                     OperateDays = operateDays,
-                    StartDate = order.PackStartDate ?? DateTime.MinValue,
-                    StartDateTH = order.PackStartDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
                     PackDaysRemain = packDaysRemain,
                     ExportDaysRemain = exportDaysRemain,
                     IsUpdate = notify?.IsUpdate ?? false,
@@ -590,7 +582,7 @@ namespace JPStockPacking.Services.Implement
                                 join b in _jPDbContext.OrdOrder on a.OrderNo equals b.Ordno into bGroup
                                 from b in bGroup.DefaultIfEmpty()
 
-                                where (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025)
+                                where (a.FactoryDate!.Value.Year == DateTime.Now.Year)
                                       && a.Factory == true
                                       && !a.OrderNo.StartsWith("S")
                                       && (a.CustCode != "STOCK" && a.CustCode != "SAMPLE")

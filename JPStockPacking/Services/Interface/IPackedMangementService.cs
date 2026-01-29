@@ -14,5 +14,6 @@ namespace JPStockPacking.Services.Interface
         Task<BaseResponseModel> ConfirmToSendExportAsync(string[] lotNos, string userId);
         Task<List<TempPack>> GetAllDocToPrint(string[] lotNos, string userid);
         Task UpdateArticleAsync(string orderNo);
+        Task UpdateOrderSuccessAsync(string orderNo);
     }
 }

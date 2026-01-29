@@ -268,11 +268,11 @@ function filterAndCalculate() {
 
     const $statusBadge = $('#statusBadge');
     if (parseFloat(targetPerWorker) < 50) {
-        $statusBadge.text('เป้าหมายต่ำ').attr('class', 'ops-badge ops-badge--success');
+        $statusBadge.text('ชิลๆ สบายๆ').attr('class', 'ops-badge ops-badge--success');
     } else if (parseFloat(targetPerWorker) < 100) {
-        $statusBadge.text('เป้าหมายปกติ').attr('class', 'ops-badge ops-badge--info');
+        $statusBadge.text('ปกติ').attr('class', 'ops-badge ops-badge--info');
     } else {
-        $statusBadge.text('เป้าหมายสูง').attr('class', 'ops-badge ops-badge--warning');
+        $statusBadge.text('งานล้นมือ').attr('class', 'ops-badge ops-badge--warning');
     }
 
     $('#summaryDetails').removeClass('ops-hidden');
@@ -281,8 +281,13 @@ function filterAndCalculate() {
     if (ordersData.length > 0 && totalQty > 0) {
         const earliestDueDate = getEarliestDueDate(ordersData);
         updateWorkStatus(totalQty, earliestDueDate, workers, daysCount, avgBaseTime);
+
+        // Timeline Breakdown
+        const segments = createTimelineSegments(ordersData, $('#fromDate').val(), workers, isSentMode);
+        displayTimelineBreakdown(segments, workers);
     } else {
         $('#statusCard').addClass('ops-hidden');
+        $('#timelineSection').addClass('ops-hidden');
     }
 }
 
@@ -305,6 +310,219 @@ function toggleMode() {
     }
 
     filterAndCalculate();
+}
+
+// ====== TIMELINE BREAKDOWN FUNCTIONS ======
+
+// หา due dates ที่ไม่ซ้ำและเรียงลำดับ
+function getUniqueDueDates(orders) {
+    const dueDatesSet = new Set();
+    orders.forEach(order => {
+        const date = new Date(order.dueDate);
+        date.setHours(0, 0, 0, 0);
+        dueDatesSet.add(date.getTime());
+    });
+    return Array.from(dueDatesSet)
+        .sort((a, b) => a - b)
+        .map(timestamp => new Date(timestamp));
+}
+
+// เช็คว่าวันที่เท่ากันหรือไม่
+function isSameDate(date1, date2) {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+}
+
+// สร้าง Timeline Segments แบ่งตาม Due Date
+function createTimelineSegments(orders, fromDate, workers, isSentMode) {
+    const uniqueDueDates = getUniqueDueDates(orders);
+    const segments = [];
+    let currentStartDate = new Date(fromDate);
+    currentStartDate.setHours(0, 0, 0, 0);
+    let carryOverDays = 0;
+
+    for (let i = 0; i < uniqueDueDates.length; i++) {
+        const dueDate = uniqueDueDates[i];
+
+        // กรอง orders ที่มี dueDate ตรงกัน
+        const segmentOrders = orders.filter(order => isSameDate(order.dueDate, dueDate));
+
+        // คำนวณ qty ตาม mode
+        const segmentQty = isSentMode
+            ? segmentOrders.reduce((sum, o) => sum + o.sendToPackQty, 0)
+            : segmentOrders.reduce((sum, o) => sum + o.qty, 0);
+
+        // คำนวณ baseTime เฉลี่ย
+        const avgBaseTime = segmentOrders.length > 0
+            ? segmentOrders.reduce((sum, o) => sum + o.baseTime, 0) / segmentOrders.length
+            : 0.6;
+
+        // คำนวณ available days
+        const availableDays = calculateDaysUntil(dueDate, currentStartDate);
+        const effectiveAvailableDays = availableDays + carryOverDays;
+
+        // คำนวณ days needed
+        const plan = calculateProductionPlan(segmentQty, workers, avgBaseTime);
+        const daysNeeded = plan.actualDays;
+
+        // เช็คว่าทันหรือไม่
+        const isOnTime = daysNeeded <= effectiveAvailableDays;
+        const timeDiff = effectiveAvailableDays - daysNeeded;
+
+        // เก็บข้อมูล segment
+        segments.push({
+            index: i + 1,
+            startDate: new Date(currentStartDate),
+            endDate: dueDate,
+            orders: segmentOrders,
+            orderCount: segmentOrders.length,
+            totalQty: segmentQty,
+            avgBaseTime: avgBaseTime,
+            availableDays: availableDays,
+            effectiveAvailableDays: effectiveAvailableDays,
+            daysNeeded: daysNeeded,
+            isOnTime: isOnTime,
+            timeDiff: timeDiff,
+            carryOverFromPrevious: carryOverDays,
+            carryOverToNext: timeDiff
+        });
+
+        // อัพเดท startDate สำหรับ segment ถัดไป
+        currentStartDate = new Date(dueDate);
+        currentStartDate.setDate(currentStartDate.getDate() + 1);
+
+        // ส่งต่อ carry-over ไป segment ถัดไป
+        carryOverDays = timeDiff;
+    }
+
+    return segments;
+}
+
+// แสดง Timeline Breakdown
+function displayTimelineBreakdown(segments, workers) {
+    const $container = $('#timelineContainer');
+    const $summary = $('#timelineSummary');
+    const $section = $('#timelineSection');
+
+    if (segments.length === 0) {
+        $section.addClass('ops-hidden');
+        return;
+    }
+
+    $section.removeClass('ops-hidden');
+    $container.empty();
+
+    segments.forEach(segment => {
+        const statusClass = segment.isOnTime ? 'ops-timeline-segment--success' : 'ops-timeline-segment--warning';
+        const statusBadgeClass = segment.isOnTime ? 'ops-segment-status--success' : 'ops-segment-status--warning';
+        const statusText = segment.isOnTime ? '✓ ทันกำหนด' : '⚠ ไม่ทัน';
+
+        const timeDiffClass = segment.timeDiff >= 0 ? 'ops-text-success' : 'ops-text-danger';
+        const timeDiffPrefix = segment.timeDiff > 0 ? '+' : '';
+
+        // Progress bar calculation
+        const progressPercent = segment.effectiveAvailableDays > 0
+            ? Math.min((segment.daysNeeded / segment.effectiveAvailableDays) * 100, 100)
+            : 100;
+
+        const segmentHtml = `
+            <div class="ops-timeline-segment ${statusClass}">
+                <div class="ops-segment-header">
+                    <div class="ops-segment-title">
+                        <span class="ops-segment-number">${segment.index}</span>
+                        Due: ${formatThaiDate(segment.endDate)}
+                    </div>
+                    <span class="ops-segment-status ${statusBadgeClass}">${statusText}</span>
+                </div>
+
+                <div class="ops-segment-dates">
+                    <i class="fas fa-calendar-alt"></i>
+                    ${formatThaiDate(segment.startDate)} → ${formatThaiDate(segment.endDate)}
+                    <span class="ops-text-muted">(${segment.availableDays} วัน)</span>
+                    ${segment.carryOverFromPrevious !== 0 ? `
+                        <span class="${segment.carryOverFromPrevious > 0 ? 'ops-text-success' : 'ops-text-danger'}" style="font-size: 0.75rem; margin-left: 0.5rem;">
+                            (${segment.carryOverFromPrevious > 0 ? '+' : ''}${segment.carryOverFromPrevious.toFixed(2)} จากช่วงก่อน)
+                        </span>
+                    ` : ''}
+                </div>
+
+                <div class="ops-segment-body">
+                    <div class="ops-segment-stat">
+                        <div class="ops-segment-stat-value">${segment.totalQty.toLocaleString()}</div>
+                        <div class="ops-segment-stat-label">ชิ้น</div>
+                    </div>
+                    <div class="ops-segment-stat">
+                        <div class="ops-segment-stat-value">${segment.orderCount}</div>
+                        <div class="ops-segment-stat-label">ออเดอร์</div>
+                    </div>
+                    <div class="ops-segment-stat">
+                        <div class="ops-segment-stat-value">${segment.daysNeeded.toFixed(2)}</div>
+                        <div class="ops-segment-stat-label">วันที่ใช้</div>
+                    </div>
+                    <div class="ops-segment-stat">
+                        <div class="ops-segment-stat-value ${timeDiffClass}">${timeDiffPrefix}${segment.timeDiff.toFixed(2)}</div>
+                        <div class="ops-segment-stat-label">ส่วนต่าง (วัน)</div>
+                    </div>
+                </div>
+
+                <div class="ops-segment-progress">
+                    <div class="ops-segment-progress-bar" style="width: ${progressPercent}%;"></div>
+                </div>
+
+                ${segment.carryOverToNext !== 0 ? `
+                    <div class="ops-segment-carry ${segment.carryOverToNext > 0 ? 'ops-segment-carry--positive' : 'ops-segment-carry--negative'}">
+                        <i class="fas ${segment.carryOverToNext > 0 ? 'fa-arrow-right' : 'fa-exclamation-circle'}"></i>
+                        <span>→ ${segment.carryOverToNext > 0 ? '+' : ''}${segment.carryOverToNext.toFixed(2)} วัน${segment.carryOverToNext > 0 ? 'เหลือส่งต่อ' : 'ค้าง'}</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        $container.append(segmentHtml);
+    });
+
+    // Summary
+    const totalSegments = segments.length;
+    const allOnTime = segments.every(s => s.isOnTime);
+    const totalQty = segments.reduce((sum, s) => sum + s.totalQty, 0);
+    const totalDaysNeeded = segments.reduce((sum, s) => sum + s.daysNeeded, 0);
+
+    const overallStatusText = allOnTime
+        ? '<span class="ops-text-success">✓ ผ่านทั้งหมด</span>'
+        : '<span class="ops-text-warning">⚠ มี segment ไม่ทัน</span>';
+
+    const workersRecHtml = allOnTime
+        ? `<div class="ops-timeline-workers-rec ops-timeline-workers-rec--success">
+               <strong class="ops-text-success"><i class="fas fa-check-circle"></i> ${workers} คน เพียงพอแล้ว</strong>
+               <div class="ops-text-muted">สามารถทำเสร็จทุก segment ได้ทันกำหนด</div>
+           </div>`
+        : `<div class="ops-timeline-workers-rec ops-timeline-workers-rec--warning">
+               <strong class="ops-text-warning"><i class="fas fa-exclamation-triangle"></i> ต้องเพิ่มพนักงาน</strong>
+               <div class="ops-text-muted">บาง segment ไม่สามารถทำเสร็จทันกำหนดได้</div>
+           </div>`;
+
+    $summary.html(`
+        <div class="ops-timeline-summary-item">
+            <div class="ops-timeline-summary-value">${totalSegments}</div>
+            <div class="ops-timeline-summary-label">จำนวน Segments</div>
+        </div>
+        <div class="ops-timeline-summary-item">
+            <div class="ops-timeline-summary-value">${totalQty.toLocaleString()}</div>
+            <div class="ops-timeline-summary-label">รวมทั้งหมด (ชิ้น)</div>
+        </div>
+        <div class="ops-timeline-summary-item">
+            <div class="ops-timeline-summary-value">${totalDaysNeeded.toFixed(2)}</div>
+            <div class="ops-timeline-summary-label">รวมวันที่ใช้</div>
+        </div>
+        <div class="ops-timeline-summary-item">
+            <div class="ops-timeline-summary-value">${overallStatusText}</div>
+            <div class="ops-timeline-summary-label">สถานะโดยรวม</div>
+        </div>
+        ${workersRecHtml}
+    `);
 }
 
 // Animation function
@@ -333,3 +551,4 @@ function animateValue(id, start, end, duration) {
         $element.text(isDecimal ? current.toFixed(2) : Math.floor(current));
     }, 16);
 }
+

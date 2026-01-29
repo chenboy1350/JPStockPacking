@@ -487,7 +487,13 @@ namespace JPStockPacking.Services.Implement
                 lot.Unallocated = input.Unallocated;
                 lot.UpdateDate = DateTime.UtcNow;
 
-                if (input.Unallocated <= 0) lot.IsSuccess = true;
+                if (input.Unallocated <= 0)
+                {
+                    lot.IsSuccess = true;
+                    lot.UpdateDate = DateTime.UtcNow;
+
+                    await UpdateOrderSuccessAsync(lot.OrderNo);
+                }
 
                 await _sPDbContext.SaveChangesAsync();
 
@@ -1472,6 +1478,25 @@ namespace JPStockPacking.Services.Implement
             filteredResult.AddRange(LostTempPacks);
 
             return filteredResult;
+        }
+
+        public async Task UpdateOrderSuccessAsync(string orderNo)
+        {
+            if (string.IsNullOrWhiteSpace(orderNo))
+                return;
+            var lots = await _sPDbContext.Lot
+                .Where(x => x.OrderNo == orderNo)
+                .ToListAsync();
+            if (lots.Count == 0)
+                return;
+            bool allSuccess = lots.All(x => x.IsSuccess);
+            var order = await _sPDbContext.Order.FirstOrDefaultAsync(x => x.OrderNo == orderNo);
+            if (order != null)
+            {
+                order.IsSuccess = allSuccess;
+                order.UpdateDate = DateTime.Now;
+                await _sPDbContext.SaveChangesAsync();
+            }
         }
 
         public async Task UpdateArticleAsync(string orderNo)
