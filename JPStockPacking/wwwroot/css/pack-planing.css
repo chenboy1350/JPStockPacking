@@ -727,6 +727,7 @@
     flex-direction: row;
     gap: 1rem;
     overflow-x: auto;
+    overflow-y: visible;
     padding-bottom: 1rem;
     scroll-snap-type: x mandatory;
 }
@@ -984,6 +985,441 @@
 }
 
 /* ===================================
+   TIMELINE SECTION HEADERS (OVERDUE/UPCOMING)
+   =================================== */
+.ops-timeline-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.ops-timeline-section-header--overdue {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+    color: var(--accent-red);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    animation: opsPulse 2s ease-in-out infinite;
+}
+
+.ops-timeline-section-header--overdue i {
+    font-size: 1.25rem;
+}
+
+.ops-timeline-section-header--upcoming {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+    color: var(--accent-blue);
+    border: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.ops-timeline-section-header--upcoming i {
+    color: var(--accent-blue);
+}
+
+/* ===================================
+   OVERDUE SEGMENT STYLES
+   =================================== */
+.ops-timeline-segment--overdue {
+    border-top-color: var(--accent-red) !important;
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, var(--card-bg) 100%);
+    border-left: 4px solid var(--accent-red);
+}
+
+.ops-timeline-segment--overdue .ops-segment-number {
+    background: var(--accent-red) !important;
+}
+
+.ops-timeline-segment--overdue:not(:last-child)::after {
+    color: var(--accent-red);
+}
+
+.ops-segment-status--overdue {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--accent-red);
+    font-weight: 700;
+}
+
+.ops-segment-dates--overdue {
+    background: rgba(239, 68, 68, 0.08);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-red);
+}
+
+.ops-segment-dates--overdue i {
+    color: var(--accent-red) !important;
+}
+
+/* ===================================
+   RECOMMENDATION BOX
+   =================================== */
+.ops-segment-recommendation {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--accent-orange);
+    font-size: 0.875rem;
+    color: var(--accent-orange);
+    font-weight: 500;
+}
+
+.ops-segment-recommendation i {
+    font-size: 1rem;
+    color: var(--accent-red);
+}
+
+.ops-segment-recommendation strong {
+    color: var(--accent-red);
+    font-size: 1rem;
+}
+
+
+/* ===================================
+   HORIZONTAL TIMELINE - NEW LAYOUT
+   =================================== */
+.ops-horizontal-timeline {
+    position: relative;
+    padding: 1rem 0 2rem 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.ops-horizontal-timeline.ops-dragging {
+    cursor: grabbing;
+}
+
+.ops-horizontal-timeline .ops-hseg-card {
+    cursor: default;
+}
+
+.ops-timeline-track {
+    display: flex;
+    align-items: flex-start;
+    min-width: max-content;
+    padding: 0 1rem;
+    gap: 0;
+    position: relative;
+}
+
+/* Timeline Base Line - ยาวตาม track ที่ scroll ได้ */
+.ops-timeline-line {
+    position: absolute;
+    top: 85px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+        var(--accent-red) 0%,
+        var(--accent-red) 35%,
+        var(--accent-orange) 50%,
+        var(--accent-blue) 65%,
+        var(--accent-blue) 100%
+    );
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Timeline Zones */
+.ops-timeline-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.ops-timeline-zone--overdue {
+    padding-right: 0.5rem;
+}
+
+.ops-timeline-zone--upcoming {
+    padding-left: 0.5rem;
+}
+
+.ops-timeline-zone--empty {
+    padding-left: 1rem;
+}
+
+.ops-zone-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    white-space: nowrap;
+}
+
+.ops-timeline-zone--overdue .ops-zone-label {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-red);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    margin-left: auto;
+}
+
+.ops-timeline-zone--upcoming .ops-zone-label {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    margin-right: auto;
+}
+
+.ops-zone-segments {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.ops-zone-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    color: var(--accent-green);
+    font-size: 0.85rem;
+}
+
+.ops-zone-empty i {
+    font-size: 1.25rem;
+}
+
+/* TODAY Section */
+.ops-timeline-today {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.ops-today-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, var(--accent-orange) 0%, #ea580c 100%);
+    color: white;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    white-space: nowrap;
+}
+
+.ops-today-label i {
+    font-size: 1rem;
+}
+
+/* Today Segments - การ์ดที่ due วันนี้ */
+.ops-today-segments {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Horizontal Segment Card - ปรับขนาดใหญ่ขึ้นเพื่อให้อ่านง่าย */
+.ops-hseg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.ops-hseg-connector {
+    width: 3px;
+    height: 30px;
+    background: var(--accent-blue);
+}
+
+.ops-hseg-node {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    border: 3px solid white;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 0.5rem;
+}
+
+.ops-hseg-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    min-width: 200px;
+    max-width: 240px;
+    box-shadow: var(--shadow-sm);
+    border-top: 4px solid var(--accent-blue);
+    transition: var(--transition-normal);
+    font-size: 1rem;
+}
+
+.ops-hseg .ops-hseg-card {
+    cursor: pointer;
+}
+
+.ops-hseg:hover .ops-hseg-card {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.ops-hseg:active .ops-hseg-card {
+    transform: translateY(-2px);
+}
+
+/* Border colors: overdue=แดง, today=เหลือง, upcoming=ฟ้า */
+.ops-hseg--overdue .ops-hseg-card {
+    border-top-color: var(--accent-red);
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, var(--card-bg) 100%);
+}
+
+.ops-hseg--today .ops-hseg-card {
+    border-top-color: #f59e0b;
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--card-bg) 100%);
+}
+
+.ops-hseg--upcoming .ops-hseg-card {
+    border-top-color: var(--accent-blue);
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, var(--card-bg) 100%);
+}
+
+/* Connector & Node colors */
+.ops-hseg--overdue .ops-hseg-connector,
+.ops-hseg--overdue .ops-hseg-node {
+    background: var(--accent-red);
+}
+
+.ops-hseg--today .ops-hseg-connector,
+.ops-hseg--today .ops-hseg-node {
+    background: #f59e0b;
+}
+
+.ops-hseg--upcoming .ops-hseg-connector,
+.ops-hseg--upcoming .ops-hseg-node {
+    background: var(--accent-blue);
+}
+
+.ops-hseg-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.ops-hseg-status {
+    font-size: 1.1rem;
+}
+
+.ops-hseg-date {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.ops-hseg-date i {
+    margin-right: 0.25rem;
+}
+
+.ops-icon--red {
+    color: var(--accent-red);
+}
+
+.ops-icon--yellow {
+    color: #f59e0b;
+}
+
+.ops-icon--blue {
+    color: var(--accent-blue);
+}
+
+.ops-hseg-time {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.ops-hseg--overdue .ops-hseg-time {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+.ops-hseg-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.ops-hseg-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ops-hseg-stat-value {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.ops-hseg-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.ops-hseg-days {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.ops-hseg-rec {
+    margin-top: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent-red);
+    text-align: center;
+    border: 1px dashed var(--accent-red);
+}
+
+/* Scrollbar styling */
+.ops-horizontal-timeline::-webkit-scrollbar {
+    height: 6px;
+}
+
+.ops-horizontal-timeline::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-full);
+}
+
+.ops-horizontal-timeline::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    border-radius: var(--radius-full);
+}
+
+.ops-horizontal-timeline::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, var(--primary), var(--accent-purple));
+}
+
+/* ===================================
    RESPONSIVE
    =================================== */
 @media (max-width: 768px) {
@@ -1010,5 +1446,30 @@
     .ops-table th,
     .ops-table td {
         padding: 0.5rem;
+    }
+
+    .ops-hseg-card {
+        min-width: 160px;
+        max-width: 200px;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .ops-hseg-stat-value {
+        font-size: 1.1rem;
+    }
+
+    .ops-hseg-stat-label {
+        font-size: 0.75rem;
+    }
+
+    .ops-zone-label {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .ops-today-label {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
     }
 }

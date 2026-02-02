@@ -47,8 +47,8 @@
                     <h3 class="card-title">รายการใบส่ง</h3>
                 </div>
             </div>
-            <div class="card-body table-responsive p-0" style="height:87vh">
-                <table id="tbl-main" class="table table-head-fixed table-striped table-hover text-nowrap">
+            <div class="card-body table-responsive" style="height:87vh; padding: 0px !important;">
+                <table id="tbl-main" class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
                     <thead>
                         <tr>
                             <th class="text-start">#</th>
@@ -73,7 +73,7 @@
                                     </td>
                                     <td class="col-action">
                                         <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
-                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                            <i class="fas fa-folder"></i> ยกเลิกรายการ
                                         </button>
                                     </td>
                                 }
@@ -84,10 +84,10 @@
                                     </td>
                                     <td class="col-action">
                                         <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
-                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                            <i class="fas fa-folder"></i> รับเข้า
                                         </button>
                                         <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
-                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                            <i class="fas fa-folder"></i> ยกเลิกรายการ
                                         </button>
                                     </td>
                                 }
@@ -98,10 +98,10 @@
                                     </td>
                                     <td class="col-action">
                                         <button class="btn btn-warning btn-sm" onclick="showModalUpdateLot('@item.ReceiveNo')">
-                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                            <i class="fas fa-folder"></i> รับเข้า
                                         </button>
                                         <button class="btn btn-danger btn-sm" onclick="showModalCancelLot('@item.ReceiveNo')">
-                                            <i class="fas fa-folder"></i> ตรวจสอบ
+                                            <i class="fas fa-folder"></i> ยกเลิกรายการ
                                         </button>
                                     </td>
                                 }
@@ -125,10 +125,11 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-head-fixed table-striped table-hover text-nowrap">
+                <div class="card-body table-responsive" style="height:87vh; padding: 0px !important;">
+                    <table class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
                         <thead>
                             <tr>
+                                <th>#</th>
                                 <th>รหัสลูกค้า</th>
                                 <th>OrderNo</th>
                                 <th>LotNo</th>
@@ -138,9 +139,9 @@
                                 <th>จำนวน</th>
                                 <th>น้ำหนักรวม(g)</th>
                                 <th class="text-center">
-                                    <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="chkSelectAll" checked>
-                                        <label for="chkSelectAll">เลือก</label>
+                                    <div class="chk-wrapper">
+                                        <input type="checkbox" id="chkSelectAll" class="custom-checkbox" checked>
+                                        <label for="chkSelectAll" class="ms-2 mb-0">เลือก</label>
                                     </div>
                                 </th>
 
@@ -152,7 +153,7 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-warning" id="btnUpdateLot">รับเข้า</button>
+                <button type="button" class="btn btn-warning" id="btnUpdateLot">รับเข้ารายการที่เลือก</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>
@@ -170,10 +171,11 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-head-fixed table-striped table-hover text-nowrap">
+                <div class="card-body table-responsive" style="padding: 0px !important;">
+                    <table class="table table-head-fixed text-nowrap table-packed-custom">
                         <thead>
                             <tr>
+                                <th>#</th>
                                 <th>รหัสลูกค้า</th>
                                 <th>OrderNo</th>
                                 <th>LotNo</th>
@@ -183,9 +185,9 @@
                                 <th>จำนวน</th>
                                 <th>น้ำหนักรวม(g)</th>
                                 <th class="text-center">
-                                    <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="chkSelectAll" checked>
-                                        <label for="chkSelectAll">เลือก</label>
+                                    <div class="chk-wrapper">
+                                        <input type="checkbox" id="chkCancelSelectAll" class="custom-checkbox" checked>
+                                        <label for="chkCancelSelectAll" class="ms-2 mb-0">เลือก</label>
                                     </div>
                                 </th>
 
@@ -197,7 +199,7 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-end">
-                <button type="button" class="btn btn-danger" id="btnCancelUpdateLot">ยกเลิก</button>
+                <button type="button" class="btn btn-danger" id="btnCancelUpdateLot">ยกเลิกรายการที่เลือก</button>
                 <button type="button" class="btn btn-default" onclick="CloseModal()">ปิด</button>
             </div>
         </div>

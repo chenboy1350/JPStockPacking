@@ -93,18 +93,21 @@
             </div>
         </div>
         <button id="calculateBtn" class="ops-calculate-btn"><i class="fas fa-calculator"></i>คำนวณแผนการทำงาน</button>
-        <div class="ops-summary ops-hidden" id="summaryDetails">
-            <div class="ops-summary-row"><span>จำนวนออเดอร์ที่เลือก:</span><span id="selectedOrders">0 รายการ</span></div>
-            <div class="ops-summary-row"><span>จำนวนชั่วโมงทำงานทั้งหมด:</span><span id="totalHours">0 ชั่วโมง</span></div>
-            <div class="ops-summary-row"><span>เป้าหมายต่อชั่วโมง:</span><span id="targetPerHour">0 ชิ้น/ชม.</span></div>
-            <div class="ops-summary-row"><span>เป้าหมายต่อคนต่อวัน:</span><span id="targetPerWorkerDay">0 ชิ้น/วัน</span></div>
-            <div class="ops-summary-row"><span class="ops-font-bold">ประสิทธิภาพที่ต้องการ:</span><span id="efficiency">0 ชิ้น/คน/ชม.</span></div>
-        </div>
     </div>
     <div class="ops-table-section">
         <h2 class="ops-table-title"><i class="fas fa-list"></i> รายการออเดอร์ทั้งหมด</h2>
         <table class="ops-table">
-            <thead><tr><th>เลขที่ออเดอร์</th><th>จำนวนสินค้าทั้งหมด (ชิ้น)</th><th>ส่งมาแล้ว (ชิ้น)</th><th>ระยะเวลาดำเนินการ (วัน)</th><th>วันที่กำหนดส่ง</th><th>สถานะ</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>เลขที่ออเดอร์</th>
+                    <th>ลูกค้า</th>
+                    <th>จำนวนสินค้าทั้งหมด (ชิ้น)</th>
+                    <th>ส่งมาแล้ว (ชิ้น)</th>
+                    <th>ระยะเวลาดำเนินการ (วัน)</th>
+                    <th>วันที่กำหนดส่ง</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
             <tbody id="ordersTableBody"></tbody>
         </table>
     </div>

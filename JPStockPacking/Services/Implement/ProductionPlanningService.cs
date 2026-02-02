@@ -7,7 +7,6 @@ using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace JPStockPacking.Services.Implement
 {
@@ -19,80 +18,99 @@ namespace JPStockPacking.Services.Implement
 
         public async Task<List<OrderPlanModel>> GetOrderToPlan(DateTime FromDate, DateTime ToDate)
         {
-            // Query หลัก (ที่ทำงานได้อยู่แล้ว)
             var result = await (from ord in _sPDbContext.Order
                                 join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
                                 where ord.SeldDate1 >= FromDate
                                       && ord.SeldDate1 <= ToDate
-                                      && lotGroup.Any(lg => lg.OperateDays > 0)
-                                let validLots = lotGroup.Where(lg => lg.OperateDays > 0)
+                                      && lotGroup.Any(lg => lg.OperateDays > 0 && !lg.IsSuccess)
+                                let validLots = lotGroup.Where(lg => lg.OperateDays > 0 && !lg.IsSuccess)
                                 select new OrderPlanModel
                                 {
                                     OrderNo = ord.OrderNo,
                                     CustCode = ord.CustCode ?? string.Empty,
-                                    CustomerGroup = 5, // ใส่ default ไว้ก่อน
+                                    CustomerGroup = 5,
                                     Article = validLots.FirstOrDefault()!.Article ?? string.Empty,
                                     ProdType = validLots.FirstOrDefault()!.EdesArt ?? string.Empty,
                                     Qty = validLots.Sum(lot => lot.TtQty ?? 0),
-                                    SendToPackQty = validLots.Sum(lot => lot.ReceivedQty ?? 0),
+                                    SendToPackQty = lotGroup.Sum(lot => lot.ReceivedQty ?? 0),
                                     OperateDay = validLots.Sum(lot => lot.OperateDays ?? 0),
                                     DueDate = ord.SeldDate1 ?? DateTime.MinValue
                                 }).ToListAsync();
 
-            // ดึง CustomerGroup แยก แล้ว map ใน memory
-            var custCodes = result.Select(r => r.CustCode).Distinct().ToList();
-            var customerGroups = await _sPDbContext.MappingCustomerGroup
-                .Where(cg => custCodes.Contains(cg.CustCode))
-                .ToDictionaryAsync(cg => cg.CustCode, cg => cg.CustomerGroupId);
+            // กรอง order ที่ Qty = 0 ออก
+            result = result.Where(r => r.Qty > 0).ToList();
+            if (result.Count == 0) return result;
 
-            // อัพเดท CustomerGroup
-            foreach (var item in result)
-            {
-                if (customerGroups.TryGetValue(item.CustCode, out var groupId))
-                {
-                    item.CustomerGroup = groupId;
-                }
-            }
-
-            foreach (var item in result)
-            {
-                double BaseTime = 0;
-                var a = _bMDbContext.OrderDetail.FirstOrDefault(od => od.OrderNo == item.OrderNo && od.Article == item.Article);
-                if (a != null)
-                {
-                    if (!string.IsNullOrEmpty(a.Mask))
-                    {
-                        BaseTime += 0.2;
-                    }
-
-                    if (!string.IsNullOrEmpty(a.Box))
-                    {
-                        BaseTime += 0.2;
-                    }
-
-                    if (!string.IsNullOrEmpty(a.MaskAndBox))
-                    {
-                        BaseTime += 0.3;
-                    }
-                }
-                else
-                {
-                    BaseTime = 0.3;
-                }
-
-
-                var b = _sPDbContext.ProductType.FirstOrDefault(pt => pt.Name == item.ProdType.Trim());
-                if (b != null && b.BaseTime.HasValue)
-                {
-                    BaseTime += b.BaseTime.Value;
-                }
-
-                item.BaseTime = BaseTime;
-                item.SendToPackOperateDay = CalLotOperateDay((int)item.SendToPackQty, item.ProdType, item.Article, item.OrderNo);
-            }
+            // Batch load ข้อมูลทั้งหมดเพื่อหลีกเลี่ยง N+1 Query
+            var lookupData = await LoadLookupDataAsync(result);
+            EnrichOrderPlanData(result, lookupData);
 
             return result;
         }
+
+        private async Task<OrderPlanLookupData> LoadLookupDataAsync(List<OrderPlanModel> orders)
+        {
+            var custCodes = orders.Select(r => r.CustCode).Distinct().ToHashSet();
+
+            // ดึง CustomerGroup ทั้งหมด แล้ว filter ใน memory
+            var allCustomerGroups = await _sPDbContext.MappingCustomerGroup.ToListAsync();
+            var customerGroups = allCustomerGroups
+                .Where(cg => custCodes.Contains(cg.CustCode))
+                .ToDictionary(cg => cg.CustCode, cg => cg.CustomerGroupId);
+
+            // ดึง ProductType ทั้งหมด (มีไม่กี่รายการ)
+            var productTypes = await _sPDbContext.ProductType
+                .ToDictionaryAsync(pt => pt.Name?.Trim() ?? string.Empty, pt => pt.BaseTime);
+
+            return new OrderPlanLookupData(customerGroups, productTypes);
+        }
+
+        private void EnrichOrderPlanData(List<OrderPlanModel> orders, OrderPlanLookupData lookupData)
+        {
+            var calculator = new ProductionPlanningCalculator();
+
+            foreach (var item in orders)
+            {
+                if (lookupData.CustomerGroups.TryGetValue(item.CustCode, out var groupId))
+                    item.CustomerGroup = groupId;
+
+                item.BaseTime = CalculateBaseTime(item, lookupData);
+
+                item.SendToPackOperateDay = item.SendToPackQty > 0
+                    ? calculator.CalculateProductionPlan((int)item.SendToPackQty, item.BaseTime).ActualProductionDays
+                    : 0;
+            }
+        }
+
+        private double CalculateBaseTime(OrderPlanModel item, OrderPlanLookupData lookupData)
+        {
+            double baseTime = 0;
+
+            // N+1 query สำหรับ OrderDetail
+            var detail = _bMDbContext.OrderDetail
+                .FirstOrDefault(od => od.OrderNo == item.OrderNo && od.Article == item.Article);
+
+            if (detail != null)
+            {
+                if (!string.IsNullOrEmpty(detail.Mask)) baseTime += 0.2;
+                if (!string.IsNullOrEmpty(detail.Box)) baseTime += 0.2;
+                if (!string.IsNullOrEmpty(detail.MaskAndBox)) baseTime += 0.3;
+            }
+            else
+            {
+                baseTime = 0.3;
+            }
+
+            var prodTypeKey = item.ProdType?.Trim() ?? string.Empty;
+            if (lookupData.ProductTypes.TryGetValue(prodTypeKey, out var ptBaseTime) && ptBaseTime.HasValue)
+                baseTime += ptBaseTime.Value;
+
+            return baseTime;
+        }
+
+        private record OrderPlanLookupData(
+            Dictionary<string, int> CustomerGroups,
+            Dictionary<string, double?> ProductTypes);
 
         public async Task RegroupCustomer()
         {

@@ -1,4 +1,17 @@
-﻿<div class="container-fluid">
+﻿<style>
+    /* Override global table styles */
+    .table-packed-custom thead th {
+        font-size: 1.1rem !important; /* Adjusted slightly smaller than 1.4rem which might be too big, but user asked for bigger */
+    }
+    .table-packed-custom tbody td {
+        font-size: 1.1rem !important;
+    }
+    /* Specific override for the header row if user wants it even bigger */
+    .table-packed-custom .header-row-1 th {
+        font-size: 1.1rem !important;
+    }
+</style>
+<div class="container-fluid">
     <div class="card d-flex">
         <div class="card-header">
             <h3 class="card-title">ค้นหาคำสั่งซื้อ</h3>
@@ -21,42 +34,57 @@
         <div class="card d-flex">
             <div class="card-header justify-content-between align-content-center">
                 <div class="d-flex justify-content-end flex-wrap gap-2">
-                    <button class="btn btn-info btn-sm d-none" id="btnSelect" onclick="showSelection()">
+                    <!-- Navigation to ListNo -->
+                    <div class="d-none" id="divGoToListNo">
+                        <div class="d-flex align-items-center gap-2 me-2">
+                            <input type="text" id="txtGoToListNo" class="form-control form-control-sm" style="width: 100px;" placeholder="ListNo">
+                            <button class="btn btn-primary btn-sm" onclick="goToListNo()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn btn-info btn-sm d-none action-btn" id="btnSelect" onclick="showSelection()">
                         <i class="fas fa-list-ul"></i> <span class="d-none d-sm-inline">เลือก</span>
                     </button>
-                    <button class="btn btn-success btn-sm d-none" id="btnConfirmSendToStore" onclick="confirmSendToStore()">
-                        <i class="fas fa-paper-plane"></i> <span class="d-none d-sm-inline">ยืนยันส่ง</span>
-                    </button>
-                    <button class="btn btn-info btn-sm d-none" id="btnPrintSendToStore" onclick="printSendToStore()">
+                    <div class="btn-group d-none" id="btnConfirmSendToStore">
+                        <button type="button" class="btn btn-success btn-sm dropdown-toggle action-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-paper-plane"></i> <span class="d-none d-sm-inline">ยืนยันส่ง</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="confirmSendAll()"><i class="fas fa-check-double text-success"></i> ยืนยันทั้งหมด</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="confirmSendStore()"><i class="fas fa-warehouse text-primary"></i> ยืนยันส่งคลัง (Store)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="confirmSendMelt()"><i class="fas fa-fire text-warning"></i> ยืนยันหลอม (Melt)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="confirmSendExport()"><i class="fas fa-truck text-success"></i> ยืนยันส่งออก (Export)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="confirmSendLost()"><i class="fas fa-question-circle text-danger"></i> ยืนยันหาย (Lost)</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-info btn-sm d-none action-btn" id="btnPrintSendToStore" onclick="printSendToStore()">
                         <i class="fas fa-print"></i> <span class="d-none d-sm-inline">พิมพ์รายงาน</span>
                     </button>
-                    <button class="btn btn-secondary btn-sm d-none" id="btnUnselect" onclick="hideSelection()">
+                    <button class="btn btn-secondary btn-sm d-none action-btn" id="btnUnselect" onclick="hideSelection()">
                         <i class="fas fa-times"></i> <span class="d-none d-sm-inline">ยกเลิก</span>
                     </button>
                 </div>
             </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-striped mb-0">
+            <div class="card-body table-responsive" style="height:87vh; padding: 0px !important;">
+                <table class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
                     <thead>
-                        <tr>
-                            <th style="min-width: 40px;" class="text-center sticky-col sticky-col-1">#</th>
-                            <th style="min-width: 100px;" class="text-start sticky-col sticky-col-2">รหัสสินค้า</th>
-                            <th style="min-width: 70px;" class="text-center sticky-col sticky-col-3">ลำดับ</th>
-                            <th style="min-width: 80px;" class="text-end">จำนวนสั่ง</th>
-                            <th style="min-width: 50px;" class="text-end">Si</th>
-                            <th style="min-width: 80px;" class="text-end">ส่งแพ็ค</th>
-                            <th style="min-width: 80px;" class="text-end">แจ้งยอด</th>
-                            <th style="min-width: 80px;" class="text-end">แพ็คแล้ว</th>
-                            <th style="min-width: 80px;" class="text-center">คงเหลือ</th>
-                            <th style="width: 12%; min-width: 160px;" class="text-center">เก็บ</th>
-                            <th style="width: 12%; min-width: 160px;" class="text-center">หลอม</th>
-                            <th style="width: 12%; min-width: 160px;" class="text-center">หาย</th>
-                            <th style="width: 12%; min-width: 160px;" class="text-center">ส่งออก</th>
-                            <th style="min-width: 120px;">
+                        <tr class="header-row-1">
+                            <th style="min-width: 20px;" class="text-center align-middle">#</th>
+                            <th style="min-width: 120px;" class="text-center align-middle">รหัสสินค้า</th>
+                            <th style="min-width: 60px;" class="text-center align-middle">ลำดับ</th>
+                            <th style="min-width: 60px;" class="text-center align-middle">ยอดสั่ง</th>
+                            <th style="min-width: 50px;" class="text-center align-middle">Si</th>
+                            <th style="min-width: 60px;" class="text-center align-middle">ส่งแพ็ค</th>
+                            <th style="min-width: 60px;" class="text-center align-middle">แจ้งยอด</th>
+                            <th style="min-width: 60px;" class="text-center align-middle">แพ็คแล้ว</th>
+                            <th style="min-width: 60px;" class="text-center align-middle">คงเหลือ</th>
+                            <th style="min-width: 100px;" class="align-middle">
                                 <div id="selectAllLotToStore" class="d-none">
-                                    <div class="icheck-primary d-inline">
-                                        <input type="checkbox" id="chkSelectAllLotToStore">
-                                        <label for="chkSelectAllLotToStore">เลือกทั้งหมด</label>
+                                    <div class="chk-wrapper">
+                                        <input type="checkbox" id="chkSelectAllLotToStore" class="custom-checkbox">
+                                        <label for="chkSelectAllLotToStore" class="ms-2 mb-0">เลือกทั้งหมด</label>
                                     </div>
                                 </div>
                             </th>
@@ -64,7 +92,7 @@
                     </thead>
                     <tbody id="tbl-sendToStore-body">
                         <tr>
-                            <td colspan="14" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td>
+                            <td colspan="10" class="text-center text-muted">ค้นหาคำสั่งซื้อ</td>
                         </tr>
                     </tbody>
                 </table>
@@ -229,6 +257,39 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Floating Action Buttons (specific to this page) -->
+    <div class="floating-actions" id="floatingActions">
+        <!-- Go to ListNo -->
+        <div class="floating-goto hidden" id="floatingGoTo">
+            <input type="text" id="txtGoToListNoFloat" class="form-control form-control-sm" placeholder="ListNo">
+            <button class="btn btn-primary btn-sm" onclick="goToListNoFloat()" title="ไปยัง ListNo">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        <button class="btn btn-info hidden" id="btnSelectFloat" onclick="showSelection()" title="เลือก">
+            <i class="fas fa-list-ul"></i>
+        </button>
+        <div class="dropup hidden" id="btnConfirmFloat">
+            <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="ยืนยันส่ง">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="confirmSendAll()"><i class="fas fa-check-double text-success"></i> ยืนยันทั้งหมด</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="confirmSendStore()"><i class="fas fa-warehouse text-primary"></i> ส่งคลัง</a></li>
+                <li><a class="dropdown-item" href="#" onclick="confirmSendMelt()"><i class="fas fa-fire text-warning"></i> หลอม</a></li>
+                <li><a class="dropdown-item" href="#" onclick="confirmSendExport()"><i class="fas fa-truck text-success"></i> ส่งออก</a></li>
+                <li><a class="dropdown-item" href="#" onclick="confirmSendLost()"><i class="fas fa-question-circle text-danger"></i> หาย</a></li>
+            </ul>
+        </div>
+        <button class="btn btn-info hidden" id="btnPrintFloat" onclick="printSendToStore()" title="พิมพ์รายงาน">
+            <i class="fas fa-print"></i>
+        </button>
+        <button class="btn btn-secondary hidden" id="btnUnselectFloat" onclick="hideSelection()" title="ยกเลิก">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </div>
 

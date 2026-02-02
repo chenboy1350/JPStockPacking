@@ -203,7 +203,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> UpdateLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("���������ú��ǹ");
+                return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
@@ -221,7 +221,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> CancelUpdateLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("���������ú��ǹ");
+                return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
@@ -238,7 +238,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateLotByRevNoItems([FromForm] string receiveNo)
         {
-            if (string.IsNullOrWhiteSpace(receiveNo)) return BadRequest("���������ú��ǹ");
+            if (string.IsNullOrWhiteSpace(receiveNo)) return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
@@ -290,7 +290,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> UpdateSampleLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("���������١��ͧ");
+                return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
@@ -308,7 +308,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> CancelUpdateSampleLotItems([FromForm] string receiveNo, [FromForm] string[] orderNos, [FromForm] int[] receiveIds)
         {
             if (string.IsNullOrWhiteSpace(receiveNo) || receiveIds == null || receiveIds.Length == 0 || orderNos == null || orderNos.Length == 0)
-                return BadRequest("���������١��ͧ");
+                return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
@@ -325,7 +325,7 @@ namespace JPStockPacking.Controllers
         [Authorize]
         public async Task<IActionResult> AssignToTable([FromForm] string lotNo, [FromForm] int[] receivedIDs, [FromForm] string tableId, [FromForm] string[] memberIds, [FromForm] bool hasPartTime, [FromForm] int workerNumber)
         {
-            if (string.IsNullOrWhiteSpace(lotNo)) return BadRequest("���������ú��ǹ");
+            if (string.IsNullOrWhiteSpace(lotNo)) return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
             await _assignmentService.SyncAssignmentsForTableAsync(lotNo, int.Parse(tableId), receivedIDs, memberIds, hasPartTime, workerNumber);
             return Ok();
         }
@@ -382,12 +382,12 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> DefineToPack([FromForm] DefineToPackRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.OrderNo) || request.Lots == null || request.Lots.Count == 0)
-                return BadRequest("���������ú��ǹ");
+                return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
                 await _checkQtyToSendService.DefineToPackAsync(request.OrderNo, request.Lots, User.GetUserId());
-                return Ok("�ѹ�֡���������º����");
+                return Ok("บันทึกข้อมูลสำเร็จ");
             }
             catch (Exception ex)
             {
@@ -471,7 +471,7 @@ namespace JPStockPacking.Controllers
         public async Task<IActionResult> CheckUser([FromForm] string username, [FromForm] string password)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-                return BadRequest("���������ú��ǹ");
+                return BadRequest("กรุณากรอกข้อมูลให้ครบถ้วน");
 
             try
             {
@@ -692,7 +692,7 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> ConfirmToSendStore([FromForm] string[] lotNos, [FromForm] string userId)
+        public async Task<IActionResult> ConfirmToSendAll([FromForm] string[] lotNos, [FromForm] string userId)
         {
             try
             {
@@ -725,7 +725,135 @@ namespace JPStockPacking.Controllers
                 return StatusCode(500, new BaseResponseModel
                 {
                     IsSuccess = false,
-                    Message = $"�Դ��ͼԴ��Ҵ: {ex.Message}"
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmToSendStore([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                var result = await _packedMangementService.ConfirmToSendStoreAsync(lotNos, userId);
+
+                var updatedLots = new List<OrderToStoreModel>();
+                foreach (var lotNo in lotNos)
+                {
+                    var lot = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+                    if (lot != null) updatedLots.Add(lot);
+                }
+
+                return Ok(new
+                {
+                    IsSuccess = result.IsSuccess,
+                    Message = $"Store: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
+                    Data = updatedLots
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmToSendMelt([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                var result = await _packedMangementService.ConfirmToSendMeltAsync(lotNos, userId);
+
+                var updatedLots = new List<OrderToStoreModel>();
+                foreach (var lotNo in lotNos)
+                {
+                    var lot = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+                    if (lot != null) updatedLots.Add(lot);
+                }
+
+                return Ok(new
+                {
+                    IsSuccess = result.IsSuccess,
+                    Message = $"Melt: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
+                    Data = updatedLots
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmToSendExport([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                var result = await _packedMangementService.ConfirmToSendExportAsync(lotNos, userId);
+
+                var updatedLots = new List<OrderToStoreModel>();
+                foreach (var lotNo in lotNos)
+                {
+                    var lot = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+                    if (lot != null) updatedLots.Add(lot);
+                }
+
+                return Ok(new
+                {
+                    IsSuccess = result.IsSuccess,
+                    Message = $"Export: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
+                    Data = updatedLots
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmToSendLost([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                var result = await _packedMangementService.ConfirmToSendLostAsync(lotNos, userId);
+
+                var updatedLots = new List<OrderToStoreModel>();
+                foreach (var lotNo in lotNos)
+                {
+                    var lot = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+                    if (lot != null) updatedLots.Add(lot);
+                }
+
+                return Ok(new
+                {
+                    IsSuccess = result.IsSuccess,
+                    Message = $"Lost: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
+                    Data = updatedLots
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
                 });
             }
         }
@@ -878,7 +1006,7 @@ namespace JPStockPacking.Controllers
                     return Ok(new BaseResponseModel
                     {
                         IsSuccess = false,
-                        Message = "��辺�����ž�ѡ�ҹ"
+                        Message = "กรุณาเลือกพนักงาน"
                     });
                 }
 
@@ -967,7 +1095,7 @@ namespace JPStockPacking.Controllers
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
             if (!System.IO.File.Exists(filePath))
-                return NotFound($"��辺��� {fileName}");
+                return NotFound($"ไม่พบไฟล์ {fileName}");
 
             try
             {
@@ -998,7 +1126,7 @@ namespace JPStockPacking.Controllers
                 return Ok(new BaseResponseModel
                 {
                     IsSuccess = true,
-                    Message = $"�ѻവ {fileName} ����� (Environment: {environmentName})"
+                    Message = $"ปรับปรุง {fileName} เรียบร้อย (Environment: {environmentName})"
                 });
             }
             catch (Exception ex)
@@ -1006,7 +1134,7 @@ namespace JPStockPacking.Controllers
                 return BadRequest(new BaseResponseModel
                 {
                     IsSuccess = false,
-                    Message = $"�Դ��ͼԴ��Ҵ: {ex.Message}"
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
                 });
             }
         }

@@ -513,6 +513,8 @@ namespace JPStockPacking.Services.Implement
                 IsReceived = existingIds.Contains(x.Id)
             }).ToList();
 
+            result = [.. result.OrderBy(x => x.LotNo).ThenBy(x => x.OrderNo).ThenBy(x => x.ListNo)];
+
             return result;
         }
     }

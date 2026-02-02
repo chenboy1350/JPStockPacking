@@ -54,31 +54,31 @@ function showEditPermissionModal(userId, username) {
 
                 html += `
                 <tr>
-                    <td>${index+=1}</td>
+                    <td>${index += 1}</td>
                     <td>${p.name}</td>
                     <td class="text-center">
-                        <div class="icheck-success d-inline">
+                        <div class="chk-wrapper">
                             <input type="radio" 
                                    name="perm_${p.permissionId}" 
                                    id="${pidEnable}" 
-                                   class="rdo-permission" 
+                                   class="rdo-permission custom-radio radio-success" 
                                    data-id="${p.permissionId}"
                                    value="enable"
                                    ${p.enabled ? "checked" : ""}>
-                            <label for="${pidEnable}"></label>
+                            <label for="${pidEnable}" class="d-none"></label>
                         </div>
                     </td>
 
                     <td class="text-center">
-                        <div class="icheck-danger d-inline">
+                        <div class="chk-wrapper">
                             <input type="radio" 
                                    name="perm_${p.permissionId}" 
                                    id="${pidDisable}" 
-                                   class="rdo-permission" 
+                                   class="rdo-permission custom-radio radio-danger" 
                                    data-id="${p.permissionId}"
                                    value="disable"
                                    ${!p.enabled ? "checked" : ""}>
-                            <label for="${pidDisable}"></label>
+                            <label for="${pidDisable}" class="d-none"></label>
                         </div>
                     </td>
                 </tr>

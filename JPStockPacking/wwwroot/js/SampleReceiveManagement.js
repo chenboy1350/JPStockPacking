@@ -136,7 +136,7 @@ function showModalUpdateSampleLot(receiveNo) {
     const modal = $('#modal-sample-update');
     const tbody = modal.find('#tbl-sample-received-body');
 
-    tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
+    tbody.empty().append('<tr><td colspan="10" class="text-center text-muted">กำลังโหลด...</td></tr>');
 
     modal.find('#txtTitleSampleUpdate').html(
         "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ (Sample): " + html(receiveNo)
@@ -153,38 +153,39 @@ function showModalUpdateSampleLot(receiveNo) {
         },
         dataType: 'json',
     })
-    .done(function (items) {
-        tbody.empty();
+        .done(function (items) {
+            tbody.empty();
 
-        $('#hddSampleReceiveNo').val(receiveNo);
+            $('#hddSampleReceiveNo').val(receiveNo);
 
-        if (!items || items.length === 0) {
-            tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
+            if (!items || items.length === 0) {
+                tbody.append('<tr><td colspan="10" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                return;
+            }
 
-        const rows = items.map(function (x, i) {
-            const safeId = ('chk_' + String(x.receiveNo ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
+            const rows = items.map(function (x, i) {
+                const safeId = ('chk_' + String(x.receiveNo ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
 
-            const isReceived = x.isReceived === true;
-            const checkedAttr = isReceived ? '' : 'checked';
-            const disabledAttr = isReceived ? 'disabled' : '';
-            const rowClass = isReceived ? 'text-muted' : '';
+                const isReceived = x.isReceived === true;
+                const checkedAttr = isReceived ? '' : 'checked';
+                const disabledAttr = isReceived ? 'disabled' : '';
+                const rowClass = isReceived ? 'text-muted' : '';
 
-            const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
-            const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
-            const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
-            const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
-            const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
-            const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
-            const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
+                const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
+                const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
+                const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
+                const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
+                const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
+                const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
+                const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
 
-            return `
+                return `
                 <tr class="${rowClass}"
                         data-receive-id="${html(x.receivedID)}"
                         data-order-no="${html(x.orderNo)}"
                         data-ttqty="${numRaw(x.ttQty)}"
                         data-ttwg="${numRaw(x.ttWg)}">
+                    <td class="text-center">${i + 1}</td>
                     <td class="text-center">${cusCodeDisplay}</td>
                     <td>${orderNoDisplay}</td>
                     <td>${lotNoDisplay}</td>
@@ -194,19 +195,19 @@ function showModalUpdateSampleLot(receiveNo) {
                     <td class="text-end">${qtyDisplay}</td>
                     <td class="text-end">${wgDisplay}</td>
                     <td class="text-center">
-                        <div class="icheck-primary d-inline">
-                            <input type="checkbox" id="${safeId}_${i}" class="chk-row" ${checkedAttr} ${disabledAttr}>
-                            <label for="${safeId}_${i}"></label>
+                        <div class="chk-wrapper">
+                            <input type="checkbox" id="${safeId}_${i}" class="chk-row custom-checkbox" ${checkedAttr} ${disabledAttr}>
+                            <label for="${safeId}_${i}" class="d-none"></label>
                         </div>
                     </td>
                 </tr>`;
-          }).join('');
+            }).join('');
 
-        tbody.append(rows);
+            tbody.append(rows);
 
-        tbody.append(`
+            tbody.append(`
             <tr class="table-secondary fw-bold" id="totalRow">
-                <td colspan="6" class="text-end">รวม</td>
+                <td colspan="7" class="text-end">รวม</td>
                 <td class="text-end" id="sumTtQty">0</td>
                 <td class="text-end" id="sumTtWg">0</td>
                 <td></td>
@@ -214,16 +215,6 @@ function showModalUpdateSampleLot(receiveNo) {
         `);
 
 
-        calcTotal();
-
-        const allEnabled = tbody.find('.chk-row:enabled').length;
-        const allChecked = tbody.find('.chk-row:enabled:checked').length;
-
-        $('#chkSampleSelectAll')
-            .prop('checked', allEnabled > 0 && allChecked === allEnabled)
-            .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
-
-        tbody.on('change', '.chk-row', function () {
             calcTotal();
 
             const allEnabled = tbody.find('.chk-row:enabled').length;
@@ -232,15 +223,25 @@ function showModalUpdateSampleLot(receiveNo) {
             $('#chkSampleSelectAll')
                 .prop('checked', allEnabled > 0 && allChecked === allEnabled)
                 .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
-        });
-    })
-    .fail(function (xhr) {
-        tbody.empty().append(
-            `<tr><td colspan="10" class="text-danger text-center">
+
+            tbody.on('change', '.chk-row', function () {
+                calcTotal();
+
+                const allEnabled = tbody.find('.chk-row:enabled').length;
+                const allChecked = tbody.find('.chk-row:enabled:checked').length;
+
+                $('#chkSampleSelectAll')
+                    .prop('checked', allEnabled > 0 && allChecked === allEnabled)
+                    .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
+            });
+        })
+        .fail(function (xhr) {
+            tbody.empty().append(
+                `<tr><td colspan="10" class="text-danger text-center">
             เกิดข้อผิดพลาดในการโหลดข้อมูล (${xhr.status} ${xhr.statusText})
         </td></tr>`
-        );
-    });
+            );
+        });
 
     function calcTotal() {
         let sumQty = 0;
@@ -264,7 +265,7 @@ function showModalCancelSampleLot(receiveNo) {
     const modal = $('#modal-sample-cancel-update');
     const tbody = modal.find('#tbl-sample-cancel-received-body');
 
-    tbody.empty().append('<tr><td colspan="9" class="text-center text-muted">กำลังโหลด...</td></tr>');
+    tbody.empty().append('<tr><td colspan="10" class="text-center text-muted">กำลังโหลด...</td></tr>');
 
     modal.find('#txtTitleSampleCancelUpdate').html(
         "<i class='fas fa-folder-plus'></i> รายการนำเข้าใบรับ (Sample): " + html(receiveNo)
@@ -281,38 +282,39 @@ function showModalCancelSampleLot(receiveNo) {
         },
         dataType: 'json',
     })
-    .done(function (items) {
-        tbody.empty();
+        .done(function (items) {
+            tbody.empty();
 
-        $('#hddSampleCancelReceiveNo').val(receiveNo);
+            $('#hddSampleCancelReceiveNo').val(receiveNo);
 
-        if (!items || items.length === 0) {
-            tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
+            if (!items || items.length === 0) {
+                tbody.append('<tr><td colspan="10" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                return;
+            }
 
-        const rows = items.map(function (x, i) {
-            const safeId = ('chk_' + String(x.receiveNo ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
+            const rows = items.map(function (x, i) {
+                const safeId = ('chk_' + String(x.receiveNo ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
 
-            const isReceived = x.isReceived === false;
-            const checkedAttr = isReceived ? '' : 'checked';
-            const disabledAttr = isReceived ? 'disabled' : '';
-            const rowClass = isReceived ? 'text-muted' : '';
+                const isReceived = x.isReceived === false;
+                const checkedAttr = isReceived ? '' : 'checked';
+                const disabledAttr = isReceived ? 'disabled' : '';
+                const rowClass = isReceived ? 'text-muted' : '';
 
-            const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
-            const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
-            const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
-            const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
-            const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
-            const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
-            const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
+                const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
+                const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
+                const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
+                const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
+                const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
+                const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
+                const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
 
-            return `
+                return `
             <tr class="${rowClass}"
                     data-receive-id="${html(x.receivedID)}"
                     data-order-no="${html(x.orderNo)}"
                     data-ttqty="${numRaw(x.ttQty)}"
                     data-ttwg="${numRaw(x.ttWg)}">
+                <td class="text-center">${i + 1}</td>
                 <td class="text-center">${cusCodeDisplay}</td>
                 <td>${orderNoDisplay}</td>
                 <td>${lotNoDisplay}</td>
@@ -322,19 +324,19 @@ function showModalCancelSampleLot(receiveNo) {
                 <td class="text-end">${qtyDisplay}</td>
                 <td class="text-end">${wgDisplay}</td>
                 <td class="text-center">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="${safeId}_${i}" class="chk-row" ${checkedAttr} ${disabledAttr}>
-                        <label for="${safeId}_${i}"></label>
+                    <div class="chk-wrapper">
+                        <input type="checkbox" id="${safeId}_${i}" class="chk-row custom-checkbox" ${checkedAttr} ${disabledAttr}>
+                        <label for="${safeId}_${i}" class="d-none"></label>
                     </div>
                 </td>
             </tr>`;
-        }).join('');
+            }).join('');
 
-        tbody.append(rows);
+            tbody.append(rows);
 
-        tbody.append(`
+            tbody.append(`
             <tr class="table-secondary fw-bold" id="totalRow">
-                <td colspan="6" class="text-end">รวม</td>
+                <td colspan="7" class="text-end">รวม</td>
                 <td class="text-end" id="sumTtQty">0</td>
                 <td class="text-end" id="sumTtWg">0</td>
                 <td></td>
@@ -342,16 +344,6 @@ function showModalCancelSampleLot(receiveNo) {
         `);
 
 
-        calcTotal();
-
-        const allEnabled = tbody.find('.chk-row:enabled').length;
-        const allChecked = tbody.find('.chk-row:enabled:checked').length;
-
-        $('#chkSampleSelectAll')
-            .prop('checked', allEnabled > 0 && allChecked === allEnabled)
-            .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
-
-        tbody.on('change', '.chk-row', function () {
             calcTotal();
 
             const allEnabled = tbody.find('.chk-row:enabled').length;
@@ -360,15 +352,25 @@ function showModalCancelSampleLot(receiveNo) {
             $('#chkSampleSelectAll')
                 .prop('checked', allEnabled > 0 && allChecked === allEnabled)
                 .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
-        });
-    })
-    .fail(function (xhr) {
-        tbody.empty().append(
-            `<tr><td colspan="10" class="text-danger text-center">
+
+            tbody.on('change', '.chk-row', function () {
+                calcTotal();
+
+                const allEnabled = tbody.find('.chk-row:enabled').length;
+                const allChecked = tbody.find('.chk-row:enabled:checked').length;
+
+                $('#chkSampleSelectAll')
+                    .prop('checked', allEnabled > 0 && allChecked === allEnabled)
+                    .prop('indeterminate', allChecked > 0 && allChecked < allEnabled);
+            });
+        })
+        .fail(function (xhr) {
+            tbody.empty().append(
+                `<tr><td colspan="10" class="text-danger text-center">
                 เกิดข้อผิดพลาดในการโหลดข้อมูล (${xhr.status} ${xhr.statusText})
             </td></tr>`
-        );
-    });
+            );
+        });
 
     function calcTotal() {
         let sumQty = 0;

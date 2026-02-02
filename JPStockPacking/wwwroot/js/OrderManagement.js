@@ -57,9 +57,9 @@ $(document).ready(function () {
                     <tr data-member-id="${item.id}">
                         <td>${item.firstName} ${item.lastName} (${item.nickName})</td>
                         <td>
-                            <div class="icheck-primary d-inline">
-                                <input type="checkbox" id="${cbxId}" class="chk-row" value="${item.id}">
-                                <label for="${cbxId}"></label>
+                            <div class="chk-wrapper">
+                                <input type="checkbox" id="${cbxId}" class="chk-row custom-checkbox" value="${item.id}">
+                                <label for="${cbxId}" class="d-none"></label>
                             </div>
                         </td>
                     </tr>
@@ -124,7 +124,7 @@ $(document).ready(function () {
                 $('#loadingIndicator').hide();
                 CloseModal();
                 await updateLotRow(lotNo);
-                swalToastSuccess;('มอบหมายงานสำเร็จ');
+                swalToastSuccess; ('มอบหมายงานสำเร็จ');
 
             },
             error: async (xhr) => {
@@ -168,9 +168,9 @@ $(document).ready(function () {
                     <td class="text-end">${num(x.ttQty)}</td>
                     <td class="text-end">${num(x.ttWg)}</td>
                     <td class="text-center">
-                        <div class="icheck-primary d-inline">
-                            <input type="checkbox" id="${safeId}_rt${i}" class="chk-row" checked>
-                            <label for="${safeId}_rt${i}"></label>
+                        <div class="chk-wrapper">
+                            <input type="checkbox" id="${safeId}_rt${i}" class="chk-row custom-checkbox" checked>
+                            <label for="${safeId}_rt${i}" class="d-none"></label>
                         </div>
                     </td>
                 </tr>`;
@@ -276,7 +276,7 @@ $(document).ready(function () {
     $(document).on("click", "#btnAddBreakDes", async function () {
         let txtAddBreakDes = $('#txtAddBreakDes').val();
         if (txtAddBreakDes == '') {
-            $('#txtAddBreakDes').show(); 
+            $('#txtAddBreakDes').show();
         } else {
             await swalConfirm(
                 `ต้องการเพิ่มอาการ "${txtAddBreakDes}" ใช่หรือไม่`, "ยืนยันการเพิ่มอาการใหม่", async () => {
@@ -403,8 +403,7 @@ $(document).ready(function () {
         const lotNo = $('#hddLotNo').val();
         const leaderID = $('#ddlTableLeader').val();
 
-        if (lostQty == '' || lostQty == 0)
-        {
+        if (lostQty == '' || lostQty == 0) {
             await swalWarning('กรุณากรอกจำนวนหาย');
             return;
         }
@@ -441,7 +440,7 @@ $(document).ready(function () {
                 });
             }
         );
-        
+
     });
 
     $(document).on('click', '#btnAddBreak', async function () {
@@ -634,7 +633,7 @@ function renderLotRow(order, lot, index = "#") {
         progressHtml = `<div class='progress-bar bg-success' role='progressbar' style='width: 100%'></div>`;
     } else if (lot.isAllReturned) {
         progressHtml = `<div class='progress-bar bg-info' role='progressbar' style='width: 100%'></div>`;
-    } 
+    }
 
     // Progress Text
     let progressText = '';
@@ -648,7 +647,7 @@ function renderLotRow(order, lot, index = "#") {
         progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
     } else if (lot.isAllReturned) {
         progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
-    } 
+    }
 
     // Status Badges
     let statusHtml = '';
@@ -848,20 +847,20 @@ function showModalAssign(lotNo) {
         dataType: 'json',
         cache: false
     })
-    .done(function (items) {
-        tbody.empty();
+        .done(function (items) {
+            tbody.empty();
 
-        $('#hddAssignLotNo').val(lotNo);
+            $('#hddAssignLotNo').val(lotNo);
 
-        if (!items || items.length === 0) {
-            tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
-            return;
-        }
+            if (!items || items.length === 0) {
+                tbody.append('<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>');
+                return;
+            }
 
-        const rows = items.map(function (x, i) {
-            const safeId = ('chk_' + String(x.receivedID ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
+            const rows = items.map(function (x, i) {
+                const safeId = ('chk_' + String(x.receivedID ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
 
-            return `
+                return `
             <tr data-revtoassign-no="${html(x.receivedID)}" data-ttqty="${numRaw(x.ttQty)}" data-ttwg="${numRaw(x.ttWg)}">
                 <td><strong>${html(x.receiveNo)}</strong></td>
                 <td>${html(x.lotNo)}</td>
@@ -872,17 +871,17 @@ function showModalAssign(lotNo) {
                 <td class="text-end">${num(x.ttQty)}</td>
                 <td class="text-end">${num(x.ttWg)}</td>
                 <td class="text-center">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="${safeId}_as${i}" class="chk-row" checked>
-                        <label for="${safeId}_as${i}"></label>
+                    <div class="chk-wrapper">
+                        <input type="checkbox" id="${safeId}_as${i}" class="chk-row custom-checkbox" checked>
+                        <label for="${safeId}_as${i}" class="d-none"></label>
                     </div>
                 </td>
             </tr>`;
-        }).join('');
+            }).join('');
 
-        tbody.append(rows);
+            tbody.append(rows);
 
-        tbody.append(`
+            tbody.append(`
             <tr class="table-secondary fw-bold" id="totalRow">
                 <td colspan="6" class="text-end">รวม</td>
                 <td class="text-end" id="sumASTtQty">0</td>
@@ -892,25 +891,25 @@ function showModalAssign(lotNo) {
         `);
 
 
-        calcTotal();
-
-        tbody.on('change', '.chk-row', function () {
             calcTotal();
-        });
 
-        modal.find('#txtTitleAssign').html(
-            "<i class='fas fa-folder-plus'></i> รายการมอบหมายงาน : " + html(items[0].lotNo ?? lotNo)
-        );
-    })
-    .fail(async function (xhr) {
-        let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-        await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
-        tbody.empty().append(
-            `<tr><td colspan="10" class="text-danger text-center">
+            tbody.on('change', '.chk-row', function () {
+                calcTotal();
+            });
+
+            modal.find('#txtTitleAssign').html(
+                "<i class='fas fa-folder-plus'></i> รายการมอบหมายงาน : " + html(items[0].lotNo ?? lotNo)
+            );
+        })
+        .fail(async function (xhr) {
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+            tbody.empty().append(
+                `<tr><td colspan="10" class="text-danger text-center">
                 ${msg}
             </td></tr>`
-        );
-    });
+            );
+        });
 
     function calcTotal() {
         let sumQty = 0;
@@ -1048,13 +1047,13 @@ async function showModalLost(lotNo) {
                     <td>${html(x.createDateTH)}</td>
                     <td class="text-center">${x.isReported ? '✔️' : '❌'}</td>
                     <td class="text-center">
-                        <div class="icheck-primary d-inline">
-                            <input type="checkbox" id="${x.lostID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
-                            <label for="${x.lostID}_as${i}"></label>
+                        <div class="chk-wrapper">
+                            <input type="checkbox" id="${x.lostID}_as${i}" class="chk-row custom-checkbox" ${!x.isReported ? 'checked' : ''}>
+                            <label for="${x.lostID}_as${i}" class="d-none"></label>
                         </div>
                     </td>
                 </tr>`;
-                }).join('');
+            }).join('');
             tbody.append(rows);
         },
         error: async function (xhr) {
@@ -1127,13 +1126,13 @@ async function showModalBreak(lotNo) {
                     <td>${html(x.createDateTH)}</td>
                     <td class="text-center">${x.isReported ? '✔️' : '❌'}</td>
                     <td class="text-center">
-                        <div class="icheck-primary d-inline">
-                            <input type="checkbox" id="${x.breakID}_as${i}" class="chk-row" ${!x.isReported ? 'checked' : ''}>
-                            <label for="${x.breakID}_as${i}"></label>
+                        <div class="chk-wrapper">
+                            <input type="checkbox" id="${x.breakID}_as${i}" class="chk-row custom-checkbox" ${!x.isReported ? 'checked' : ''}>
+                            <label for="${x.breakID}_as${i}" class="d-none"></label>
                         </div>
                     </td>
                 </tr>`;
-                }).join('');
+            }).join('');
             tbody.append(rows);
         },
         error: async function (xhr) {

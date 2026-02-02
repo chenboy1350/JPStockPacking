@@ -1,9 +1,9 @@
 ﻿var ToastThemes = {
-  success: { background: "#10b981", color: "#ffffff", iconColor: "#ffffff" },
-  info: { background: "#1e40af", color: "#ffffff", iconColor: "#ffffff" },
-  error: { background: "#ef4444", color: "#ffffff", iconColor: "#ffffff" },
-  warning: { background: "#f59e0b", color: "#ffffff", iconColor: "#ffffff" },
-  question: { background: "#f59e0b", color: "#ffffff", iconColor: "#ffffff" },
+    success: { background: "#10b981", color: "#ffffff", iconColor: "#ffffff" },
+    info: { background: "#1e40af", color: "#ffffff", iconColor: "#ffffff" },
+    error: { background: "#ef4444", color: "#ffffff", iconColor: "#ffffff" },
+    warning: { background: "#f59e0b", color: "#ffffff", iconColor: "#ffffff" },
+    question: { background: "#f59e0b", color: "#ffffff", iconColor: "#ffffff" },
 };
 
 var ToastBase = Swal.mixin({
@@ -91,17 +91,17 @@ function swalWarning(message, title) {
 
 async function swalConfirm(message, title, onConfirm) {
     var result = await Swal.fire(
-      Object.assign({}, swalBase, {
-        icon: "question",
-        title: title || "Confirm Action",
-        text: message || "Are you sure you want to proceed?",
-        showCancelButton: true,
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        customClass: Object.assign({}, swalBase.customClass, {
-          confirmButton: "swal-custom-btn swal-custom-btn-success",
+        Object.assign({}, swalBase, {
+            icon: "question",
+            title: title || "Confirm Action",
+            text: message || "Are you sure you want to proceed?",
+            showCancelButton: true,
+            confirmButtonText: "Confirm",
+            cancelButtonText: "Cancel",
+            customClass: Object.assign({}, swalBase.customClass, {
+                confirmButton: "swal-custom-btn swal-custom-btn-success",
+            }),
         }),
-      }),
     );
     if (result.isConfirmed && typeof onConfirm === 'function') {
         await onConfirm();
@@ -111,18 +111,18 @@ async function swalConfirm(message, title, onConfirm) {
 
 async function swalDeleteConfirm(message, onConfirm, title) {
     var result = await Swal.fire(
-      Object.assign({}, swalBase, {
-        icon: "warning",
-        title: title || "Confirm Delete",
-        text:
-          message || "Are you sure you want to delete? This cannot be undone.",
-        showCancelButton: true,
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-        customClass: Object.assign({}, swalBase.customClass, {
-          confirmButton: "swal-custom-btn swal-custom-btn-delete",
+        Object.assign({}, swalBase, {
+            icon: "warning",
+            title: title || "Confirm Delete",
+            text:
+                message || "Are you sure you want to delete? This cannot be undone.",
+            showCancelButton: true,
+            confirmButtonText: "Confirm",
+            cancelButtonText: "Cancel",
+            customClass: Object.assign({}, swalBase.customClass, {
+                confirmButton: "swal-custom-btn swal-custom-btn-delete",
+            }),
         }),
-      }),
     );
     if (result.isConfirmed && typeof onConfirm === 'function') {
         await onConfirm();
@@ -171,10 +171,14 @@ function addDays(date, days) {
     return result;
 }
 
-window.onscroll = function () {
-    const btn = document.getElementById("btnTop");
-    btn.style.display = (document.documentElement.scrollTop > 200) ? "block" : "none";
-};
+// Scroll handler for btnTop only - uses addEventListener to coexist with other scroll handlers
+window.addEventListener('scroll', function () {
+    var scrollTop = document.documentElement.scrollTop;
+    var btn = document.getElementById("btnTop");
+    if (btn) {
+        btn.style.display = (scrollTop > 200) ? "flex" : "none";
+    }
+});
 
 function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
