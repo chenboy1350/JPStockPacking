@@ -1066,7 +1066,7 @@ namespace JPStockPacking.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> GetOrderToPlan([FromForm] DateTime FromDate, [FromForm] DateTime ToDate)
+        public async Task<IActionResult> GetOrderToPlan([FromForm] DateTime? FromDate, [FromForm] DateTime? ToDate)
         {
             try
             {

@@ -16,12 +16,12 @@ namespace JPStockPacking.Services.Implement
         private readonly SPDbContext _sPDbContext = sPDbContext;
         private readonly BMDbContext _bMDbContext = bMDbContext;
 
-        public async Task<List<OrderPlanModel>> GetOrderToPlan(DateTime FromDate, DateTime ToDate)
+        public async Task<List<OrderPlanModel>> GetOrderToPlan(DateTime? FromDate, DateTime? ToDate)
         {
             var result = await (from ord in _sPDbContext.Order
                                 join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
-                                where ord.SeldDate1 >= FromDate
-                                      && ord.SeldDate1 <= ToDate
+                                where (FromDate == null || ord.SeldDate1 >= FromDate)
+                                      && (ToDate == null || ord.SeldDate1 <= ToDate)
                                       && lotGroup.Any(lg => lg.OperateDays > 0 && !lg.IsSuccess)
                                 let validLots = lotGroup.Where(lg => lg.OperateDays > 0 && !lg.IsSuccess)
                                 select new OrderPlanModel
@@ -38,7 +38,7 @@ namespace JPStockPacking.Services.Implement
                                 }).ToListAsync();
 
             // กรอง order ที่ Qty = 0 ออก
-            result = result.Where(r => r.Qty > 0).ToList();
+            result = [.. result.Where(r => r.Qty > 0)];
             if (result.Count == 0) return result;
 
             // Batch load ข้อมูลทั้งหมดเพื่อหลีกเลี่ยง N+1 Query

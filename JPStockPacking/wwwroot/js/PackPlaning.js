@@ -12,6 +12,10 @@ let currentSegments = [];
 // Animation timers
 const animationTimers = {};
 
+// เก็บค่าวันที่ล่าสุดที่ fetch
+let lastFromDate = null;
+let lastToDate = null;
+
 // ดึงข้อมูล orders จาก API
 async function fetchOrdersData() {
     const fromDate = $('#fromDate').val();
@@ -61,12 +65,30 @@ $(document).ready(function () {
 
     // ตัวอย่างเพิ่มเติมสำหรับ click events (ถ้ามีปุ่มในอนาคต)
     $(document).on('click', '#calculateBtn', async function () {
-        await fetchOrdersData()
+        const fromDate = $('#fromDate').val();
+        const toDate = $('#toDate').val();
+
+        // เช็คว่าวันที่เปลี่ยนหรือไม่
+        if (fromDate !== lastFromDate || toDate !== lastToDate) {
+            await fetchOrdersData();
+            lastFromDate = fromDate;
+            lastToDate = toDate;
+        }
+
         filterAndCalculate();
     });
 
     $(document).on('click', '#modeToggle', async function () {
-        await fetchOrdersData()
+        const fromDate = $('#fromDate').val();
+        const toDate = $('#toDate').val();
+
+        // เช็คว่าวันที่เปลี่ยนหรือไม่
+        if (fromDate !== lastFromDate || toDate !== lastToDate) {
+            await fetchOrdersData();
+            lastFromDate = fromDate;
+            lastToDate = toDate;
+        }
+
         toggleMode();
     });
 });
@@ -426,7 +448,67 @@ function createTimelineSegments(orders, fromDate, workers, isSentMode) {
         carryOverDays = timeDiff;
     }
 
+    // === CUMULATIVE CALCULATION สำหรับ UPCOMING SEGMENTS ===
+    // คำนวณแบบ cumulative จาก overdue + today + upcoming แต่ละตัว
+    calculateCumulativeWorkersForUpcoming(segments, workers);
+
     return segments;
+}
+
+// คำนวณพนักงานแบบ cumulative สำหรับ Upcoming segments
+function calculateCumulativeWorkersForUpcoming(segments, workers) {
+    // แยก segments ออกเป็น 3 กลุ่ม
+    const overdueSegments = segments.filter(s => s.isOverdue);
+    const todaySegments = segments.filter(s => !s.isOverdue && s.daysUntilDue === 0);
+    const upcomingSegments = segments.filter(s => !s.isOverdue && s.daysUntilDue > 0);
+
+    // รวม qty และ baseTime ของ Overdue + Today
+    const mustFinishTodaySegments = [...overdueSegments, ...todaySegments];
+    let cumulativeQty = 0;
+    let totalWeightedTime = 0;
+
+    if (mustFinishTodaySegments.length > 0) {
+        cumulativeQty = mustFinishTodaySegments.reduce((sum, s) => sum + s.totalQty, 0);
+        totalWeightedTime = mustFinishTodaySegments.reduce((sum, s) => sum + (s.avgBaseTime * s.totalQty), 0);
+    }
+
+    // คำนวณสำหรับ Upcoming แต่ละตัว (แบบ cumulative)
+    for (const seg of upcomingSegments) {
+        // เพิ่ม qty ของ segment นี้เข้าไปใน cumulative
+        cumulativeQty += seg.totalQty;
+        totalWeightedTime += seg.avgBaseTime * seg.totalQty;
+
+        // คำนวณ avgBaseTime รวมแบบ weighted average
+        const cumulativeAvgBaseTime = cumulativeQty > 0 ? totalWeightedTime / cumulativeQty : 0.6;
+
+        // วันที่มีทั้งหมด = วันที่เหลือถึง segment นี้
+        const totalAvailableDays = seg.availableDays;
+
+        // คำนวณว่า ถ้าใช้พนักงานปัจจุบัน จะทำ cumulative qty ได้ใน กี่วัน
+        const cumulativePlan = calculateProductionPlan(cumulativeQty, workers, cumulativeAvgBaseTime);
+        const cumulativeDaysNeeded = cumulativePlan.actualDays;
+
+        // เช็คว่าทันหรือไม่
+        const cumulativeIsOnTime = cumulativeDaysNeeded <= totalAvailableDays;
+
+        // คำนวณจำนวนคนที่ต้องใช้ (cumulative) ถ้าไม่ทัน
+        let cumulativeRequiredWorkers = workers;
+        let cumulativeAdditionalWorkers = 0;
+
+        if (!cumulativeIsOnTime) {
+            const result = calculateRequiredWorkers(cumulativeQty, Math.max(totalAvailableDays, 0.5), workers, cumulativeAvgBaseTime);
+            cumulativeRequiredWorkers = result.requiredWorkers;
+            cumulativeAdditionalWorkers = result.additionalWorkers;
+        }
+
+        // เก็บข้อมูล cumulative ลงใน segment
+        seg.cumulativeQty = cumulativeQty;
+        seg.cumulativeAvgBaseTime = cumulativeAvgBaseTime;
+        seg.cumulativeDaysNeeded = cumulativeDaysNeeded;
+        seg.cumulativeIsOnTime = cumulativeIsOnTime;
+        seg.cumulativeRequiredWorkers = cumulativeRequiredWorkers;
+        seg.cumulativeAdditionalWorkers = cumulativeAdditionalWorkers;
+    }
 }
 
 // แสดง Timeline Breakdown (แนวนอน: OVERDUE ← | TODAY | → UPCOMING)
@@ -670,6 +752,9 @@ function showSegmentOrders(segmentIndex) {
     const segment = currentSegments.find(s => s.index === segmentIndex);
     if (!segment) return;
 
+    // เช็คว่าเป็น upcoming segment หรือไม่
+    const isUpcoming = !segment.isOverdue && segment.daysUntilDue > 0;
+
     // สร้างตาราง orders
     const ordersTableHtml = segment.orders.map((order, idx) => {
         const qty = order.qty || 0;
@@ -703,6 +788,46 @@ function showSegmentOrders(segmentIndex) {
         statusBadge = '<span class="badge bg-primary">กำลังจะถึง</span>';
     }
 
+    // สำหรับ Upcoming: แสดงข้อมูล cumulative
+    let cumulativeInfoHtml = '';
+    if (isUpcoming && segment.cumulativeAdditionalWorkers !== undefined) {
+        const cumulativeStatusClass = segment.cumulativeIsOnTime ? 'text-success' : 'text-danger';
+        const cumulativeStatusText = segment.cumulativeIsOnTime ? '✓ ทัน' : `+${segment.cumulativeAdditionalWorkers} คน`;
+
+        cumulativeInfoHtml = `
+            <div class="alert alert-info mt-3">
+                <h6 class="alert-heading"><i class="fas fa-chart-line"></i> การคำนวณแบบ Cumulative (รวมงานก่อนหน้า)</h6>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>รวมจำนวน (ตั้งแต่เริ่มต้น):</strong><br>
+                        <span class="fs-5">${segment.cumulativeQty.toLocaleString()} ชิ้น</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>รวมวันที่ใช้:</strong><br>
+                        <span class="fs-5">${segment.cumulativeDaysNeeded.toFixed(1)} วัน</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>สถานะ (cumulative):</strong><br>
+                        <span class="fs-5 fw-bold ${cumulativeStatusClass}">${cumulativeStatusText}</span>
+                    </div>
+                </div>
+                ${!segment.cumulativeIsOnTime ? `
+                    <div class="alert alert-warning mt-2 mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>ต้องเพิ่มพนักงาน +${segment.cumulativeAdditionalWorkers} คน (รวม ${segment.cumulativeRequiredWorkers} คน)</strong>
+                        เพื่อทำงานตั้งแต่วันนี้ให้ทัน segment นี้
+                    </div>
+                ` : `
+                    <div class="alert alert-success mt-2 mb-0">
+                        <i class="fas fa-check-circle"></i>
+                        พนักงานปัจจุบันเพียงพอสำหรับทำงานถึง segment นี้
+                    </div>
+                `}
+            </div>
+        `;
+    }
+
     // สร้าง modal content
     const modalHtml = `
         <div class="modal fade" id="segmentOrdersModal" tabindex="-1">
@@ -731,7 +856,7 @@ function showSegmentOrders(segmentIndex) {
                                 <div class="card bg-light">
                                     <div class="card-body text-center py-2">
                                         <div class="fs-4 fw-bold">${segment.totalQty.toLocaleString()}</div>
-                                        <small class="text-muted">ชิ้น</small>
+                                        <small class="text-muted">ชิ้น (segment นี้)</small>
                                     </div>
                                 </div>
                             </div>
@@ -755,8 +880,11 @@ function showSegmentOrders(segmentIndex) {
                             </div>
                         </div>
 
+                        <!-- Cumulative Info (สำหรับ Upcoming segments) -->
+                        ${cumulativeInfoHtml}
+
                         <!-- Orders Table -->
-                        <div class="table-responsive">
+                        <div class="table-responsive mt-3">
                             <table class="table table-sm table-hover ops-table">
                                 <thead>
                                     <tr>
@@ -797,6 +925,7 @@ function showSegmentOrders(segmentIndex) {
 // สร้าง HTML สำหรับ Segment แนวนอน
 function createHorizontalSegmentHtml(segment, isOverdue) {
     const isToday = !isOverdue && segment.daysUntilDue === 0;
+    const isUpcoming = !isOverdue && segment.daysUntilDue > 0;
 
     // กำหนด class ตามสถานะ: overdue=แดง, today=เหลือง, upcoming=ฟ้า
     let segmentClass = '';
@@ -809,7 +938,13 @@ function createHorizontalSegmentHtml(segment, isOverdue) {
     }
 
     // เพิ่ม class สำหรับสถานะทันหรือไม่ทัน
-    const statusClass = segment.isOnTime ? 'ops-hseg--success' : 'ops-hseg--warning';
+    // สำหรับ Upcoming ใช้ cumulativeIsOnTime แทน
+    let statusClass = '';
+    if (isUpcoming && segment.cumulativeIsOnTime !== undefined) {
+        statusClass = segment.cumulativeIsOnTime ? 'ops-hseg--success' : 'ops-hseg--warning';
+    } else {
+        statusClass = segment.isOnTime ? 'ops-hseg--success' : 'ops-hseg--warning';
+    }
 
     // Calendar icon color based on segment type
     let calendarIconClass = '';
@@ -826,10 +961,13 @@ function createHorizontalSegmentHtml(segment, isOverdue) {
         ? `เลยมา ${segment.daysOverdue} วัน`
         : isToday ? 'วันนี้' : `อีก ${segment.daysUntilDue} วัน`;
 
-    // Recommendation
-    const recommendation = !segment.isOnTime
-        ? `<div class="ops-hseg-rec">+${segment.additionalWorkers} คน</div>`
-        : '';
+    // Recommendation - สำหรับ Upcoming ใช้ cumulative
+    let recommendation = '';
+    if (isUpcoming && segment.cumulativeAdditionalWorkers !== undefined && segment.cumulativeAdditionalWorkers > 0) {
+        recommendation = `<div class="ops-hseg-rec">+${segment.cumulativeAdditionalWorkers} คน</div>`;
+    } else if (!segment.isOnTime && !isUpcoming) {
+        recommendation = `<div class="ops-hseg-rec">+${segment.additionalWorkers} คน</div>`;
+    }
 
     return `
         <div class="ops-hseg ${segmentClass} ${statusClass}" title="${formatThaiDate(segment.endDate)}">
