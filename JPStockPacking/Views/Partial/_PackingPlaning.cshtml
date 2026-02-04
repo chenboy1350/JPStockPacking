@@ -1,4 +1,5 @@
 ﻿<div id="page-title" data-title="วางแผนจัดการออเดอร์"></div>
+<script>initPackPlaning();</script>
 <div class="ops-container">
     <div class="ops-header">
 @*         <h1 class="ops-title"><i class="fas fa-calendar-check ops-title-icon"></i> ระบบวางแผนจัดการออเดอร์</h1> *@
@@ -39,11 +40,11 @@
                     </div>
                 </div>
                 <div class="ops-status-details" id="statusDetails">
-                    <div class="ops-stat-label">รายละเอียดเวลา</div>
+                    <div class="ops-stat-label">สรุปจาก Timeline</div>
                     <div id="statusDescription">กำลังคำนวณ...</div>
                 </div>
                 <div class="ops-status-workers" id="statusWorkers">
-                    <div class="ops-stat-label">ข้อมูลพนักงาน</div>
+                    <div class="ops-stat-label">คำแนะนำพนักงาน</div>
                     <div id="workerInfo">กำลังคำนวณ...</div>
                 </div>
             </div>
@@ -73,11 +74,11 @@
         <div class="ops-input-grid">
             <div class="ops-input-group">
                 <label class="ops-input-label"><i class="fas fa-calendar-day"></i>วันที่เริ่มต้น (From Date)</label>
-                <input type="date" id="fromDate" class="ops-input" value="@DateTime.UtcNow.Date.ToString("yyyy-MM-dd")">
+                <input type="date" id="fromDate" class="ops-input" value="">
             </div>
             <div class="ops-input-group">
                 <label class="ops-input-label"><i class="fas fa-calendar-day"></i>วันที่สิ้นสุด (To Date)</label>
-                <input type="date" id="toDate" class="ops-input" value="@DateTime.UtcNow.Date.ToString("yyyy-MM-dd")">
+                <input type="date" id="toDate" class="ops-input" value="">
             </div>
             <div class="ops-input-group">
                 <label class="ops-input-label"><i class="fas fa-user"></i>จำนวนพนักงาน</label>

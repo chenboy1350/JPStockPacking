@@ -56,41 +56,50 @@ async function fetchOrdersData() {
     });
 }
 
-// Document ready
-$(document).ready(function () {
-    // Initialize - ใช้ jQuery event delegation
-    $(document).on('change', 'input', function () {
-        //filterAndCalculate();
-    });
+// เรียกตอน partial view ถูก inject เข้า #content-container
+function initPackPlaning() {
+    // reset state
+    ordersData = [];
+    currentSegments = [];
+    isSentMode = false;
+    lastFromDate = null;
+    lastToDate = null;
 
-    // ตัวอย่างเพิ่มเติมสำหรับ click events (ถ้ามีปุ่มในอนาคต)
-    $(document).on('click', '#calculateBtn', async function () {
-        const fromDate = $('#fromDate').val();
-        const toDate = $('#toDate').val();
-
-        // เช็คว่าวันที่เปลี่ยนหรือไม่
-        if (fromDate !== lastFromDate || toDate !== lastToDate) {
-            await fetchOrdersData();
-            lastFromDate = fromDate;
-            lastToDate = toDate;
+    // โหลดข้อมูลตอนเข้าหน้า (ไม่กรองวันที่)
+    fetchOrdersData().then(() => {
+        if (ordersData.length > 0) {
+            filterAndCalculate();
         }
-
-        filterAndCalculate();
     });
+}
 
-    $(document).on('click', '#modeToggle', async function () {
-        const fromDate = $('#fromDate').val();
-        const toDate = $('#toDate').val();
+// Event delegation (ใช้ document level เพราะ DOM ยังไม่มีตอน script load)
+$(document).on('click', '#calculateBtn', async function () {
+    const fromDate = $('#fromDate').val();
+    const toDate = $('#toDate').val();
 
-        // เช็คว่าวันที่เปลี่ยนหรือไม่
-        if (fromDate !== lastFromDate || toDate !== lastToDate) {
-            await fetchOrdersData();
-            lastFromDate = fromDate;
-            lastToDate = toDate;
-        }
+    // เช็คว่าวันที่เปลี่ยนหรือไม่
+    if (fromDate !== lastFromDate || toDate !== lastToDate) {
+        await fetchOrdersData();
+        lastFromDate = fromDate;
+        lastToDate = toDate;
+    }
 
-        toggleMode();
-    });
+    filterAndCalculate();
+});
+
+$(document).on('click', '#modeToggle', async function () {
+    const fromDate = $('#fromDate').val();
+    const toDate = $('#toDate').val();
+
+    // เช็คว่าวันที่เปลี่ยนหรือไม่
+    if (fromDate !== lastFromDate || toDate !== lastToDate) {
+        await fetchOrdersData();
+        lastFromDate = fromDate;
+        lastToDate = toDate;
+    }
+
+    toggleMode();
 });
 
 
@@ -149,8 +158,8 @@ function formatThaiDate(dateStr) {
     return date.toLocaleDateString('th-TH', options);
 }
 
-// อัพเดทสถานะการทำงาน
-function updateWorkStatus(totalQty, earliestDueDate, currentWorkers, daysCount, baseTime) {
+// อัพเดทสถานะการทำงาน (ใช้ข้อมูลจาก segments เพื่อให้สอดคล้องกับ Timeline)
+function updateWorkStatus(segments, currentWorkers) {
     const $statusCard = $('#statusCard');
     const $statusIconWrapper = $('#statusIconWrapper');
     const $statusIcon = $('#statusIcon');
@@ -160,59 +169,123 @@ function updateWorkStatus(totalQty, earliestDueDate, currentWorkers, daysCount, 
     const $statusDescription = $('#statusDescription');
     const $workerInfo = $('#workerInfo');
 
-    const fromDate = $('#fromDate').val();
-    const availableDays = calculateDaysUntil(earliestDueDate, fromDate);
     $statusCard.removeClass('ops-hidden');
 
-    if (daysCount > availableDays) {
+    // แยก segments เป็น 3 กลุ่ม (เหมือน Timeline)
+    const overdueSegments = segments.filter(s => s.isOverdue);
+    const todaySegments = segments.filter(s => !s.isOverdue && s.daysUntilDue === 0);
+    const upcomingSegments = segments.filter(s => !s.isOverdue && s.daysUntilDue > 0);
+
+    // รวม qty
+    const overdueQty = overdueSegments.reduce((sum, s) => sum + s.totalQty, 0);
+    const todayQty = todaySegments.reduce((sum, s) => sum + s.totalQty, 0);
+    const mustFinishTodayQty = overdueQty + todayQty;
+    const upcomingQty = upcomingSegments.reduce((sum, s) => sum + s.totalQty, 0);
+    const totalQty = mustFinishTodayQty + upcomingQty;
+
+    // คำนวณพนักงานสำหรับงานวันนี้ (Overdue + Today ต้องเสร็จใน 1 วัน)
+    const mustFinishTodaySegments = [...overdueSegments, ...todaySegments];
+    let todayRequiredWorkers = currentWorkers;
+    let todayAdditionalWorkers = 0;
+    let todayIsOnTime = true;
+
+    if (mustFinishTodayQty > 0) {
+        const totalWeightedTime = mustFinishTodaySegments.reduce((sum, s) => sum + (s.avgBaseTime * s.totalQty), 0);
+        const todayAvgBaseTime = totalWeightedTime / mustFinishTodayQty;
+        const todayPlan = calculateProductionPlan(mustFinishTodayQty, currentWorkers, todayAvgBaseTime);
+        todayIsOnTime = todayPlan.actualDays <= 1;
+
+        if (!todayIsOnTime) {
+            const result = calculateRequiredWorkers(mustFinishTodayQty, 1, currentWorkers, todayAvgBaseTime);
+            todayRequiredWorkers = result.requiredWorkers;
+            todayAdditionalWorkers = result.additionalWorkers;
+        }
+    }
+
+    // หา Upcoming segment ที่ต้องเพิ่มคนมากที่สุด (จาก cumulative)
+    let worstUpcoming = null;
+    for (const seg of upcomingSegments) {
+        if (seg.cumulativeAdditionalWorkers > 0) {
+            if (!worstUpcoming || seg.cumulativeAdditionalWorkers > worstUpcoming.cumulativeAdditionalWorkers) {
+                worstUpcoming = seg;
+            }
+        }
+    }
+
+    // ตัดสินสถานะรวม
+    const hasOverdue = overdueSegments.length > 0;
+    const hasNotOnTime = segments.some(s => {
+        if (s.isOverdue || s.daysUntilDue === 0) return !s.isOnTime;
+        return s.cumulativeIsOnTime !== undefined ? !s.cumulativeIsOnTime : !s.isOnTime;
+    });
+    const allOnTime = !hasOverdue && !hasNotOnTime;
+
+    // === แสดงผล ===
+    if (hasOverdue || !todayIsOnTime) {
+        // สถานะ: แดง - มีงาน overdue หรืองานวันนี้ไม่ทัน
         $statusCard.attr('class', 'ops-stat-card ops-stat-card--warning ops-stat-card--full');
         $statusIconWrapper.attr('class', 'ops-stat-icon ops-stat-icon--red');
         $statusIcon.attr('class', 'fas fa-exclamation-triangle');
-        $statusLabel.html('<i class="fas fa-exclamation-triangle"></i> งานไม่ทัน!');
-
-        const result = calculateRequiredWorkers(totalQty, availableDays, currentWorkers, baseTime);
-        $statusDays.text(daysCount.toFixed(2));
-        $statusUnit.text('วัน');
-
-        $statusDescription.html(`
-            <div class="ops-status-row"><span>เวลาที่ต้องใช้:</span><strong>${daysCount.toFixed(2)} วัน</strong></div>
-            <div class="ops-status-row"><span>วันที่เหลือถึง due date:</span><strong>${availableDays} วัน</strong></div>
-            <div class="ops-status-row"><span>Due date ที่เร็วที่สุด:</span><strong>${formatThaiDate(earliestDueDate)}</strong></div>
-            <div class="ops-status-highlight ops-status-highlight--danger"><i class="fas fa-clock"></i> ช้ากว่ากำหนด ${(daysCount - availableDays).toFixed(2)} วัน</div>
-        `);
-
-        $workerInfo.html(`
-            <div class="ops-status-highlight ops-status-highlight--danger"><i class="fas fa-user-plus"></i> +${result.additionalWorkers} คน</div>
-            <div class="ops-text-muted" style="margin-top: 0.5rem; font-size: 0.85rem;">ต้องเพิ่มพนักงาน</div>
-            <div class="ops-status-row" style="margin-top: 1rem;"><span>พนักงานปัจจุบัน:</span><strong>${currentWorkers} คน</strong></div>
-            <div class="ops-status-row"><span>พนักงานที่ต้องการ:</span><strong class="ops-text-danger">${result.requiredWorkers} คน</strong></div>
-            <div class="ops-status-row"><span>เวลาที่ใช้ (ถ้าเพิ่มคน):</span><strong>${result.actualDays.toFixed(2)} วัน</strong></div>
-        `);
+        $statusLabel.html(`<i class="fas fa-exclamation-triangle"></i> ${hasOverdue ? 'มีงานเลยกำหนด!' : 'งานวันนี้ไม่ทัน!'}`);
+        $statusDays.text(mustFinishTodayQty.toLocaleString());
+        $statusUnit.text('ชิ้น ต้องเสร็จวันนี้');
+    } else if (hasNotOnTime) {
+        // สถานะ: เหลือง - มี segment ที่เสี่ยงไม่ทัน
+        $statusCard.attr('class', 'ops-stat-card ops-stat-card--warning ops-stat-card--full');
+        $statusIconWrapper.attr('class', 'ops-stat-icon ops-stat-icon--orange');
+        $statusIcon.attr('class', 'fas fa-exclamation-circle');
+        $statusLabel.html('<i class="fas fa-exclamation-circle"></i> มีงานเสี่ยงไม่ทัน');
+        $statusDays.text(totalQty.toLocaleString());
+        $statusUnit.text('ชิ้น ทั้งหมด');
     } else {
+        // สถานะ: เขียว - ทุก segment ทัน
         $statusCard.attr('class', 'ops-stat-card ops-stat-card--success ops-stat-card--full');
         $statusIconWrapper.attr('class', 'ops-stat-icon ops-stat-icon--green');
         $statusIcon.attr('class', 'fas fa-check-circle');
-        $statusLabel.html('<i class="fas fa-check-circle"></i> งานทัน!');
-
-        const reserveDays = availableDays - daysCount;
-        $statusDays.text('+' + reserveDays.toFixed(2));
-        $statusUnit.text('วัน');
-
-        $statusDescription.html(`
-            <div class="ops-status-row"><span>เวลาที่ต้องใช้:</span><strong>${daysCount.toFixed(2)} วัน</strong></div>
-            <div class="ops-status-row"><span>วันที่เหลือถึง due date:</span><strong>${availableDays} วัน</strong></div>
-            <div class="ops-status-row"><span>Due date ที่เร็วที่สุด:</span><strong>${formatThaiDate(earliestDueDate)}</strong></div>
-            <div class="ops-status-highlight ops-status-highlight--success"><i class="fas fa-check"></i> <strong>เร็วกว่ากำหนด +${reserveDays.toFixed(2)} วัน</strong></div>
-        `);
-
-        $workerInfo.html(`
-            <div class="ops-status-highlight ops-text-success" style="font-size: 1.8rem;"><i class="fas fa-check-circle"></i> ${currentWorkers} คน</div>
-            <div class="ops-text-success ops-font-semibold" style="margin-top: 0.5rem; font-size: 0.95rem;">✓ ${currentWorkers} คน สามารถทำทันได้แล้ว</div>
-            <div class="ops-status-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(16, 185, 129, 0.2);"><span>พนักงานที่มี:</span><strong class="ops-text-success">${currentWorkers} คน</strong></div>
-            <div class="ops-status-row"><span>สถานะ:</span><strong class="ops-text-success">✓ เพียงพอและพร้อมทำงาน</strong></div>
-            <div class="ops-status-row"><span>เวลาสำรอง:</span><strong class="ops-text-success" style="font-size: 1.1rem;">+${reserveDays.toFixed(2)} วัน</strong></div>
-        `);
+        $statusLabel.html('<i class="fas fa-check-circle"></i> งานทั้งหมดทัน!');
+        $statusDays.text(totalQty.toLocaleString());
+        $statusUnit.text('ชิ้น ทั้งหมด');
     }
+
+    // === สรุปจาก Timeline ===
+    let descRows = '';
+    if (overdueSegments.length > 0) {
+        descRows += `<div class="ops-status-row"><span><i class="fas fa-exclamation-triangle ops-text-danger"></i> เลยกำหนด:</span><strong class="ops-text-danger">${overdueSegments.length} segments / ${overdueQty.toLocaleString()} ชิ้น</strong></div>`;
+    }
+    if (todaySegments.length > 0) {
+        descRows += `<div class="ops-status-row"><span><i class="fas fa-clock ops-text-warning"></i> Due วันนี้:</span><strong>${todaySegments.length} segments / ${todayQty.toLocaleString()} ชิ้น</strong></div>`;
+    }
+    if (mustFinishTodayQty > 0) {
+        descRows += `<div class="ops-status-row ops-status-highlight ops-status-highlight--danger"><span><i class="fas fa-bolt"></i> รวมต้องเสร็จวันนี้:</span><strong>${mustFinishTodayQty.toLocaleString()} ชิ้น</strong></div>`;
+    }
+    if (upcomingSegments.length > 0) {
+        descRows += `<div class="ops-status-row"><span><i class="fas fa-calendar-alt ops-text-info"></i> กำลังจะถึง:</span><strong>${upcomingSegments.length} segments / ${upcomingQty.toLocaleString()} ชิ้น</strong></div>`;
+    }
+    $statusDescription.html(descRows);
+
+    // === คำแนะนำพนักงาน ===
+    let workerRows = `<div class="ops-status-row"><span>พนักงานปัจจุบัน:</span><strong>${currentWorkers} คน</strong></div>`;
+
+    if (mustFinishTodayQty > 0) {
+        if (todayIsOnTime) {
+            workerRows += `<div class="ops-status-row ops-status-highlight ops-status-highlight--success"><span><i class="fas fa-check-circle"></i> งานวันนี้:</span><strong>${currentWorkers} คน เพียงพอ</strong></div>`;
+        } else {
+            workerRows += `<div class="ops-status-row ops-status-highlight ops-status-highlight--danger"><span><i class="fas fa-user-plus"></i> งานวันนี้:</span><strong>+${todayAdditionalWorkers} คน (รวม ${todayRequiredWorkers})</strong></div>`;
+        }
+    }
+
+    if (worstUpcoming) {
+        workerRows += `<div class="ops-status-row ops-status-highlight ops-status-highlight--danger" style="margin-top: 0.5rem;"><span><i class="fas fa-user-plus"></i> Upcoming:</span><strong>+${worstUpcoming.cumulativeAdditionalWorkers} คน (รวม ${worstUpcoming.cumulativeRequiredWorkers})</strong></div>
+            <div class="ops-status-row"><span></span><span class="ops-text-muted" style="font-size: 0.8rem;">ถึง ${formatThaiDate(worstUpcoming.endDate)}</span></div>`;
+    } else if (upcomingSegments.length > 0) {
+        workerRows += `<div class="ops-status-row ops-status-highlight ops-status-highlight--success" style="margin-top: 0.5rem;"><span><i class="fas fa-check-circle"></i> Upcoming:</span><strong>เพียงพอทุก segment</strong></div>`;
+    }
+
+    if (allOnTime && mustFinishTodayQty === 0) {
+        workerRows += `<div class="ops-status-row ops-status-highlight ops-status-highlight--success" style="margin-top: 0.5rem;"><span><i class="fas fa-check-circle"></i> สถานะ:</span><strong>เพียงพอทุก segment</strong></div>`;
+    }
+
+    $workerInfo.html(workerRows);
 }
 
 // แสดงข้อมูลในตาราง
@@ -296,11 +369,9 @@ function filterAndCalculate() {
     displayOrders();
 
     if (ordersData.length > 0 && totalQty > 0) {
-        const earliestDueDate = getEarliestDueDate(ordersData);
-        updateWorkStatus(totalQty, earliestDueDate, workers, daysCount, avgBaseTime);
-
-        // Timeline Breakdown
+        // สร้าง segments ก่อน แล้วใช้ร่วมกันทั้ง statusCard และ Timeline
         const segments = createTimelineSegments(ordersData, $('#fromDate').val(), workers, isSentMode);
+        updateWorkStatus(segments, workers);
         displayTimelineBreakdown(segments, workers);
     } else {
         $('#statusCard').addClass('ops-hidden');
@@ -758,8 +829,7 @@ function showSegmentOrders(segmentIndex) {
     // สร้างตาราง orders
     const ordersTableHtml = segment.orders.map((order, idx) => {
         const qty = order.qty || 0;
-        const packedQty = order.packedQty || 0;
-        const remaining = qty - packedQty;
+        const sendToPackQty = order.sendToPackQty || 0;
         const baseTime = order.baseTime || 0;
         const vipBadge = order.customerGroup === 1
             ? '<span class="ops-badge ops-badge--warning" style="margin-left: 0.5rem;"><i class="fas fa-star"></i></span>'
@@ -771,8 +841,7 @@ function showSegmentOrders(segmentIndex) {
                 <td><strong>${order.orderNo || '-'}</strong>${vipBadge}</td>
                 <td>${order.custCode || '-'}</td>
                 <td class="text-end">${qty.toLocaleString()}</td>
-                <td class="text-end">${packedQty.toLocaleString()}</td>
-                <td class="text-end">${remaining.toLocaleString()}</td>
+                <td class="text-end">${sendToPackQty.toLocaleString()}</td>
                 <td class="text-center">${baseTime} นาที</td>
             </tr>
         `;
@@ -892,8 +961,7 @@ function showSegmentOrders(segmentIndex) {
                                         <th>Order No</th>
                                         <th>ลูกค้า</th>
                                         <th class="text-end">จำนวน</th>
-                                        <th class="text-end">แพ็คแล้ว</th>
-                                        <th class="text-end">คงเหลือ</th>
+                                        <th class="text-end">ส่งมาแล้ว (ชิ้น)</th>
                                         <th class="text-center">เวลา/ชิ้น</th>
                                     </tr>
                                 </thead>
@@ -1142,81 +1210,3 @@ function animateValue(id, start, end, duration) {
         $element.text(isDecimal ? current.toFixed(2) : Math.floor(current));
     }, 16);
 }
-
-// ====== TEST FUNCTION ======
-// ฟังก์ชันทดสอบ Timeline ด้วยข้อมูลจำลอง
-function testTimeline() {
-    // ข้อมูลทดสอบ
-    const testData = [
-        {"orderNo":"25001023","custCode":"BG8","customerGroup":5,"article":"124670074","qty":1200,"sendToPackQty":444,"operateDay":0.04705882352941176,"sendToPackOperateDay":0.017411764705882352,"dueDate":"2026-01-24T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001091","custCode":"DDJ64","customerGroup":4,"article":"230600013.5","qty":2750,"sendToPackQty":1129,"operateDay":0.10784313725490188,"sendToPackOperateDay":0.044274509803921565,"dueDate":"2026-01-31T00:00:00","prodType":"PENDANT","baseTime":0.6},
-        {"orderNo":"25001094","custCode":"AAJ57","customerGroup":4,"article":"224630012.1","qty":15,"sendToPackQty":0,"operateDay":0.000588235294117647,"sendToPackOperateDay":0,"dueDate":"2026-01-28T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001095","custCode":"AAJ57","customerGroup":4,"article":"061640005.10","qty":305,"sendToPackQty":102,"operateDay":0.011960784313725489,"sendToPackOperateDay":0.004,"dueDate":"2026-01-28T00:00:00","prodType":"NOSE STUD","baseTime":0.6},
-        {"orderNo":"25001104","custCode":"AAS3","customerGroup":4,"article":"124630230","qty":320,"sendToPackQty":63,"operateDay":0.012549019607843144,"sendToPackOperateDay":0.0024705882352941176,"dueDate":"2026-01-24T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001114","custCode":"JP1","customerGroup":1,"article":"114680007","qty":2218,"sendToPackQty":303,"operateDay":0.08698039215686272,"sendToPackOperateDay":0.01188235294117647,"dueDate":"2026-01-31T00:00:00","prodType":"RING","baseTime":0.6},
-        {"orderNo":"25001117","custCode":"AAS3","customerGroup":4,"article":"120600277.5","qty":280,"sendToPackQty":50,"operateDay":0.010980392156862745,"sendToPackOperateDay":0.00196078431372549,"dueDate":"2026-01-31T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001118","custCode":"SAC21","customerGroup":1,"article":"062540010","qty":6960,"sendToPackQty":343,"operateDay":0.27294117647058824,"sendToPackOperateDay":0.013450980392156862,"dueDate":"2026-01-31T00:00:00","prodType":"NOSE STUD","baseTime":0.6},
-        {"orderNo":"25001120","custCode":"CCJ82","customerGroup":1,"article":"110670007.1","qty":1350,"sendToPackQty":0,"operateDay":0.052941176470588235,"sendToPackOperateDay":0,"dueDate":"2026-02-05T00:00:00","prodType":"RING","baseTime":0.6},
-        {"orderNo":"25001121","custCode":"CCJ82","customerGroup":1,"article":"110670007.1","qty":1280,"sendToPackQty":0,"operateDay":0.05019607843137255,"sendToPackOperateDay":0,"dueDate":"2026-02-05T00:00:00","prodType":"RING","baseTime":0.6},
-        {"orderNo":"25001122","custCode":"CCJ82","customerGroup":1,"article":"110670007.1","qty":2360,"sendToPackQty":0,"operateDay":0.09254901960784313,"sendToPackOperateDay":0,"dueDate":"2026-02-05T00:00:00","prodType":"RING","baseTime":0.6},
-        {"orderNo":"25001123","custCode":"CCJ82","customerGroup":1,"article":"124680011.1.L","qty":730,"sendToPackQty":0,"operateDay":0.028627450980392155,"sendToPackOperateDay":0,"dueDate":"2026-02-05T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001125","custCode":"CCJ82","customerGroup":1,"article":"1200008.6.L","qty":620,"sendToPackQty":620,"operateDay":0.02431372549019608,"sendToPackOperateDay":0.02431372549019608,"dueDate":"2026-02-05T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001126","custCode":"CCJ82","customerGroup":1,"article":"1200008.6.L","qty":550,"sendToPackQty":549,"operateDay":0.021568627450980392,"sendToPackOperateDay":0.021529411764705877,"dueDate":"2026-02-05T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001127","custCode":"CCJ82","customerGroup":1,"article":"1200008.6.L","qty":1070,"sendToPackQty":828.5,"operateDay":0.04196078431372549,"sendToPackOperateDay":0.03247058823529411,"dueDate":"2026-02-05T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001128","custCode":"CCJ82","customerGroup":1,"article":"1200008.6.L","qty":750,"sendToPackQty":750,"operateDay":0.029411764705882353,"sendToPackOperateDay":0.029411764705882353,"dueDate":"2026-02-05T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001130","custCode":"CCJ82","customerGroup":1,"article":"1200006.60.L","qty":4650,"sendToPackQty":4606.5,"operateDay":0.18235294117647063,"sendToPackOperateDay":0.18062745098039212,"dueDate":"2026-01-22T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001133","custCode":"CCJ82","customerGroup":1,"article":"1200006.50.L","qty":11630,"sendToPackQty":11654,"operateDay":0.4560784313725489,"sendToPackOperateDay":0.4570196078431372,"dueDate":"2026-01-22T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001134","custCode":"CCJ82","customerGroup":1,"article":"114620005.1.L","qty":3750,"sendToPackQty":3751,"operateDay":0.1470588235294118,"sendToPackOperateDay":0.1470980392156863,"dueDate":"2026-01-22T00:00:00","prodType":"RING","baseTime":0.6},
-        {"orderNo":"25001139","custCode":"CCJ152","customerGroup":4,"article":"124640031","qty":510,"sendToPackQty":49.5,"operateDay":0.019999999999999987,"sendToPackOperateDay":0.0019215686274509805,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001142","custCode":"CCJ148","customerGroup":1,"article":"1200006.12DMH","qty":2350,"sendToPackQty":1428.5,"operateDay":0.09215686274509804,"sendToPackOperateDay":0.056,"dueDate":"2026-02-06T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001144","custCode":"CCJ82","customerGroup":1,"article":"220550111.95L","qty":500,"sendToPackQty":0,"operateDay":0.0196078431372549,"sendToPackOperateDay":0,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001145","custCode":"CCJ82","customerGroup":1,"article":"2200436.8.L","qty":15000,"sendToPackQty":0,"operateDay":0.5882352941176471,"sendToPackOperateDay":0,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001146","custCode":"CCJ82","customerGroup":1,"article":"220550111.3.L","qty":6400,"sendToPackQty":0,"operateDay":0.25098039215686274,"sendToPackOperateDay":0,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001147","custCode":"JP32","customerGroup":3,"article":"S130610024","qty":30,"sendToPackQty":0,"operateDay":0.001176470588235294,"sendToPackOperateDay":0,"dueDate":"2026-01-31T00:00:00","prodType":"PENDANT","baseTime":0.6},
-        {"orderNo":"25001148","custCode":"BBJ60","customerGroup":5,"article":"131610027","qty":40,"sendToPackQty":0,"operateDay":0.001568627450980392,"sendToPackOperateDay":0,"dueDate":"2026-02-04T00:00:00","prodType":"PENDANT","baseTime":0.6},
-        {"orderNo":"25001152","custCode":"CCJ82","customerGroup":1,"article":"1200006.40.L","qty":2480,"sendToPackQty":1170.5,"operateDay":0.09725490196078436,"sendToPackOperateDay":0.04588235294117647,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001153","custCode":"CCJ82","customerGroup":1,"article":"1200007.14.L","qty":3300,"sendToPackQty":2667,"operateDay":0.1294117647058824,"sendToPackOperateDay":0.10458823529411765,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001154","custCode":"CCJ82","customerGroup":1,"article":"1200006.12.L","qty":2320,"sendToPackQty":1199,"operateDay":0.09098039215686274,"sendToPackOperateDay":0.04701960784313726,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"25001155","custCode":"CCJ82","customerGroup":1,"article":"1200006.50.L","qty":1600,"sendToPackQty":1362,"operateDay":0.06274509803921569,"sendToPackOperateDay":0.05341176470588235,"dueDate":"2026-01-29T00:00:00","prodType":"EARRING","baseTime":0.6},
-        {"orderNo":"26000010","custCode":"CCJ82","customerGroup":1,"article":"Z260002","qty":6,"sendToPackQty":0,"operateDay":0.00023529411764705886,"sendToPackOperateDay":0,"dueDate":"2026-01-30T00:00:00","prodType":"NECKLACE","baseTime":0.6},
-        {"orderNo":"26000048","custCode":"E10","customerGroup":2,"article":"03HC0122","qty":389,"sendToPackQty":0,"operateDay":0.015254901960784311,"sendToPackOperateDay":0,"dueDate":"2026-01-31T00:00:00","prodType":"PENDANT","baseTime":0.6}
-    ];
-
-    // กำหนด ordersData
-    ordersData = testData;
-
-    console.log('=== TEST DATA LOADED ===');
-    console.log('Total orders:', ordersData.length);
-
-    // วิเคราะห์ข้อมูลตาม Due Date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    console.log('Today:', today.toISOString().split('T')[0]);
-
-    const dueDateCounts = {};
-    ordersData.forEach(order => {
-        const dueDate = order.dueDate.split('T')[0];
-        const dueDateObj = new Date(order.dueDate);
-        dueDateObj.setHours(0, 0, 0, 0);
-        const isOverdue = dueDateObj < today;
-
-        if (!dueDateCounts[dueDate]) {
-            dueDateCounts[dueDate] = { count: 0, qty: 0, isOverdue };
-        }
-        dueDateCounts[dueDate].count++;
-        dueDateCounts[dueDate].qty += order.qty;
-    });
-
-    console.log('\n=== DUE DATE BREAKDOWN ===');
-    Object.keys(dueDateCounts).sort().forEach(date => {
-        const info = dueDateCounts[date];
-        const status = info.isOverdue ? '🔴 OVERDUE' : '📅 UPCOMING';
-        console.log(`${date}: ${info.count} orders, ${info.qty.toLocaleString()} pcs ${status}`);
-    });
-
-    // เรียก filterAndCalculate เพื่อแสดง Timeline
-    filterAndCalculate();
-
-    console.log('\n=== TIMELINE RENDERED ===');
-}
-

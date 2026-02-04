@@ -18,34 +18,45 @@ namespace JPStockPacking.Services.Implement
 
         public async Task<List<OrderPlanModel>> GetOrderToPlan(DateTime? FromDate, DateTime? ToDate)
         {
-            var result = await (from ord in _sPDbContext.Order
-                                join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
-                                where (FromDate == null || ord.SeldDate1 >= FromDate)
-                                      && (ToDate == null || ord.SeldDate1 <= ToDate)
-                                      && lotGroup.Any(lg => lg.OperateDays > 0 && !lg.IsSuccess)
-                                let validLots = lotGroup.Where(lg => lg.OperateDays > 0 && !lg.IsSuccess)
-                                select new OrderPlanModel
-                                {
-                                    OrderNo = ord.OrderNo,
-                                    CustCode = ord.CustCode ?? string.Empty,
-                                    CustomerGroup = 5,
-                                    Article = validLots.FirstOrDefault()!.Article ?? string.Empty,
-                                    ProdType = validLots.FirstOrDefault()!.EdesArt ?? string.Empty,
-                                    Qty = validLots.Sum(lot => lot.TtQty ?? 0),
-                                    SendToPackQty = lotGroup.Sum(lot => lot.ReceivedQty ?? 0),
-                                    OperateDay = validLots.Sum(lot => lot.OperateDays ?? 0),
-                                    DueDate = ord.SeldDate1 ?? DateTime.MinValue
-                                }).ToListAsync();
+            try
+            {
+                var result =  from ord in _sPDbContext.Order
+                                    join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
+                                    where lotGroup.Any(lg => lg.OperateDays > 0 && !lg.IsSuccess)
+                                          && ord.SeldDate1.HasValue // กรองเฉพาะที่มี DueDate
+                                          && (FromDate == null || ord.SeldDate1 >= FromDate)
+                                          && (ToDate == null || ord.SeldDate1 <= ToDate)
+                                    let validLots = lotGroup.Where(lg => lg.OperateDays > 0 && !lg.IsSuccess)
+                                    select new OrderPlanModel
+                                    {
+                                        OrderNo = ord.OrderNo,
+                                        CustCode = ord.CustCode ?? string.Empty,
+                                        CustomerGroup = 5,
+                                        Article = validLots.FirstOrDefault()!.Article ?? string.Empty,
+                                        ProdType = validLots.FirstOrDefault()!.EdesArt ?? string.Empty,
+                                        Qty = validLots.Sum(lot => lot.TtQty ?? 0),
+                                        SendToPackQty = lotGroup.Sum(lot => lot.ReceivedQty ?? 0),
+                                        OperateDay = validLots.Sum(lot => lot.OperateDays ?? 0),
+                                        DueDate = ord.SeldDate1.Value // ปลอดภัยเพราะ filter ด้านบนแล้ว
+                                    };
 
-            // กรอง order ที่ Qty = 0 ออก
-            result = [.. result.Where(r => r.Qty > 0)];
-            if (result.Count == 0) return result;
+                var resultList = await result.ToListAsync();
 
-            // Batch load ข้อมูลทั้งหมดเพื่อหลีกเลี่ยง N+1 Query
-            var lookupData = await LoadLookupDataAsync(result);
-            EnrichOrderPlanData(result, lookupData);
+                // กรอง order ที่ Qty = 0 ออก
+                resultList = [.. resultList.Where(r => r.Qty > 0)];
+                if (resultList.Count == 0) return resultList;
 
-            return result;
+                // Batch load ข้อมูลทั้งหมดเพื่อหลีกเลี่ยง N+1 Query
+                var lookupData = await LoadLookupDataAsync(resultList);
+                EnrichOrderPlanData(resultList, lookupData);
+
+                return resultList;
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+
         }
 
         private async Task<OrderPlanLookupData> LoadLookupDataAsync(List<OrderPlanModel> orders)
