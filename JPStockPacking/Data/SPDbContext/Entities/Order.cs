@@ -29,6 +29,8 @@ public partial class Order
     [Column(TypeName = "datetime")]
     public DateTime? OrdDate { get; set; }
 
+    public bool IsSample { get; set; }
+
     public bool IsSuccess { get; set; }
 
     public bool IsActive { get; set; }

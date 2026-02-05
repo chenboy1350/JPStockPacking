@@ -330,7 +330,7 @@ namespace JPStockPacking.Services.Implement
                                     OrderDate = b.OrderDate,
                                     SeldDate1 = b.SeldDate1,
                                     OrdDate = a.OrdDate,
-
+                                    IsSample = true,
                                     IsSuccess = false,
                                     IsActive = true,
                                     CreateDate = DateTime.Now,
