@@ -46,8 +46,6 @@ namespace JPStockPacking.Services.Implement
 
         private async Task ImportOrderAsync(string orderNo)
         {
-            List<OrderNotify> orderNotifies = [];
-            List<LotNotify> lotNotifies = [];
 
             var newLots = new List<Lot>();
 
@@ -68,30 +66,6 @@ namespace JPStockPacking.Services.Implement
                     return;
                 }
 
-                foreach (var order in newOrders)
-                {
-                    orderNotifies.Add(new OrderNotify
-                    {
-                        OrderNo = order.OrderNo,
-                        IsNew = true,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
-
-                foreach (var lot in newLots)
-                {
-                    lotNotifies.Add(new LotNotify
-                    {
-                        LotNo = lot.LotNo,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
             }
             else
             {
@@ -103,8 +77,6 @@ namespace JPStockPacking.Services.Implement
             {
                 _sPDbContext.Order.AddRange(newOrders);
                 _sPDbContext.Lot.AddRange(newLots);
-                _sPDbContext.OrderNotify.AddRange(orderNotifies);
-                _sPDbContext.LotNotify.AddRange(lotNotifies);
 
                 await _sPDbContext.SaveChangesAsync();
 

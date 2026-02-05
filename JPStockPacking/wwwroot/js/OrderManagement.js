@@ -10,30 +10,6 @@ $(document).ready(function () {
         }
     });
 
-    $(document).on('show.bs.collapse', '.accordion-collapse', function () {
-        var accordionItem = $(this).closest('.accordion-item');
-
-        var $newBadge = accordionItem.find('.badge.bg-danger.new');
-
-        if ($newBadge.length) {
-            $newBadge.remove();
-        } else {
-            return;
-        }
-
-        var orderNo = accordionItem.data('order-no');
-        if (orderNo) {
-            $.ajax({
-                url: urlOrderMarkAsRead,
-                method: 'GET',
-                data: { orderNo: orderNo },
-                error: function (xhr) {
-                    console.error('Mark as read failed:', xhr.responseText);
-                }
-            });
-        }
-    });
-
     $(document).on('change', '#pageSize', function () {
         currentPageSize = parseInt($(this).val());
         currentPage = 1;

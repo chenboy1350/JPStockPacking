@@ -10,7 +10,6 @@ using static JPStockPacking.Services.Helper.Enum;
 namespace JPStockPacking.Controllers
 {
     public class HomeController(IOrderManagementService orderManagementService,
-        INotificationService notificationService,
         IReportService reportService,
         IReceiveManagementService receiveManagementService,
         IWebHostEnvironment webHostEnvironment,
@@ -30,7 +29,6 @@ namespace JPStockPacking.Controllers
         ISampleReceiveManagementService sampleReceiveManagementService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
-        private readonly INotificationService _notificationService = notificationService;
         private readonly IReportService _reportService = reportService;
         private readonly IReceiveManagementService _receiveManagementService = receiveManagementService;
         private readonly IWebHostEnvironment _env = webHostEnvironment;
@@ -455,15 +453,6 @@ namespace JPStockPacking.Controllers
         {
             var result = await _receiveManagementService.GetTopJPReceivedAsync(receiveNo, orderNo, lotNo);
             return Ok(result);
-        }
-
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> OrderMarkAsRead(string orderNo)
-        {
-            if (string.IsNullOrWhiteSpace(orderNo)) return BadRequest();
-            await _notificationService.OrderMarkAsReadAsync(orderNo);
-            return Ok();
         }
 
         [HttpPost]

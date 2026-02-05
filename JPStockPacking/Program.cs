@@ -35,7 +35,6 @@ builder.Services.AddScoped<IApiClientService, ApiClientService>();
 builder.Services.AddScoped<IPISService, PISService>();
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 builder.Services.AddScoped<IProductionPlanningService, ProductionPlanningService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IReceiveManagementService, ReceiveManagementService>();
 builder.Services.AddScoped<IAssignmentService, AssignmentService>();

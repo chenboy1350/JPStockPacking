@@ -14,8 +14,6 @@
         public int CompleteLot { get; set; } = 0;
         public bool IsSuccess { get; set; } = false;
         public bool IsActive { get; set; } = false;
-        public bool IsNew { get; set; } = false;
-        public bool IsUpdate { get; set; } = false;
         public string StartDateTH { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public int PackDaysRemain { get; set; } = 0;
@@ -43,7 +41,6 @@
         public List<AssignedWorkTableModel> AssignTo { get; set; } = [];
         public bool IsSuccess { get; set; } = false;
         public bool IsActive { get; set; } = false;
-        public bool IsUpdate { get; set; } = false;
         public string UpdateDate { get; set; } = string.Empty;
         public bool IsAllReceived { get; set; } = false;
         public bool IsPacking { get; set; } = false;

@@ -49,9 +49,6 @@ namespace JPStockPacking.Services.Implement
 
             var orderNos = orders.Select(o => o.OrderNo).ToList();
 
-            var orderNotifies = await _sPDbContext.OrderNotify
-                .Where(x => x.IsActive && orderNos.Contains(x.OrderNo))
-                .ToDictionaryAsync(x => x.OrderNo, x => x);
 
             var lotsQuery = _sPDbContext.Lot
                 .Where(l => l.IsActive && orderNos.Contains(l.OrderNo));
@@ -86,9 +83,6 @@ namespace JPStockPacking.Services.Implement
                         .ToList()
                 );
 
-            var lotNotifies = await _sPDbContext.LotNotify
-                .Where(l => lotNos.Contains(l.LotNo) && l.IsActive)
-                .ToDictionaryAsync(l => l.LotNo, l => l);
 
             var repairs = await (
                 from bek in _sPDbContext.Break
@@ -133,7 +127,6 @@ namespace JPStockPacking.Services.Implement
 
             foreach (var order in orders)
             {
-                orderNotifies.TryGetValue(order.OrderNo, out var notify);
                 lots.TryGetValue(order.OrderNo, out var relatedLots);
                 relatedLots ??= [];
 
@@ -148,9 +141,7 @@ namespace JPStockPacking.Services.Implement
                 var customLots = relatedLots.Select(l =>
                 {
                     assignedTableDict.TryGetValue(l.LotNo, out var atables);
-                    lotNotifies.TryGetValue(l.LotNo, out var lotNotify);
 
-                    bool isLotUpdate = lotNotify?.IsUpdate ?? false;
                     bool isAllReturned = l.TtQty > 0 && l.ReturnedQty >= (l.TtQty + l.Si);
                     bool isAllReceived = l.TtQty > 0 && l.ReceivedQty >= l.TtQty;
                     bool isPacking = l.TtQty > 0 && l.AssignedQty > 0;
@@ -174,7 +165,6 @@ namespace JPStockPacking.Services.Implement
                         SaleRem = l.SaleRem!,
                         IsSuccess = l.IsSuccess,
                         IsActive = l.IsActive,
-                        IsUpdate = isLotUpdate,
                         UpdateDate = l.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? string.Empty,
                         FileName = (l.ImgPath ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
                         AssignTo = atables ?? [],
@@ -206,8 +196,6 @@ namespace JPStockPacking.Services.Implement
                     OperateDays = operateDays,
                     PackDaysRemain = packDaysRemain,
                     ExportDaysRemain = exportDaysRemain,
-                    IsUpdate = notify?.IsUpdate ?? false,
-                    IsNew = notify?.IsNew ?? false,
                     IsActive = order.IsActive,
                     IsSuccess = order.IsSuccess,
                     IsReceivedLate = packDaysRemain <= 1 && !order.IsSuccess,
@@ -259,12 +247,6 @@ namespace JPStockPacking.Services.Implement
                         .ToList()
                 );
 
-            // LotNotify
-            var isLotUpdate = await _sPDbContext.LotNotify
-                .AsNoTracking()
-                .Where(w => w.LotNo == lot.LotNo && w.IsActive)
-                .Select(x => x.IsUpdate)
-                .FirstOrDefaultAsync();
 
             // Check not all assigned
             var hasNotAllAssigned = await _sPDbContext.Received
@@ -341,7 +323,6 @@ namespace JPStockPacking.Services.Implement
                 SaleRem = lot.SaleRem!,
                 IsSuccess = lot.IsSuccess,
                 IsActive = lot.IsActive,
-                IsUpdate = isLotUpdate,
                 UpdateDate = lot.UpdateDate?.ToString("dd MMMM yyyy", new CultureInfo("th-TH")) ?? "",
                 FileName = (lot.ImgPath ?? "").Split("\\", StringSplitOptions.None).LastOrDefault() ?? string.Empty,
                 AssignTo = atables ?? [],
@@ -511,8 +492,6 @@ namespace JPStockPacking.Services.Implement
 
         public async Task ImportOrderAsync()
         {
-            List<OrderNotify> orderNotifies = [];
-            List<LotNotify> lotNotifies = [];
 
             var newLots = new List<Lot>();
 
@@ -530,30 +509,6 @@ namespace JPStockPacking.Services.Implement
 
                 if (newLots.Count == 0) return;
 
-                foreach (var order in newOrders)
-                {
-                    orderNotifies.Add(new OrderNotify
-                    {
-                        OrderNo = order.OrderNo,
-                        IsNew = true,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
-
-                foreach (var lot in newLots)
-                {
-                    lotNotifies.Add(new LotNotify
-                    {
-                        LotNo = lot.LotNo,
-                        IsUpdate = false,
-                        IsActive = true,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                }
             }
             else return;
 
@@ -562,8 +517,6 @@ namespace JPStockPacking.Services.Implement
             {
                 _sPDbContext.Order.AddRange(newOrders);
                 _sPDbContext.Lot.AddRange(newLots);
-                _sPDbContext.OrderNotify.AddRange(orderNotifies);
-                _sPDbContext.LotNotify.AddRange(lotNotifies);
 
                 await _sPDbContext.SaveChangesAsync();
 

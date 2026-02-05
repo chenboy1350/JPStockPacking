@@ -34,8 +34,6 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<Lot> Lot { get; set; }
 
-    public virtual DbSet<LotNotify> LotNotify { get; set; }
-
     public virtual DbSet<MappingCustomerGroup> MappingCustomerGroup { get; set; }
 
     public virtual DbSet<MappingPermission> MappingPermission { get; set; }
@@ -43,8 +41,6 @@ public partial class SPDbContext : DbContext
     public virtual DbSet<Melt> Melt { get; set; }
 
     public virtual DbSet<Order> Order { get; set; }
-
-    public virtual DbSet<OrderNotify> OrderNotify { get; set; }
 
     public virtual DbSet<Permission> Permission { get; set; }
 
