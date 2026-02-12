@@ -10,5 +10,6 @@ namespace JPStockPacking.Services.Interface
         Task<BaseResponseModel> MarkInvoiceAsRead(string InvoiceNo, int userId);
         Task<List<ComparedInvoiceModel>> GetConfirmedInvoice(string InvoiceNo);
         Task<BaseResponseModel> GetIsMarked(string InvoiceNo);
+        Task<List<SendLostCheckModel>> GetSendLostCheckList(ComparedInvoiceFilterModel comparedInvoiceFilterModel);
     }
 }

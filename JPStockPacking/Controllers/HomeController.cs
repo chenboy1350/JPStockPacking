@@ -26,7 +26,8 @@ namespace JPStockPacking.Controllers
         IProductionPlanningService productionPlanningService,
         IPermissionManagement permissionManagement,
         IReturnService returnService,
-        ISampleReceiveManagementService sampleReceiveManagementService) : Controller
+        ISampleReceiveManagementService sampleReceiveManagementService,
+        ICancelReceiveService cancelReceiveService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly IReportService _reportService = reportService;
@@ -46,6 +47,7 @@ namespace JPStockPacking.Controllers
         private readonly IPermissionManagement _permissionManagement = permissionManagement;
         private readonly IReturnService _returnService = returnService;
         private readonly ISampleReceiveManagementService _sampleReceiveManagementService = sampleReceiveManagementService;
+        private readonly ICancelReceiveService _cancelReceiveService = cancelReceiveService;
 
         [Authorize]
         public IActionResult Index()
@@ -106,6 +108,149 @@ namespace JPStockPacking.Controllers
         public IActionResult Validation()
         {
             return PartialView("~/Views/Partial/_Validation.cshtml");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> CancelReceive()
+        {
+            var result = await _cancelReceiveService.GetTopSJ1JPReceivedAsync(null, null, null);
+            return PartialView("~/Views/Partial/_CancelReceive.cshtml", result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelStoreList(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetTopSJ1JPReceivedAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelStoreDetail(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetSJ1JPReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelMeltList(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetTopSJ2JPReceivedAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelMeltDetail(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetSJ2JPReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelLostList(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetTopSendLostReceivedAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelLostDetail(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetSendLostReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelExportList(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetTopExportReceivedAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelExportDetail(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetExportReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelLostByReceiveNo([FromForm] string receiveNo)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelSendLostByReceiveNoAsync(receiveNo, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelLostByLotNo([FromForm] string receiveNo, [FromForm] string[] lotNos)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelSendLostByLotNoAsync(receiveNo, lotNos, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelExportByReceiveNo([FromForm] string receiveNo)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelExportByReceiveNoAsync(receiveNo, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelExportByLotNo([FromForm] string receiveNo, [FromForm] string[] lotNos)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelExportByLotNoAsync(receiveNo, lotNos, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelStoreByReceiveNo([FromForm] string receiveNo)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelSJ1ByReceiveNoAsync(receiveNo, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelStoreByLotNo([FromForm] string receiveNo, [FromForm] string[] lotNos)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelSJ1ByLotNoAsync(receiveNo, lotNos, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelMeltByReceiveNo([FromForm] string receiveNo)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelSJ2ByReceiveNoAsync(receiveNo, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelMeltByLotNo([FromForm] string receiveNo, [FromForm] string[] lotNos)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelSJ2ByLotNoAsync(receiveNo, lotNos, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [Authorize]
@@ -936,6 +1081,36 @@ namespace JPStockPacking.Controllers
                 Response.Headers.Append("Content-Disposition", contentDisposition);
 
                 return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetUnallocatedQuantityData([FromBody] ComparedInvoiceFilterModel comparedInvoiceFilterModel)
+        {
+            try
+            {
+                var result = await _auditService.GetUnallocatedQuentityToStore(comparedInvoiceFilterModel);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetSendLostCheckList([FromBody] ComparedInvoiceFilterModel comparedInvoiceFilterModel)
+        {
+            try
+            {
+                var result = await _auditService.GetSendLostCheckList(comparedInvoiceFilterModel);
+                return Ok(result);
             }
             catch (Exception ex)
             {

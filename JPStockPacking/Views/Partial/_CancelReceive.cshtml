@@ -1,0 +1,244 @@
+﻿@model List<JPStockPacking.Models.ReceivedListModel>
+
+
+<div class="container-fluid">
+    <style>
+        /* Custom Tab Colors */
+        #tab-cancel-store.active { background-color: var(--bs-primary); color: #fff; }
+        #tab-cancel-melt.active { background-color: var(--bs-warning); color: #1f2d3d; }
+        #tab-cancel-lost.active { background-color: var(--bs-danger); color: #fff; }
+        #tab-cancel-export.active { background-color: var(--bs-success); color: #fff; }
+    </style>
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="accordion" id="accordionFilter">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFilter">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="true" aria-controls="collapseFilter">
+                                <strong>ค้นหาใบส่ง</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseFilter" class="accordion-collapse collapse show" aria-labelledby="headingFilter" data-bs-parent="#accordionFilter">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>เลขใบส่ง</label>
+                                            <input type="text" id="txtFindReceivedNoToCancel" class="form-control" placeholder="กรอก ReceiveNo">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>เลขที่งาน</label>
+                                            <input type="text" id="txtFindLotNoCancel" class="form-control" placeholder="กรอก LotNo">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="ClearFindByReceiveToCancel()">Clear</button>
+                                <button class="btn btn-primary" onclick="FindReceiveToCancel()">ค้นหา</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="card">
+            <div class="card-header p-2">
+                <ul class="nav nav-pills" id="cancelReceiveTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-cancel-store" data-bs-toggle="tab" data-bs-target="#content-cancel-store" type="button" role="tab" aria-controls="content-cancel-store" aria-selected="true">
+                            <i class="fas fa-warehouse"></i> ส่งเก็บ
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-cancel-melt" data-bs-toggle="tab" data-bs-target="#content-cancel-melt" type="button" role="tab" aria-controls="content-cancel-melt" aria-selected="false">
+                            <i class="fas fa-fire"></i> ส่งหลอม
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-cancel-lost" data-bs-toggle="tab" data-bs-target="#content-cancel-lost" type="button" role="tab" aria-controls="content-cancel-lost" aria-selected="false">
+                            <i class="fas fa-question-circle"></i> ส่งหาย
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-cancel-export" data-bs-toggle="tab" data-bs-target="#content-cancel-export" type="button" role="tab" aria-controls="content-cancel-export" aria-selected="false">
+                            <i class="fas fa-shipping-fast"></i> ส่งออก
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+
+                <!-- Tab Contents -->
+                <div class="tab-content" id="cancelReceiveTabContent">
+                    <!-- Tab: ส่งเก็บ -->
+                    <div class="tab-pane fade show active" id="content-cancel-store" role="tabpanel" aria-labelledby="tab-cancel-store">
+                        <div class="table-responsive" style="height:75vh; padding: 0px !important;">
+                            <table id="tbl-cancel-store" class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">#</th>
+                                        <th class="text-start">เลขที่ใบส่ง</th>
+                                        <th class="text-start">วันที่ส่ง</th>
+                                        <th class="text-start">สถานะ</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbl-cancel-store-body">
+                                    @if (Model != null && Model.Count > 0)
+                                    {
+                                        var index = 0;
+                                        foreach (var item in Model)
+                                        {
+                                            index++;
+                                            <tr data-receive-no="@item.ReceiveNo">
+                                                <td>@index</td>
+                                                <td class="col-receiveno"><strong>@item.ReceiveNo</strong></td>
+                                                <td class="col-mdate">@item.Mdate</td>
+                                                <td class="col-status">
+                                                    @if (item.IsReceived)
+                                                    {
+                                                        <i class="fas fa-check text-success" title="รับเข้าแล้ว"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fas fa-times text-danger" title="ยังไม่รับเข้า"></i>
+                                                    }
+                                                </td>
+                                                <td class="col-action">
+                                                    <button class="btn btn-warning btn-sm" onclick="showCancelDetail('@item.ReceiveNo', 'store')">
+                                                        <i class="fas fa-folder"></i> ดูรายการ
+                                                    </button>
+                                                    @if (!item.IsReceived)
+                                                    {
+                                                        <button class="btn btn-danger btn-sm" onclick="cancelReceive('@item.ReceiveNo', 'store')">
+                                                            <i class="fas fa-times"></i> ยกเลิกใบส่ง
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: ส่งหลอม -->
+                    <div class="tab-pane fade" id="content-cancel-melt" role="tabpanel" aria-labelledby="tab-cancel-melt">
+                        <div class="table-responsive" style="height:75vh; padding: 0px !important;">
+                            <table id="tbl-cancel-melt" class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">#</th>
+                                        <th class="text-start">เลขที่ใบส่ง</th>
+                                        <th class="text-start">วันที่ส่ง</th>
+                                        <th class="text-start">สถานะ</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbl-cancel-melt-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: ส่งหาย -->
+                    <div class="tab-pane fade" id="content-cancel-lost" role="tabpanel" aria-labelledby="tab-cancel-lost">
+                        <div class="table-responsive" style="height:75vh; padding: 0px !important;">
+                            <table id="tbl-cancel-lost" class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">#</th>
+                                        <th class="text-start">เลขที่ใบส่ง</th>
+                                        <th class="text-start">วันที่ส่ง</th>
+                                        <th class="text-start">สถานะ</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbl-cancel-lost-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: ส่งออก -->
+                    <div class="tab-pane fade" id="content-cancel-export" role="tabpanel" aria-labelledby="tab-cancel-export">
+                        <div class="table-responsive" style="height:75vh; padding: 0px !important;">
+                            <table id="tbl-cancel-export" class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">#</th>
+                                        <th class="text-start">เลขที่ใบส่ง</th>
+                                        <th class="text-start">วันที่ส่ง</th>
+                                        <th class="text-start">สถานะ</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbl-cancel-export-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-cancel-detail">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="txtTitleCancelDetail"><i class='fas fa-folder-open'></i> รายการใบส่ง :</h4>
+                <input type="hidden" id="hddCancelReceiveNo" value="" />
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card-body table-responsive" style="height:70vh; padding: 0px !important;">
+                    <table class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>รหัสลูกค้า</th>
+                                <th>OrderNo</th>
+                                <th>LotNo</th>
+                                <th>ลำดับที่</th>
+                                <th>เลขที่งาน</th>
+                                <th>รหัสสินค้า</th>
+                                <th>จำนวน</th>
+                                <th>น้ำหนักรวม(g)</th>
+                                <th class="text-center">
+                                    <div class="chk-wrapper">
+                                        <input type="checkbox" id="chkSelectAllCancel" class="custom-checkbox" checked>
+                                        <label for="chkSelectAllCancel" class="ms-2 mb-0">เลือก</label>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-cancel-detail-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-danger" id="btnCancelSelected" onclick="cancelSelectedItems()">ยกเลิกรายการที่เลือก</button>
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-title" data-title="ยกเลิกใบส่ง"></div>

@@ -109,7 +109,7 @@ async function swalConfirm(message, title, onConfirm) {
     return result.isConfirmed;
 }
 
-async function swalDeleteConfirm(message, onConfirm, title) {
+async function swalDeleteConfirm(message, title, onConfirm) {
     var result = await Swal.fire(
         Object.assign({}, swalBase, {
             icon: "warning",
@@ -145,6 +145,16 @@ function html(s) {
             '=': '&#x3D;'
         }[c];
     });
+}
+
+function html(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function num(v) {

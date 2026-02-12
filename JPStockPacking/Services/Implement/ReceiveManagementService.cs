@@ -195,7 +195,7 @@ namespace JPStockPacking.Services.Implement
                 var receivedList = (from r in _sPDbContext.Received
                                      join l in _sPDbContext.Lot on r.LotNo equals l.LotNo
                                      join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
-                                     where r.ReceiveId == receiveId && o.CustCode != "SAMPLE" && r.IsActive && !r.IsAssigned && !r.IsReturned
+                                     where r.ReceiveId == receiveId && !o.IsSample && r.IsActive && !r.IsAssigned && !r.IsReturned
                                      select r).ToList();
 
                 if (receivedList.Count == 0)

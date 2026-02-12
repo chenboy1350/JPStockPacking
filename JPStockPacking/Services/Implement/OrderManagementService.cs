@@ -2,10 +2,7 @@
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
-using JPStockPacking.Services.Helper;
 using JPStockPacking.Services.Interface;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
@@ -23,7 +20,7 @@ namespace JPStockPacking.Services.Implement
         {
             var today = DateTime.Now.Date;
 
-            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSuccess);
+            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSample);
 
             if (!string.IsNullOrEmpty(orderNo))
                 ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));
@@ -48,7 +45,6 @@ namespace JPStockPacking.Services.Implement
                 .ToListAsync();
 
             var orderNos = orders.Select(o => o.OrderNo).ToList();
-
 
             var lotsQuery = _sPDbContext.Lot
                 .Where(l => l.IsActive && orderNos.Contains(l.OrderNo));
@@ -82,7 +78,6 @@ namespace JPStockPacking.Services.Implement
                         .DistinctBy(m => m.TableName)
                         .ToList()
                 );
-
 
             var repairs = await (
                 from bek in _sPDbContext.Break

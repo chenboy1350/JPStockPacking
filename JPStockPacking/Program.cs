@@ -46,6 +46,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IPermissionManagement, PermissionManagement>();
 builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<ISampleReceiveManagementService, SampleReceiveManagementService>();
+builder.Services.AddScoped<ICancelReceiveService, CancelReceiveService>();
 
 builder.Services.AddAuthentication("AppCookieAuth")
     .AddCookie("AppCookieAuth", options =>

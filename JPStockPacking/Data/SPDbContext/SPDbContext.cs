@@ -30,6 +30,8 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<Export> Export { get; set; }
 
+    public virtual DbSet<ExportDetail> ExportDetail { get; set; }
+
     public virtual DbSet<Lost> Lost { get; set; }
 
     public virtual DbSet<Lot> Lot { get; set; }
@@ -53,6 +55,8 @@ public partial class SPDbContext : DbContext
     public virtual DbSet<ReturnedDetail> ReturnedDetail { get; set; }
 
     public virtual DbSet<SendLost> SendLost { get; set; }
+
+    public virtual DbSet<SendLostDetail> SendLostDetail { get; set; }
 
     public virtual DbSet<SendQtyToPack> SendQtyToPack { get; set; }
 
@@ -82,6 +86,11 @@ public partial class SPDbContext : DbContext
 
         modelBuilder.Entity<Export>(entity =>
         {
+            entity.HasKey(e => e.Doc).HasName("PK_Exports");
+        });
+
+        modelBuilder.Entity<ExportDetail>(entity =>
+        {
             entity.HasKey(e => e.ExportId).HasName("PK_ExportDetailID");
         });
 
@@ -108,6 +117,16 @@ public partial class SPDbContext : DbContext
         modelBuilder.Entity<ReturnedDetail>(entity =>
         {
             entity.HasKey(e => e.ReturnDetailId).HasName("PK_Returned");
+        });
+
+        modelBuilder.Entity<SendLost>(entity =>
+        {
+            entity.HasKey(e => e.Doc).HasName("PK_SendLosts");
+        });
+
+        modelBuilder.Entity<SendLostDetail>(entity =>
+        {
+            entity.HasKey(e => e.SendLostId).HasName("PK_SendLost");
         });
 
         modelBuilder.Entity<WorkTable>(entity =>

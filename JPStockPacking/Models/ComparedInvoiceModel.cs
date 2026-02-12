@@ -9,6 +9,8 @@ namespace JPStockPacking.Models
         public string InvoiceNo { get; set; } = string.Empty;
         public string OrderNo { get; set; } = string.Empty;
         public InvoiceType InvoiceType { get; set; }
+        public bool IsSample { get; set; } = false;
+        public bool IsOver30Days { get; set; } = true;
     }
 
     public class ComparedInvoiceModel

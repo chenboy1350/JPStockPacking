@@ -240,6 +240,7 @@ namespace JPStockPacking.Services.Implement
                 InputValidator validator = new();
                 var apiSettings = _configuration.GetSection("ApiSettings");
                 var apiKey = apiSettings["APIKey"];
+                var Audience = apiSettings["Audience"];
                 var urlAccessToken = apiSettings["AccessToken"];
 
                 if (validator.IsValidInput(username) && validator.IsValidInput(password))
@@ -249,6 +250,7 @@ namespace JPStockPacking.Services.Implement
                     {
                         ClientId = username,
                         ClientSecret = password,
+                        Audience = Audience
                     };
                     var content = new StringContent(JsonSerializer.Serialize(requestBody, CachedJsonSerializerOptions), Encoding.UTF8, "application/json");
                     httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);

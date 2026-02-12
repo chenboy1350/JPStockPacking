@@ -94,6 +94,16 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "CancelReceive"))
+                    {
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-action="@Url.Action("CancelReceive", "Home")">
+                                <i class="nav-icon fas fa-eraser"></i>
+                                <p>ยกเลิกใบส่ง</p>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.HasClaim("Menu", "Validation"))
                     {
                         <li class="nav-item">
@@ -109,45 +119,45 @@
                         <li class="nav-header">ADMINISTRATION</li>
                     }
 
-                        @if (User.HasClaim("Menu", "UserManagement"))
-                        {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("UserManagement", "Home")">
-                                <i class="nav-icon fas fa-user-edit"></i>
-                                <p>จัดการบัญชีผู้ใช้</p>
-                                </a>
-                            </li>
-                        }
+                    @if (User.HasClaim("Menu", "UserManagement"))
+                    {
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-action="@Url.Action("UserManagement", "Home")">
+                            <i class="nav-icon fas fa-user-edit"></i>
+                            <p>จัดการบัญชีผู้ใช้</p>
+                            </a>
+                        </li>
+                    }
 
-                        @if (User.HasClaim("Menu", "EmployeeManagement"))
-                        {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("EmployeeManagement", "Home")">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>จัดการข้อมูลพนักงาน</p>
-                                </a>
-                            </li>
-                        }
+                    @if (User.HasClaim("Menu", "EmployeeManagement"))
+                    {
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-action="@Url.Action("EmployeeManagement", "Home")">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>จัดการข้อมูลพนักงาน</p>
+                            </a>
+                        </li>
+                    }
 
-                        @if (User.HasClaim("Menu", "PermissionManagement"))
-                        {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("PermissionManagement", "Home")">
-                                <i class="nav-icon fas fa-user-shield"></i>
-                                <p>จัดการสิทธิการเข้าถึง</p>
-                                </a>
-                            </li>
-                        }
+                    @if (User.HasClaim("Menu", "PermissionManagement"))
+                    {
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-action="@Url.Action("PermissionManagement", "Home")">
+                            <i class="nav-icon fas fa-user-shield"></i>
+                            <p>จัดการสิทธิการเข้าถึง</p>
+                            </a>
+                        </li>
+                    }
 
-                        @if (User.HasClaim("Menu", "AppSettings"))
-                        {
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-action="@Url.Action("AppSettings", "Home")">
-                                <i class="nav-icon fas fa-cog"></i>
-                                <p>ตั้งค่าทั่วไป</p>
-                                </a>
-                            </li>
-                        }
+                    @if (User.HasClaim("Menu", "AppSettings"))
+                    {
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-action="@Url.Action("AppSettings", "Home")">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>ตั้งค่าทั่วไป</p>
+                            </a>
+                        </li>
+                    }
 
                     <li class="nav-header"><hr class="border-top"></li>
                     <li class="nav-item mt-auto">
@@ -287,6 +297,26 @@
                                         <div class="mc-content">
                                             <h4 class="mc-title">แจ้งยอดบรรจุ</h4>
                                             <p class="mc-desc">รายงานยอดการบรรจุ</p>
+                                        </div>
+                                        <div class="mc-arrow">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+
+                        @if (User.HasClaim("Menu", "CancelReceive"))
+                        {
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-4">
+                                <a href="#" class="mc-link" data-action="@Url.Action("CancelReceive", "Home")">
+                                    <div class="mc-card mc-card--red">
+                                        <div class="mc-icon">
+                                            <i class="fas fa-eraser"></i>
+                                        </div>
+                                        <div class="mc-content">
+                                            <h4 class="mc-title">ยกเลิกใบส่ง</h4>
+                                            <p class="mc-desc">ยกเลิกใบส่งต่างๆ</p>
                                         </div>
                                         <div class="mc-arrow">
                                             <i class="fas fa-arrow-right"></i>
@@ -493,6 +523,24 @@
         window.urlUpdateSampleLotItems = '@Url.Action("UpdateSampleLotItems", "Home")';
         window.urlCancelUpdateSampleLotItems = '@Url.Action("CancelUpdateSampleLotItems", "Home")';
         window.urlGetOrderToPlan = '@Url.Action("GetOrderToPlan", "Home")';
+        window.urlGetCancelStoreList = '@Url.Action("GetCancelStoreList", "Home")';
+        window.urlGetCancelStoreDetail = '@Url.Action("GetCancelStoreDetail", "Home")';
+        window.urlGetCancelMeltList = '@Url.Action("GetCancelMeltList", "Home")';
+        window.urlGetCancelMeltDetail = '@Url.Action("GetCancelMeltDetail", "Home")';
+        window.urlGetCancelLostList = '@Url.Action("GetCancelLostList", "Home")';
+        window.urlGetCancelLostDetail = '@Url.Action("GetCancelLostDetail", "Home")';
+        window.urlGetCancelExportList = '@Url.Action("GetCancelExportList", "Home")';
+        window.urlGetCancelExportDetail = '@Url.Action("GetCancelExportDetail", "Home")';
+        window.urlCancelLostByReceiveNo = '@Url.Action("CancelLostByReceiveNo", "Home")';
+        window.urlCancelLostByLotNo = '@Url.Action("CancelLostByLotNo", "Home")';
+        window.urlCancelExportByReceiveNo = '@Url.Action("CancelExportByReceiveNo", "Home")';
+        window.urlCancelExportByLotNo = '@Url.Action("CancelExportByLotNo", "Home")';
+        window.urlCancelStoreByReceiveNo = '@Url.Action("CancelStoreByReceiveNo", "Home")';
+        window.urlCancelStoreByLotNo = '@Url.Action("CancelStoreByLotNo", "Home")';
+        window.urlCancelMeltByReceiveNo = '@Url.Action("CancelMeltByReceiveNo", "Home")';
+        window.urlCancelMeltByLotNo = '@Url.Action("CancelMeltByLotNo", "Home")';
+        window.urlGetUnallocatedQuantityData = '@Url.Action("GetUnallocatedQuantityData", "Home")';
+        window.urlGetSendLostCheckList = '@Url.Action("GetSendLostCheckList", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -506,6 +554,7 @@
     <script src="~/js/EmploeeManagement.js" asp-append-version="true"></script>
     <script src="~/js/PackPlaning.js" asp-append-version="true"></script>
     <script src="~/js/SampleReceiveManagement.js" asp-append-version="true"></script>
+    <script src="~/js/CancelReceive.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {

@@ -61,7 +61,7 @@ namespace JPStockPacking.Services.Implement
             ).ToDictionaryAsync(x => x.LotNo);
 
             var dictLost = await (
-                from s in _sPDbContext.SendLost
+                from s in _sPDbContext.SendLostDetail
                 join l in _sPDbContext.Lot on s.LotNo equals l.LotNo
                 where s.IsActive && l.OrderNo == orderNo
                 group s by s.LotNo into g
@@ -78,7 +78,7 @@ namespace JPStockPacking.Services.Implement
             ).ToDictionaryAsync(x => x.LotNo);
 
             var dictExport = await (
-                from s in _sPDbContext.Export
+                from s in _sPDbContext.ExportDetail
                 join l in _sPDbContext.Lot on s.LotNo equals l.LotNo
                 where s.IsActive && l.OrderNo == orderNo
                 group s by s.LotNo into g
@@ -205,7 +205,7 @@ namespace JPStockPacking.Services.Implement
             ).FirstOrDefaultAsync();
 
             var lostData = await (
-                from s in _sPDbContext.SendLost
+                from s in _sPDbContext.SendLostDetail
                 where s.IsActive && s.LotNo == lotNo
                 group s by s.LotNo into g
                 select new
@@ -219,7 +219,7 @@ namespace JPStockPacking.Services.Implement
             ).FirstOrDefaultAsync();
 
             var exportData = await (
-                from s in _sPDbContext.Export
+                from s in _sPDbContext.ExportDetail
                 where s.IsActive && s.LotNo == lotNo
                 group s by s.LotNo into g
                 select new
@@ -363,7 +363,9 @@ namespace JPStockPacking.Services.Implement
                         IsStored = false,
                         IsActive = true,
                         CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
+                        CreateBy = int.TryParse(input.UserId, out int userId) ? userId : null,
+                        UpdateDate = DateTime.Now,
+                        UpdateBy = int.TryParse(input.UserId, out int updateBy) ? updateBy : null
                     });
                 }
                 else if (input.KsQty == 0)
@@ -397,7 +399,9 @@ namespace JPStockPacking.Services.Implement
                         IsMelted = false,
                         IsActive = true,
                         CreateDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
+                        CreateBy = int.TryParse(input.UserId, out int userId) ? userId : null,
+                        UpdateDate = DateTime.Now,
+                        UpdateBy = int.TryParse(input.UserId, out int updateBy) ? updateBy : null
                     });
                 }
                 else if (input.KmQty == 0)
@@ -415,11 +419,11 @@ namespace JPStockPacking.Services.Implement
                 }
 
                 // ===== LOST =====
-                var sendLost = await _sPDbContext.SendLost.FirstOrDefaultAsync(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc));
+                var sendLost = await _sPDbContext.SendLostDetail.FirstOrDefaultAsync(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc));
 
                 if (sendLost == null && input.KlQty > 0)
                 {
-                    _sPDbContext.SendLost.Add(new SendLost
+                    _sPDbContext.SendLostDetail.Add(new SendLostDetail
                     {
                         LotNo = input.LotNo,
                         Doc = string.Empty,
@@ -435,7 +439,7 @@ namespace JPStockPacking.Services.Implement
                 }
                 else if (input.KlQty == 0)
                 {
-                    await _sPDbContext.SendLost
+                    await _sPDbContext.SendLostDetail
                         .Where(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc))
                         .ExecuteDeleteAsync();
                 }
@@ -448,11 +452,11 @@ namespace JPStockPacking.Services.Implement
                 }
 
                 // ===== EXPORT =====
-                var export = await _sPDbContext.Export.FirstOrDefaultAsync(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc));
+                var export = await _sPDbContext.ExportDetail.FirstOrDefaultAsync(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc));
 
                 if (export == null && input.KxQty > 0)
                 {
-                    _sPDbContext.Export.Add(new Export
+                    _sPDbContext.ExportDetail.Add(new ExportDetail
                     {
                         LotNo = input.LotNo,
                         Doc = string.Empty,
@@ -470,7 +474,7 @@ namespace JPStockPacking.Services.Implement
                 }
                 else if (input.KxQty == 0)
                 {
-                    await _sPDbContext.Export
+                    await _sPDbContext.ExportDetail
                         .Where(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc))
                         .ExecuteDeleteAsync();
                 }
@@ -485,12 +489,12 @@ namespace JPStockPacking.Services.Implement
                 }
 
                 lot.Unallocated = input.Unallocated;
-                lot.UpdateDate = DateTime.UtcNow;
+                lot.UpdateDate = DateTime.Now;
 
                 if (input.Unallocated <= 0)
                 {
                     lot.IsSuccess = true;
-                    lot.UpdateDate = DateTime.UtcNow;
+                    lot.UpdateDate = DateTime.Now;
 
                     await UpdateOrderSuccessAsync(lot.OrderNo);
                 }
@@ -791,7 +795,7 @@ namespace JPStockPacking.Services.Implement
 
         private async Task<List<TempPack>> GetSendLostAsync(string[] lotNos)
         {
-            List<TempPack> tempPacks = await (from sl in _sPDbContext.SendLost
+            List<TempPack> tempPacks = await (from sl in _sPDbContext.SendLostDetail
                                               join lot in _sPDbContext.Lot on sl.LotNo equals lot.LotNo into gjLot
                                               from lot in gjLot.DefaultIfEmpty()
                                               join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
@@ -816,7 +820,7 @@ namespace JPStockPacking.Services.Implement
 
         private async Task<List<TempPack>> GetExportAsync(string[] lotNos)
         {
-            List<TempPack> tempPacks = await (from expt in _sPDbContext.Export
+            List<TempPack> tempPacks = await (from expt in _sPDbContext.ExportDetail
                                               join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
                                               from lot in gjLot.DefaultIfEmpty()
                                               join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
@@ -977,6 +981,7 @@ namespace JPStockPacking.Services.Implement
                         Store.IsSended = true;
                         Store.Doc = receiveNo;
                         Store.UpdateDate = DateTime.Now;
+                        Store.UpdateBy = int.TryParse(pack.Username, out int userId) ? userId : null;
                         _sPDbContext.Store.UpdateRange(Store);
                     }
                 }
@@ -1158,6 +1163,7 @@ namespace JPStockPacking.Services.Implement
                         Melt.IsSended = true;
                         Melt.Doc = receiveNo;
                         Melt.UpdateDate = DateTime.Now;
+                        Melt.UpdateBy = int.TryParse(pack.Username, out int userId) ? userId : null;
                         _sPDbContext.Melt.UpdateRange(Melt);
                     }
                 }
@@ -1180,15 +1186,28 @@ namespace JPStockPacking.Services.Implement
             try
             {
                 var receiveNo = await GenerateSPReceiveNoAsync();
+
+                SendLost sendLost = new()
+                {
+                    Doc = receiveNo,
+                    IsActive = true,
+                    CreateDate = DateTime.Now,
+                    CreateBy = int.TryParse(userId, out int userIdInt) ? userIdInt : null,
+                    UpdateDate = DateTime.Now,
+                    UpdateBy = int.TryParse(userId, out int userIdInt2) ? userIdInt2 : null,
+
+                };
+                _sPDbContext.SendLost.Add(sendLost);
+
                 foreach (var pack in tempPacks)
                 {
-                    var sendLost = await _sPDbContext.SendLost.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
-                    if (sendLost != null)
+                    var sendLostDetail = await _sPDbContext.SendLostDetail.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
+                    if (sendLostDetail != null)
                     {
-                        sendLost.Doc = receiveNo;
-                        sendLost.IsSended = true;
-                        sendLost.UpdateDate = DateTime.Now;
-                        _sPDbContext.SendLost.UpdateRange(sendLost);
+                        sendLostDetail.Doc = receiveNo;
+                        sendLostDetail.IsSended = true;
+                        sendLostDetail.UpdateDate = DateTime.Now;
+                        _sPDbContext.SendLostDetail.UpdateRange(sendLostDetail);
                     }
                 }
                 await _sPDbContext.SaveChangesAsync();
@@ -1217,18 +1236,30 @@ namespace JPStockPacking.Services.Implement
             {
                 var receiveNo = await GenerateSPReceiveNoAsync();
 
+                Export export = new()
+                {
+                    Doc = receiveNo,
+                    IsActive = true,
+                    CreateDate = DateTime.Now,
+                    CreateBy = int.TryParse(userId, out int userIdInt) ? userIdInt : null,
+                    UpdateDate = DateTime.Now,
+                    UpdateBy = int.TryParse(userId, out int userIdInt2) ? userIdInt2 : null,
+                };
+
+                _sPDbContext.Export.Add(export);
+
                 foreach (var pack in tempPacks)
                 {
-                    var exports = await _sPDbContext.Export.Where(x => x.LotNo == pack.LotNo).ToListAsync();
+                    var exports = await _sPDbContext.ExportDetail.Where(x => x.LotNo == pack.LotNo).ToListAsync();
 
-                    var export = exports.FirstOrDefault(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
-                    if (export != null)
+                    var exportDetail = exports.FirstOrDefault(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
+                    if (exportDetail != null)
                     {
-                        export.Doc = receiveNo;
-                        export.IsSended = true;
-                        export.UpdateDate = DateTime.Now;
+                        exportDetail.Doc = receiveNo;
+                        exportDetail.IsSended = true;
+                        exportDetail.UpdateDate = DateTime.Now;
 
-                        _sPDbContext.Export.UpdateRange(export);
+                        _sPDbContext.ExportDetail.UpdateRange(exportDetail);
                     }
 
                     var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo);
@@ -1416,12 +1447,12 @@ namespace JPStockPacking.Services.Implement
                         .ToList()
                 );
 
-            List<TempPack> ExportTempPacks = await (from expt in _sPDbContext.Export
+            List<TempPack> ExportTempPacks = await (from expt in _sPDbContext.ExportDetail
                                                     join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
                                                     from lot in gjLot.DefaultIfEmpty()
                                                     join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
                                                     from ord in gjOrd.DefaultIfEmpty()
-                                                    where lotNos.Contains(expt.LotNo) && !string.IsNullOrEmpty(expt.Doc)
+                                                    where lotNos.Contains(expt.LotNo) && !string.IsNullOrEmpty(expt.Doc) && expt.IsSended == true && expt.IsActive
                                                     select new TempPack
                                                     {
                                                         LotNo = expt.LotNo,
@@ -1441,12 +1472,12 @@ namespace JPStockPacking.Services.Implement
                                                         OkWg = (decimal)expt.TtWg!,
                                                     }).ToListAsync();
 
-            List<TempPack> LostTempPacks = await (from sl in _sPDbContext.SendLost
+            List<TempPack> LostTempPacks = await (from sl in _sPDbContext.SendLostDetail
                                                   join lot in _sPDbContext.Lot on sl.LotNo equals lot.LotNo into gjLot
                                                   from lot in gjLot.DefaultIfEmpty()
                                                   join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
                                                   from ord in gjOrd.DefaultIfEmpty()
-                                                  where lotNos.Contains(sl.LotNo) && !string.IsNullOrEmpty(sl.Doc)
+                                                  where lotNos.Contains(sl.LotNo) && !string.IsNullOrEmpty(sl.Doc) && sl.IsSended == true && sl.IsActive
                                                   select new TempPack
                                                   {
                                                       LotNo = sl.LotNo,

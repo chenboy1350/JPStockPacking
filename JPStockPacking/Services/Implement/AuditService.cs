@@ -84,7 +84,7 @@ namespace JPStockPacking.Services.Implement
                         var lot = await _jPDbContext.OrdLotno.Where(x => x.SetNo1 == jpItem.SetNo.Trim() && x.OrderNo == jpItem.OrderNo).ToListAsync();
                         if (lot != null && lot.Count > 0)
                         {
-                            var spexlot = await _sPDbContext.Export.Where(x => lot.Select(l => l.LotNo).Contains(x.LotNo)).ToListAsync();
+                            var spexlot = await _sPDbContext.ExportDetail.Where(x => lot.Select(l => l.LotNo).Contains(x.LotNo) && x.IsActive).ToListAsync();
                             if (spexlot == null || spexlot.Count == 0)
                             {
                                 continue;
@@ -142,7 +142,7 @@ namespace JPStockPacking.Services.Implement
 
                         if (lot != null)
                         {
-                            var spexlot = await _sPDbContext.Export.Where(x => x.LotNo == jpItem.LotNo).ToListAsync();
+                            var spexlot = await _sPDbContext.ExportDetail.Where(x => x.LotNo == jpItem.LotNo && x.IsActive).ToListAsync();
 
                             if (spexlot != null && spexlot.Count > 0)
                             {
@@ -355,26 +355,37 @@ namespace JPStockPacking.Services.Implement
 
             foreach (var lotNo in JPExDminvLots)
             {
-                var lot = await _sPDbContext.Lot.Where(x => x.LotNo == lotNo).FirstOrDefaultAsync();
+                var lot = await (from l in _sPDbContext.Lot
+                                 join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
+                                 where l.LotNo == lotNo
+                                 select new { l, o }).FirstOrDefaultAsync();
+
+                if (lot == null) continue;
+
+                // กรองตาม IsSample
+                if (comparedInvoiceFilterModel.IsSample != lot.o.IsSample) continue;
+                
+                var lotData = lot.l;
 
                 // แสดงเฉพาะ lot ที่ยังมี Unallocated คงเหลือ
-                if (lot != null && lot.Unallocated > 0)
+                if (lotData.Unallocated > 0)
                 {
-                    // ดึงข้อมูล Export ย้อนหลัง 30 วัน
-                    var exportList = await _sPDbContext.Export
-                        .Where(x => x.LotNo == lotNo && x.CreateDate >= cutoffDate)
+                    // ดึงข้อมูล Export ตามเงื่อนไขวันที่
+                    var exportList = await _sPDbContext.ExportDetail
+                        .Where(x => x.LotNo == lotNo && x.IsActive &&
+                                   (comparedInvoiceFilterModel.IsOver30Days ? x.CreateDate < cutoffDate : x.CreateDate >= cutoffDate))
                         .ToListAsync();
 
-                    if(exportList.Count > 0)
+                    if (exportList.Count > 0)
                     {
                         // ดึงข้อมูล Store
                         var storeList = await _sPDbContext.Store
-                            .Where(x => x.LotNo == lotNo)
+                            .Where(x => x.LotNo == lotNo && x.IsActive)
                             .ToListAsync();
 
                         // ดึงข้อมูล Melt
                         var meltList = await _sPDbContext.Melt
-                            .Where(x => x.LotNo == lotNo)
+                            .Where(x => x.LotNo == lotNo && x.IsActive)
                             .ToListAsync();
 
                         // คำนวณจำนวนแต่ละประเภท
@@ -388,20 +399,65 @@ namespace JPStockPacking.Services.Implement
                             unallocatedQuantityModels.Add(new UnallocatedQuantityModel
                             {
                                 LotNo = lotNo ?? string.Empty,
-                                OrderNo = lot.OrderNo ?? string.Empty,
-                                ListNo = lot.ListNo ?? string.Empty,
-                                Article = lot.Article ?? string.Empty,
+                                OrderNo = lotData.OrderNo ?? string.Empty,
+                                ListNo = lotData.ListNo ?? string.Empty,
+                                Article = lotData.Article ?? string.Empty,
                                 ExportedQty = exportedQty,
                                 StoredQty = storedQty,
                                 MeltedQty = meltedQty,
-                                UnallocatedQty = lot.Unallocated ?? 0
+                                UnallocatedQty = lotData.Unallocated ?? 0
                             });
                         }
                     }
                 }
+
             }
 
             return unallocatedQuantityModels;
+        }
+
+        public async Task<List<SendLostCheckModel>> GetSendLostCheckList(ComparedInvoiceFilterModel comparedInvoiceFilterModel)
+        {
+            DateTime FromDate = comparedInvoiceFilterModel.FromDate ?? DateTime.Now;
+            DateTime ToDate = comparedInvoiceFilterModel.ToDate ?? DateTime.Now;
+
+            if (comparedInvoiceFilterModel.FromDate != null)
+            {
+                FromDate = comparedInvoiceFilterModel.FromDate.Value;
+            }
+
+            if (comparedInvoiceFilterModel.ToDate != null)
+            {
+                ToDate = comparedInvoiceFilterModel.ToDate.Value;
+            }
+            
+            // Adjust time to cover the whole day
+            FromDate = FromDate.Date;
+            ToDate = ToDate.Date.AddDays(1).AddSeconds(-1);
+
+            var query = from sld in _sPDbContext.SendLostDetail
+                        join l in _sPDbContext.Lot on sld.LotNo equals l.LotNo
+                        join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
+                        where sld.IsActive
+                        select new { sld, l, o };
+
+            if (!string.IsNullOrEmpty(comparedInvoiceFilterModel.OrderNo))
+            {
+                query = query.Where(x => x.o.OrderNo == comparedInvoiceFilterModel.OrderNo);
+            }
+            
+            var result = await query.Select(x => new SendLostCheckModel
+            {
+                Customer = x.o.CustCode ?? string.Empty,
+                OrderNo = x.o.OrderNo,
+                LotNo = x.l.LotNo,
+                ListNo = x.l.ListNo,
+                Article = x.l.Article ?? string.Empty,
+                Qty = x.sld.TtQty,
+                Wg = x.sld.TtWg
+            }).ToListAsync();
+
+            return result;
         }
     }
 

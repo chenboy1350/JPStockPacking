@@ -9,27 +9,9 @@ namespace JPStockPacking.Data.SPDbContext.Entities;
 public partial class Export
 {
     [Key]
-    [Column("ExportID")]
-    public int ExportId { get; set; }
-
     [StringLength(50)]
     [Unicode(false)]
-    public string LotNo { get; set; } = null!;
-
-    [StringLength(10)]
-    [Unicode(false)]
     public string Doc { get; set; } = null!;
-
-    [Column(TypeName = "numeric(18, 1)")]
-    public decimal TtQty { get; set; }
-
-    public double TtWg { get; set; }
-
-    public bool IsOverQuota { get; set; }
-
-    public int? Approver { get; set; }
-
-    public bool IsSended { get; set; }
 
     public bool IsActive { get; set; }
 

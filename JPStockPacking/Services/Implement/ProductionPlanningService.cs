@@ -23,7 +23,8 @@ namespace JPStockPacking.Services.Implement
                 var result =  from ord in _sPDbContext.Order
                                     join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo into lotGroup
                                     where lotGroup.Any(lg => lg.OperateDays > 0 && !lg.IsSuccess)
-                                          && ord.SeldDate1.HasValue // กรองเฉพาะที่มี DueDate
+                                          && ord.SeldDate1.HasValue
+                                          && !ord.IsSample
                                           && (FromDate == null || ord.SeldDate1 >= FromDate)
                                           && (ToDate == null || ord.SeldDate1 <= ToDate)
                                     let validLots = lotGroup.Where(lg => lg.OperateDays > 0 && !lg.IsSuccess)
@@ -37,12 +38,11 @@ namespace JPStockPacking.Services.Implement
                                         Qty = validLots.Sum(lot => lot.TtQty ?? 0),
                                         SendToPackQty = lotGroup.Sum(lot => lot.ReceivedQty ?? 0),
                                         OperateDay = validLots.Sum(lot => lot.OperateDays ?? 0),
-                                        DueDate = ord.SeldDate1.Value // ปลอดภัยเพราะ filter ด้านบนแล้ว
+                                        DueDate = ord.SeldDate1 ?? DateTime.MinValue
                                     };
 
                 var resultList = await result.ToListAsync();
 
-                // กรอง order ที่ Qty = 0 ออก
                 resultList = [.. resultList.Where(r => r.Qty > 0)];
                 if (resultList.Count == 0) return resultList;
 

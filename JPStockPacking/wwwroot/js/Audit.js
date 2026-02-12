@@ -181,6 +181,8 @@ function FindUnalocateLot() {
 
     var dtInvFromDate = $('#dtLocFromDate').val();
     var dtInvToDate = $('#dtLocToDate').val();
+    var isOver30Days = $('input[name="rdDays"]:checked').val() === "true";
+    var isSample = $('input[name="rdIsSample"]:checked').val() === "true";
 
     if (!dtInvFromDate || !dtInvToDate) return swalWarning('กรุณาเลือกวันที่ให้ครบถ้วน');
 
@@ -188,6 +190,65 @@ function FindUnalocateLot() {
         FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
         ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
         OrderNo: txtInvOrderNo,
+        IsOver30Days: isOver30Days,
+        IsSample: isSample
+    };
+
+    $.ajax({
+        url: urlGetUnallocatedQuantityData,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        beforeSend: async () => $('#loadingIndicator').show(),
+        success: async (data) => {
+            $('#loadingIndicator').hide();
+
+            let tbody = $('#tblUnallocated tbody');
+            tbody.empty();
+
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    let row = `<tr>
+                        <td>${item.orderNo || ''}</td>
+                        <td>${item.lotNo || ''}</td>
+                        <td>${item.listNo || ''}</td>
+                        <td>${item.article || ''}</td>
+                        <td class="text-right">${(item.exportedQty || 0).toLocaleString()}</td>
+                        <td class="text-right">${(item.storedQty || 0).toLocaleString()}</td>
+                        <td class="text-right">${(item.meltedQty || 0).toLocaleString()}</td>
+                        <td class="text-right font-weight-bold text-danger">${(item.unallocatedQty || 0).toLocaleString()}</td>
+                    </tr>`;
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append('<tr><td colspan="8" class="text-center">ไม่พบข้อมูล</td></tr>');
+            }
+        },
+        error: async (xhr) => {
+            $('#loadingIndicator').hide();
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        }
+    });
+
+}
+
+function PrintUnalocateLot() {
+    var txtInvOrderNo = $('#txtLocOrderNo').val().trim();
+
+    var dtInvFromDate = $('#dtLocFromDate').val();
+    var dtInvToDate = $('#dtLocToDate').val();
+    var isOver30Days = $('input[name="rdDays"]:checked').val() === "true";
+    var isSample = $('input[name="rdIsSample"]:checked').val() === "true";
+
+    if (!dtInvFromDate || !dtInvToDate) return swalWarning('กรุณาเลือกวันที่ให้ครบถ้วน');
+
+    let model = {
+        FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
+        ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
+        OrderNo: txtInvOrderNo,
+        IsOver30Days: isOver30Days,
+        IsSample: isSample
     };
 
     let pdfWindow = window.open('', '_blank');
@@ -222,7 +283,6 @@ function FindUnalocateLot() {
             await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }
     });
-
 }
 
 function ClearLocInput() {
@@ -230,9 +290,67 @@ function ClearLocInput() {
 
     $('#dtLocToDate').val(null);
     $('#dtLocFromDate').val(null);
+    $('#tblUnallocated tbody').empty();
+    $('#rdOver30').prop('checked', true);
 }
 
-function ClearInvoice(){
+function FindSendLostList() {
+    var txtInvOrderNo = $('#txtSendLostOrderNo').val().trim();
+
+    var dtInvFromDate = $('#dtSendLostFromDate').val();
+    var dtInvToDate = $('#dtSendLostToDate').val();
+
+    let model = {
+        FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
+        ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
+        OrderNo: txtInvOrderNo
+    };
+
+    $.ajax({
+        url: urlGetSendLostCheckList,
+        type: 'POST',
+        data: JSON.stringify(model),
+        contentType: "application/json; charset=utf-8",
+        beforeSend: async () => $('#loadingIndicator').show(),
+        success: async (data) => {
+            $('#loadingIndicator').hide();
+
+            let tbody = $('#tblSendLostList tbody');
+            tbody.empty();
+
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    let row = `<tr>
+                        <td>${item.customer || ''}</td>
+                        <td>${item.orderNo || ''}</td>
+                        <td>${item.lotNo || ''}</td>
+                        <td>${item.listNo || ''}</td>
+                        <td>${item.article || ''}</td>
+                        <td class="text-right">${(item.qty || 0).toLocaleString()}</td>
+                        <td class="text-right">${(item.wg || 0).toLocaleString()}</td>
+                    </tr>`;
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append('<tr><td colspan="7" class="text-center">ไม่พบข้อมูล</td></tr>');
+            }
+        },
+        error: async (xhr) => {
+            $('#loadingIndicator').hide();
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        }
+    });
+}
+
+function ClearSendLostInput() {
+    $('#txtSendLostOrderNo').val('');
+    $('#dtSendLostFromDate').val(null);
+    $('#dtSendLostToDate').val(null);
+    $('#tblSendLostList tbody').empty();
+}
+
+function ClearInvoice() {
     $('#txtInvoice').val('');
     $('#txtInvOrderNo').val('');
 

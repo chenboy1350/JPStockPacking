@@ -174,7 +174,7 @@ function showModalUpdateSampleLot(receiveNo) {
                 const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
                 const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
                 const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
-                const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
+                const eDesFnDisplay = isReceived ? `<del>${html(x.edesFn)}</del>` : html(x.edesFn);
                 const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
                 const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
                 const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
@@ -190,7 +190,7 @@ function showModalUpdateSampleLot(receiveNo) {
                     <td>${orderNoDisplay}</td>
                     <td>${lotNoDisplay}</td>
                     <td class="text-center">${html(x.listNo)}</td>
-                    <td>${barcodeDisplay}</td>
+                    <td>${eDesFnDisplay}</td>
                     <td>${articleDisplay}</td>
                     <td class="text-end">${qtyDisplay}</td>
                     <td class="text-end">${wgDisplay}</td>
@@ -303,7 +303,7 @@ function showModalCancelSampleLot(receiveNo) {
                 const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
                 const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
                 const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
-                const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
+                const eDesFnDisplay = isReceived ? `<del>${html(x.edesFn)}</del>` : html(x.edesFn);
                 const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
                 const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
                 const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
@@ -319,7 +319,7 @@ function showModalCancelSampleLot(receiveNo) {
                 <td>${orderNoDisplay}</td>
                 <td>${lotNoDisplay}</td>
                 <td class="text-center">${html(x.listNo)}</td>
-                <td>${barcodeDisplay}</td>
+                <td>${eDesFnDisplay}</td>
                 <td>${articleDisplay}</td>
                 <td class="text-end">${qtyDisplay}</td>
                 <td class="text-end">${wgDisplay}</td>

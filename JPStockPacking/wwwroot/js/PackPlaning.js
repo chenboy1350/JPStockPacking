@@ -433,8 +433,6 @@ function createTimelineSegments(orders, fromDate, workers, isSentMode) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let carryOverDays = 0;
-
     for (let i = 0; i < uniqueDueDates.length; i++) {
         const dueDate = uniqueDueDates[i];
 
@@ -470,16 +468,13 @@ function createTimelineSegments(orders, fromDate, workers, isSentMode) {
             availableDays = daysUntilDue === 0 ? 1 : daysUntilDue;
         }
 
-        // effective available days รวม carry-over
-        const effectiveAvailableDays = Math.max(availableDays + carryOverDays, 0);
-
         // คำนวณ days needed
         const plan = calculateProductionPlan(segmentQty, workers, avgBaseTime);
         const daysNeeded = plan.actualDays;
 
         // เช็คว่าทันหรือไม่
-        const isOnTime = daysNeeded <= effectiveAvailableDays;
-        const timeDiff = effectiveAvailableDays - daysNeeded;
+        const isOnTime = daysNeeded <= availableDays;
+        const timeDiff = availableDays - daysNeeded;
 
         // คำนวณจำนวนคนที่ต้องเพิ่มถ้าไม่ทัน
         let requiredWorkers = workers;
@@ -501,22 +496,15 @@ function createTimelineSegments(orders, fromDate, workers, isSentMode) {
             totalQty: segmentQty,
             avgBaseTime: avgBaseTime,
             availableDays: availableDays,
-            effectiveAvailableDays: effectiveAvailableDays,
             daysNeeded: daysNeeded,
             isOnTime: isOnTime,
             timeDiff: timeDiff,
-            carryOverFromPrevious: carryOverDays,
-            carryOverToNext: timeDiff,
-            // ข้อมูลใหม่
             isOverdue: isOverdue,
             daysOverdue: daysOverdue,
             daysUntilDue: daysUntilDue,
             requiredWorkers: requiredWorkers,
             additionalWorkers: additionalWorkers
         });
-
-        // ส่งต่อ carry-over ไป segment ถัดไป (รวมถึง overdue ที่ทำไม่เสร็จ)
-        carryOverDays = timeDiff;
     }
 
     // === CUMULATIVE CALCULATION สำหรับ UPCOMING SEGMENTS ===
@@ -704,10 +692,10 @@ function displayTimelineBreakdown(segments, workers) {
 
     // สถานะโดยรวม
     const overallStatusText = overdueCount > 0
-        ? `<span class="ops-text-danger">🔴 ${overdueCount} overdue</span>`
+        ? `<span class="ops-text-danger"><i class="fas fa-exclamation-triangle"></i> ${overdueCount} overdue</span>`
         : allOnTime
-            ? '<span class="ops-text-success">✓ ผ่านทั้งหมด</span>'
-            : '<span class="ops-text-warning">⚠ มี segment ไม่ทัน</span>';
+            ? '<span class="ops-text-success"><i class="fas fa-check-circle"></i> ผ่านทั้งหมด</span>'
+            : '<span class="ops-text-warning"><i class="fas fa-exclamation-circle"></i> มี segment ไม่ทัน</span>';
 
     // คำแนะนำสำหรับงานที่ต้องเสร็จวันนี้
     let workersRecHtml = '';
@@ -1029,12 +1017,10 @@ function createHorizontalSegmentHtml(segment, isOverdue) {
         ? `เลยมา ${segment.daysOverdue} วัน`
         : isToday ? 'วันนี้' : `อีก ${segment.daysUntilDue} วัน`;
 
-    // Recommendation - สำหรับ Upcoming ใช้ cumulative
+    // Recommendation - แสดงเฉพาะ Upcoming (cumulative)
     let recommendation = '';
     if (isUpcoming && segment.cumulativeAdditionalWorkers !== undefined && segment.cumulativeAdditionalWorkers > 0) {
         recommendation = `<div class="ops-hseg-rec">+${segment.cumulativeAdditionalWorkers} คน</div>`;
-    } else if (!segment.isOnTime && !isUpcoming) {
-        recommendation = `<div class="ops-hseg-rec">+${segment.additionalWorkers} คน</div>`;
     }
 
     return `
@@ -1058,9 +1044,6 @@ function createHorizontalSegmentHtml(segment, isOverdue) {
                 </div>
                 <div class="ops-hseg-days">
                     <span>ใช้ ${segment.daysNeeded.toFixed(1)} วัน</span>
-                    <span class="${segment.timeDiff >= 0 ? 'ops-text-success' : 'ops-text-danger'}">
-                        ${segment.timeDiff >= 0 ? '+' : ''}${segment.timeDiff.toFixed(1)}
-                    </span>
                 </div>
                 ${recommendation}
             </div>
@@ -1077,13 +1060,13 @@ function createSegmentHtml(segment, _workers, isOverdue) {
     let statusText = '';
     let statusBadgeClass = '';
     if (isOverdue) {
-        statusText = `🔴 เลยมา ${segment.daysOverdue} วัน`;
+        statusText = `<i class="fas fa-exclamation-triangle"></i> เลยมา ${segment.daysOverdue} วัน`;
         statusBadgeClass = 'ops-segment-status--overdue';
     } else if (segment.isOnTime) {
-        statusText = '✓ ทันกำหนด';
+        statusText = '<i class="fas fa-check-circle"></i> ทันกำหนด';
         statusBadgeClass = 'ops-segment-status--success';
     } else {
-        statusText = '⚠ ไม่ทัน';
+        statusText = '<i class="fas fa-exclamation-circle"></i> ไม่ทัน';
         statusBadgeClass = 'ops-segment-status--warning';
     }
 
@@ -1091,8 +1074,8 @@ function createSegmentHtml(segment, _workers, isOverdue) {
     const timeDiffPrefix = segment.timeDiff > 0 ? '+' : '';
 
     // Progress bar calculation
-    const progressPercent = segment.effectiveAvailableDays > 0
-        ? Math.min((segment.daysNeeded / segment.effectiveAvailableDays) * 100, 100)
+    const progressPercent = segment.availableDays > 0
+        ? Math.min((segment.daysNeeded / segment.availableDays) * 100, 100)
         : 100;
 
     // Date info
@@ -1112,11 +1095,6 @@ function createSegmentHtml(segment, _workers, isOverdue) {
                 <i class="fas fa-calendar-alt"></i>
                 Due: ${formatThaiDate(segment.endDate)}
                 <span class="ops-text-muted">(${segment.daysUntilDue === 0 ? 'วันนี้' : `อีก ${segment.daysUntilDue} วัน`})</span>
-                ${segment.carryOverFromPrevious !== 0 ? `
-                    <span class="${segment.carryOverFromPrevious > 0 ? 'ops-text-success' : 'ops-text-danger'}" style="font-size: 0.75rem; margin-left: 0.5rem;">
-                        (${segment.carryOverFromPrevious > 0 ? '+' : ''}${segment.carryOverFromPrevious.toFixed(2)} จากช่วงก่อน)
-                    </span>
-                ` : ''}
             </div>
         `;
     }
@@ -1159,7 +1137,7 @@ function createSegmentHtml(segment, _workers, isOverdue) {
                     <div class="ops-segment-stat-label">วันที่ใช้</div>
                 </div>
                 <div class="ops-segment-stat">
-                    <div class="ops-segment-stat-value">${segment.effectiveAvailableDays.toFixed(2)}</div>
+                    <div class="ops-segment-stat-value">${segment.availableDays.toFixed(2)}</div>
                     <div class="ops-segment-stat-label">วันที่มี</div>
                 </div>
                 <div class="ops-segment-stat">
@@ -1173,13 +1151,6 @@ function createSegmentHtml(segment, _workers, isOverdue) {
             </div>
 
             ${recommendationHtml}
-
-            ${segment.carryOverToNext !== 0 ? `
-                <div class="ops-segment-carry ${segment.carryOverToNext > 0 ? 'ops-segment-carry--positive' : 'ops-segment-carry--negative'}">
-                    <i class="fas ${segment.carryOverToNext > 0 ? 'fa-arrow-right' : 'fa-exclamation-circle'}"></i>
-                    <span>→ ${segment.carryOverToNext > 0 ? '+' : ''}${segment.carryOverToNext.toFixed(2)} วัน${segment.carryOverToNext > 0 ? ' เหลือส่งต่อ' : ' ค้างไป segment ถัดไป'}</span>
-                </div>
-            ` : ''}
         </div>
     `;
 }
