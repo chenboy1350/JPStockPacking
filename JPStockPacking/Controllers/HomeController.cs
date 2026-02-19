@@ -27,7 +27,8 @@ namespace JPStockPacking.Controllers
         IPermissionManagement permissionManagement,
         IReturnService returnService,
         ISampleReceiveManagementService sampleReceiveManagementService,
-        ICancelReceiveService cancelReceiveService) : Controller
+        ICancelReceiveService cancelReceiveService,
+        IProductTypeService productTypeService) : Controller
     {
         private readonly IOrderManagementService _orderManagementService = orderManagementService;
         private readonly IReportService _reportService = reportService;
@@ -48,6 +49,7 @@ namespace JPStockPacking.Controllers
         private readonly IReturnService _returnService = returnService;
         private readonly ISampleReceiveManagementService _sampleReceiveManagementService = sampleReceiveManagementService;
         private readonly ICancelReceiveService _cancelReceiveService = cancelReceiveService;
+        private readonly IProductTypeService _productTypeService = productTypeService;
 
         [Authorize]
         public IActionResult Index()
@@ -1303,6 +1305,55 @@ namespace JPStockPacking.Controllers
             }
         }
 
+        // ==================== ProductType Management ====================
+
+        [Authorize]
+        public async Task<IActionResult> ProductTypeManagement()
+        {
+            var res = await _productTypeService.GetAllAsync();
+            return PartialView("~/Views/Partial/_ProductTypeManagement.cshtml", res);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetProductTypes()
+        {
+            var result = await _productTypeService.GetAllAsync();
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> GetProductTypeById([FromBody] int id)
+        {
+            var result = await _productTypeService.GetByIdAsync(id);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddProductType([FromBody] Data.SPDbContext.Entities.ProductType model)
+        {
+            var result = await _productTypeService.AddAsync(model);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> EditProductType([FromBody] Data.SPDbContext.Entities.ProductType model)
+        {
+            var result = await _productTypeService.UpdateAsync(model);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> ToggleProductTypeStatus([FromBody] int id)
+        {
+            var result = await _productTypeService.ToggleStatusAsync(id);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
 
     }
 }

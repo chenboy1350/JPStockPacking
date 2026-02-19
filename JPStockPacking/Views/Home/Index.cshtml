@@ -159,6 +159,16 @@
                         </li>
                     }
 
+                    @if (User.HasClaim("Menu", "ProductTypeManagement"))
+                    {
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-action="@Url.Action("ProductTypeManagement", "Home")">
+                            <i class="nav-icon fas fa-tags"></i>
+                            <p>ประเภทสินค้า</p>
+                            </a>
+                        </li>
+                    }
+
                     <li class="nav-header"><hr class="border-top"></li>
                     <li class="nav-item mt-auto">
                         <a href="#" id="btnSignOut" class="nav-link">
@@ -349,7 +359,7 @@
                 </div>
 
                 <!-- Administration Section -->
-                @if (User.HasClaim("Menu", "UserManagement") || User.HasClaim("Menu", "EmployeeManagement") || User.HasClaim("Menu", "PermissionManagement") || User.HasClaim("Menu", "FormulaManagement") || User.HasClaim("Menu", "AppSettings"))
+                @if (User.HasClaim("Menu", "UserManagement") || User.HasClaim("Menu", "EmployeeManagement") || User.HasClaim("Menu", "PermissionManagement") || User.HasClaim("Menu", "FormulaManagement") || User.HasClaim("Menu", "AppSettings") || User.HasClaim("Menu", "ProductTypeManagement"))
                 {
                     <div class="mc-section">
                         <div class="mc-section-header text-center mb-4">
@@ -432,6 +442,26 @@
                                             <div class="mc-content">
                                                 <h4 class="mc-title">ตั้งค่าทั่วไป</h4>
                                                 <p class="mc-desc">ตั้งค่าระบบทั้งหมด</p>
+                                            </div>
+                                            <div class="mc-arrow">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+
+                            @if (User.HasClaim("Menu", "ProductTypeManagement"))
+                            {
+                                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-4">
+                                    <a href="#" class="mc-link" data-action="@Url.Action("ProductTypeManagement", "Home")">
+                                        <div class="mc-card mc-card--slate">
+                                            <div class="mc-icon">
+                                                <i class="fas fa-tags"></i>
+                                            </div>
+                                            <div class="mc-content">
+                                                <h4 class="mc-title">ประเภทสินค้า</h4>
+                                                <p class="mc-desc">จัดการข้อมูลประเภทสินค้า</p>
                                             </div>
                                             <div class="mc-arrow">
                                                 <i class="fas fa-arrow-right"></i>
@@ -541,6 +571,11 @@
         window.urlCancelMeltByLotNo = '@Url.Action("CancelMeltByLotNo", "Home")';
         window.urlGetUnallocatedQuantityData = '@Url.Action("GetUnallocatedQuantityData", "Home")';
         window.urlGetSendLostCheckList = '@Url.Action("GetSendLostCheckList", "Home")';
+        window.urlGetProductTypes = '@Url.Action("GetProductTypes", "Home")';
+        window.urlGetProductTypeById = '@Url.Action("GetProductTypeById", "Home")';
+        window.urlAddProductType = '@Url.Action("AddProductType", "Home")';
+        window.urlEditProductType = '@Url.Action("EditProductType", "Home")';
+        window.urlToggleProductTypeStatus = '@Url.Action("ToggleProductTypeStatus", "Home")';
     </script>
 
     <script src="~/js/OrderManagement.js" asp-append-version="true"></script>
@@ -555,6 +590,7 @@
     <script src="~/js/PackPlaning.js" asp-append-version="true"></script>
     <script src="~/js/SampleReceiveManagement.js" asp-append-version="true"></script>
     <script src="~/js/CancelReceive.js" asp-append-version="true"></script>
+    <script src="~/js/ProductTypeManagement.js" asp-append-version="true"></script>
 
     <script>
         $(document).ready(function() {
