@@ -59,9 +59,19 @@
                             <li><a class="dropdown-item" href="#" onclick="confirmSendLost()"><i class="fas fa-question-circle text-danger"></i> ยืนยันหาย (Lost)</a></li>
                         </ul>
                     </div>
-                    <button class="btn btn-info btn-sm d-none action-btn" id="btnPrintSendToStore" onclick="printSendToStore()">
-                        <i class="fas fa-print"></i> <span class="d-none d-sm-inline">พิมพ์รายงาน</span>
-                    </button>
+                    <div class="btn-group d-none" id="btnPrintSendToStore">
+                        <button type="button" class="btn btn-info btn-sm dropdown-toggle action-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-print"></i> <span class="d-none d-sm-inline">พิมพ์รายงาน</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="printSendByType('All')"><i class="fas fa-print text-info"></i> พิมพ์ทั้งหมด</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="printSendByType('KS')"><i class="fas fa-warehouse text-primary"></i> ส่งคลัง (Store)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="printSendByType('KM')"><i class="fas fa-fire text-warning"></i> หลอม (Melt)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="printSendByType('KX')"><i class="fas fa-truck text-success"></i> ส่งออก (Export)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="printSendByType('KL')"><i class="fas fa-question-circle text-danger"></i> หาย (Lost)</a></li>
+                        </ul>
+                    </div>
                     <button class="btn btn-secondary btn-sm d-none action-btn" id="btnUnselect" onclick="hideSelection()">
                         <i class="fas fa-times"></i> <span class="d-none d-sm-inline">ยกเลิก</span>
                     </button>
@@ -284,9 +294,19 @@
                 <li><a class="dropdown-item" href="#" onclick="confirmSendLost()"><i class="fas fa-question-circle text-danger"></i> หาย</a></li>
             </ul>
         </div>
-        <button class="btn btn-info hidden" id="btnPrintFloat" onclick="printSendToStore()" title="พิมพ์รายงาน">
-            <i class="fas fa-print"></i>
-        </button>
+        <div class="dropup hidden" id="btnPrintFloat">
+            <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="พิมพ์รายงาน">
+                <i class="fas fa-print"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="printSendByType('All')"><i class="fas fa-print text-info"></i> พิมพ์ทั้งหมด</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="printSendByType('KS')"><i class="fas fa-warehouse text-primary"></i> ส่งคลัง</a></li>
+                <li><a class="dropdown-item" href="#" onclick="printSendByType('KM')"><i class="fas fa-fire text-warning"></i> หลอม</a></li>
+                <li><a class="dropdown-item" href="#" onclick="printSendByType('KX')"><i class="fas fa-truck text-success"></i> ส่งออก</a></li>
+                <li><a class="dropdown-item" href="#" onclick="printSendByType('KL')"><i class="fas fa-question-circle text-danger"></i> หาย</a></li>
+            </ul>
+        </div>
         <button class="btn btn-secondary hidden" id="btnUnselectFloat" onclick="hideSelection()" title="ยกเลิก">
             <i class="fas fa-times"></i>
         </button>

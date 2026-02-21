@@ -110,14 +110,21 @@
                                                     }
                                                 </td>
                                                 <td class="col-action">
-                                                    <button class="btn btn-warning btn-sm" onclick="showCancelDetail('@item.ReceiveNo', 'store')">
-                                                        <i class="fas fa-folder"></i> ดูรายการ
-                                                    </button>
-                                                    @if (!item.IsReceived)
+                                                    @if (item.IsCancel)
                                                     {
-                                                        <button class="btn btn-danger btn-sm" onclick="cancelReceive('@item.ReceiveNo', 'store')">
-                                                            <i class="fas fa-times"></i> ยกเลิกใบส่ง
+                                                        <span class="text-muted"><i class="fas fa-ban"></i> ยกเลิกแล้ว</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-warning btn-sm" onclick="showCancelDetail('@item.ReceiveNo', 'store')">
+                                                            <i class="fas fa-folder"></i> ดูรายการ
                                                         </button>
+                                                        @if (!item.IsReceived)
+                                                        {
+                                                            <button class="btn btn-danger btn-sm" onclick="cancelReceive('@item.ReceiveNo', 'store')">
+                                                                <i class="fas fa-times"></i> ยกเลิกใบส่ง
+                                                            </button>
+                                                        }
                                                     }
                                                 </td>
                                             </tr>

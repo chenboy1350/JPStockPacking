@@ -257,7 +257,6 @@ namespace JPStockPacking.Services.Implement
         public async Task UpdateReceiveHeaderStatusAsync(string receiveNo)
         {
             using var transaction = await _jPDbContext.Database.BeginTransactionAsync();
-
             try
             {
                 var header = await _jPDbContext.Sphreceive
@@ -432,7 +431,7 @@ namespace JPStockPacking.Services.Implement
                 query = query.Where(b => _jPDbContext.Spdreceive.Any(sr => sr.Lotno.Contains(lotNo) && sr.ReceiveNo == b.ReceiveNo));
             }
 
-            var receives = await query.OrderByDescending(o => o.Mdate).Take(100).ToListAsync();
+            var receives = await query.OrderByDescending(o => o.Mdate).Take(1000).ToListAsync();
 
             var receiveNos = receives.Select(r => r.ReceiveNo).ToList();
 

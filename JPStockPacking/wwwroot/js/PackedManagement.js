@@ -534,17 +534,19 @@ $(document).ready(function () {
             return;
         }
 
-        const $exportInput = currentForceRow.find('input.export_qty');
-        $exportInput.val(qty).trigger('change');
+        const lotNo = currentForceRow.data('lot-no');
+        const $inputRow = $(`#tbl-sendToStore-body tr.input-row[data-lot-no="${lotNo}"]`);
+        const fixed = getFixedQty(currentForceRow, 'export');
+
+        currentForceRow.data('export-draft-qty', qty);
+        $inputRow.find('input.export_qty').val(fixed + qty);
 
         currentForceRow.attr('data-force-user', userId);
 
         const exportWg = calcWgFromQty(currentForceRow, qty);
         currentForceRow.attr('data-export-wg', exportWg);
 
-        if (typeof updateAvailableQty === 'function') {
-            updateAvailableQty(currentForceRow);
-        }
+        updateAvailableQty(currentForceRow);
 
         $('#modal-force-send-to-export').modal('hide');
         $('#modal-edit-export').modal('hide');
@@ -1046,6 +1048,50 @@ async function printSendToStore() {
                 pdfWindow.close();
             }
 
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        }
+    });
+}
+
+async function printSendByType(sendType) {
+    const uid = $('#hddUserID').val();
+    const selectedLots = [];
+    $(".chk-row:checked").each(function () {
+        const lotNo = $(this).closest("tr").data("lot-no");
+        if (lotNo) selectedLots.push(lotNo);
+    });
+
+    const formData = new FormData();
+    selectedLots.forEach(no => formData.append("lotNos", no));
+    formData.append("userId", uid);
+    formData.append("sendType", sendType);
+
+    let pdfWindow = window.open('', '_blank');
+
+    $.ajax({
+        url: urlPrintSendToByTypeReport,
+        type: 'POST',
+        processData: false,
+        contentType: false,
+        data: formData,
+        xhrFields: {
+            responseType: 'blob'
+        },
+        beforeSend: async () => $('#loadingIndicator').show(),
+        success: async (data) => {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            if (pdfWindow) {
+                pdfWindow.location = blobUrl;
+            }
+            $('#loadingIndicator').hide();
+        },
+        error: async (xhr) => {
+            $('#loadingIndicator').hide();
+            if (pdfWindow) {
+                pdfWindow.close();
+            }
             let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
             await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
         }

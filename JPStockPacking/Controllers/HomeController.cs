@@ -1010,7 +1010,36 @@ namespace JPStockPacking.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> PrintSendToReportByType([FromForm] string[] lotNos, [FromForm] string userId, [FromForm] string sendType)
+        {
+            try
+            {
+                List<TempPack> result = await _packedMangementService.GetDocToPrintByType(lotNos, userId, sendType);
+
+                byte[] pdfBytes = _reportService.GenerateSenToReport(result);
+
+                string contentDisposition = $"inline; filename=SendToReport_{sendType}_{DateTime.Now:yyyyMMdd}.pdf";
+                Response.Headers.Append("Content-Disposition", contentDisposition);
+
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
             }
         }
 

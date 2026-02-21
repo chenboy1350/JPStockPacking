@@ -23,7 +23,8 @@ namespace JPStockPacking.Services.Implement
                 {
                     a.ReceiveNo,
                     a.Mdate,
-                    a.Mupdate
+                    a.Mupdate,
+                    a.Cancel
                 };
 
             if (!string.IsNullOrWhiteSpace(receiveNo))
@@ -51,6 +52,7 @@ namespace JPStockPacking.Services.Implement
                 ReceiveNo = r.ReceiveNo,
                 Mdate = r.Mdate.ToString("dd MMMM yyyy", new CultureInfo("th-TH")),
                 IsReceived = r.Mupdate,
+                IsCancel = r.Cancel,
             }).ToList();
 
             return result;
@@ -176,7 +178,7 @@ namespace JPStockPacking.Services.Implement
                 var header = await _jPDbContext.Sj1hreceive.FirstOrDefaultAsync(h => h.ReceiveNo == receiveNo);
                 if (header != null)
                 {
-                    _jPDbContext.Sj1hreceive.Remove(header);
+                    header.Cancel = true;
                 }
 
                 await _jPDbContext.SaveChangesAsync();
@@ -310,7 +312,7 @@ namespace JPStockPacking.Services.Implement
                     var header = await _jPDbContext.Sj1hreceive.FirstOrDefaultAsync(h => h.ReceiveNo == receiveNo);
                     if (header != null)
                     {
-                        _jPDbContext.Sj1hreceive.Remove(header);
+                        header.Cancel = true;
                     }
                 }
 
@@ -375,7 +377,8 @@ namespace JPStockPacking.Services.Implement
                 {
                     a.ReceiveNo,
                     a.Mdate,
-                    a.Mupdate
+                    a.Mupdate,
+                    a.Cancel
                 };
 
             if (!string.IsNullOrWhiteSpace(receiveNo))
@@ -402,6 +405,7 @@ namespace JPStockPacking.Services.Implement
                 ReceiveNo = r.ReceiveNo,
                 Mdate = r.Mdate.ToString("dd MMMM yyyy", new CultureInfo("th-TH")),
                 IsReceived = r.Mupdate,
+                IsCancel = r.Cancel,
             }).ToList();
 
             return result;
@@ -536,9 +540,9 @@ namespace JPStockPacking.Services.Implement
                     transaction: dbTransaction
                 );
 
-                // ลบ Sj2hreceive ด้วย Dapper (ไม่มี primary key)
+                // อัพเดท Cancel ใน Sj2hreceive ด้วย Dapper (ไม่มี primary key)
                 await jpConnection.ExecuteAsync(
-                    "DELETE FROM Sj2hreceive WHERE ReceiveNo = @ReceiveNo",
+                    "UPDATE Sj2hreceive SET Cancel = 1 WHERE ReceiveNo = @ReceiveNo",
                     new { ReceiveNo = receiveNo },
                     transaction: dbTransaction
                 );
@@ -684,13 +688,13 @@ namespace JPStockPacking.Services.Implement
                     );
                 }
 
-                // ถ้าไม่มี detail เหลือ ให้ลบ header ด้วย
+                // ถ้าไม่มี detail เหลือ ให้ set Cancel ใน header
                 var remainingCount = allDetails.Count(d => !lotNos.Contains((string)d.Lotno));
 
                 if (remainingCount == 0)
                 {
                     await jpConnection.ExecuteAsync(
-                        "DELETE FROM Sj2hreceive WHERE ReceiveNo = @ReceiveNo",
+                        "UPDATE Sj2hreceive SET Cancel = 1 WHERE ReceiveNo = @ReceiveNo",
                         new { ReceiveNo = receiveNo },
                         transaction: dbTransaction
                     );

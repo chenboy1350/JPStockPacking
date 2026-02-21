@@ -224,8 +224,9 @@ function renderCancelTable(tbody, rows, type) {
                </button>`
             : '';
 
-        const action = `
-            <button class="btn btn-warning btn-sm" onclick="showCancelDetail('${html(r.receiveNo)}', '${type}')">
+        const action = r.isCancel
+            ? `<span class="text-muted"><i class="fas fa-ban"></i> ยกเลิกแล้ว</span>`
+            : `<button class="btn btn-warning btn-sm" onclick="showCancelDetail('${html(r.receiveNo)}', '${type}')">
                 <i class="fas fa-folder"></i> ดูรายการ
             </button>
             ${cancelBtn}`;

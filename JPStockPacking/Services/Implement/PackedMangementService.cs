@@ -5,8 +5,10 @@ using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 using static JPStockPacking.Services.Helper.Enum;
 
 namespace JPStockPacking.Services.Implement
@@ -1290,29 +1292,37 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
-        public async Task<List<TempPack>> GetAllDocToPrint(string[] lotNos, string userid)
+        // ดึงชื่อผู้รายงานจาก userid
+        private async Task<string> GetReporterNameAsync(string? userid)
+        {
+            if (string.IsNullOrEmpty(userid)) return string.Empty;
+            var users = await _pISService.GetAllUser();
+            if (users == null) return string.Empty;
+            var reporter = users.FirstOrDefault(x => x.UserID == Convert.ToInt32(userid));
+            return reporter != null ? $"{reporter.FirstName} {reporter.LastName}".Trim() : string.Empty;
+        }
+
+        // LINQ หลักสำหรับ KS/KM จาก JobBillSendStock (ใช้ร่วมกันระหว่าง Store และ Melt)
+        private async Task<List<TempPack>> QueryJobBillSendStockForPrintAsync(string[] lotNos, string reporterName, string sendType)
         {
             try
             {
-                var users = await _pISService.GetAllUser();
-                var Reporter = users != null && userid != null ? users.Where(x => x.UserID == Convert.ToInt32(userid)).ToList() : [];
-
                 List<TempPack> result = await (
-                    from h in _jPDbContext.JobBillSendStock
-                    join a in _jPDbContext.JobBill on h.Billnumber equals a.Billnumber into gjA
+                    from h in _jPDbContext.JobBillSendStock.AsNoTracking()
+                    join a in _jPDbContext.JobBill.AsNoTracking() on h.Billnumber equals a.Billnumber into gjA
                     from a in gjA.DefaultIfEmpty()
-                    join d in _jPDbContext.JobDetail on a.JobBarcode equals d.JobBarcode
-                    join i in _jPDbContext.JobHead on new { d.DocNo, d.EmpCode } equals new { i.DocNo, i.EmpCode }
-                    join b in _jPDbContext.OrdLotno on new { d.ListNo, d.OrderNo } equals new { b.ListNo, b.OrderNo }
-                    join c in _jPDbContext.CpriceSale on a.Barcode equals c.Barcode
-                    join f in _jPDbContext.OrdLotno on a.Lotno equals f.LotNo
-                    join g in _jPDbContext.JobBillsize on a.Billnumber equals g.Billnumber into gjG
+                    join d in _jPDbContext.JobDetail.AsNoTracking() on a.JobBarcode equals d.JobBarcode
+                    join i in _jPDbContext.JobHead.AsNoTracking() on new { d.DocNo, d.EmpCode } equals new { i.DocNo, i.EmpCode }
+                    join b in _jPDbContext.OrdLotno.AsNoTracking() on new { d.ListNo, d.OrderNo } equals new { b.ListNo, b.OrderNo }
+                    join c in _jPDbContext.CpriceSale.AsNoTracking() on a.Barcode equals c.Barcode
+                    join f in _jPDbContext.OrdLotno.AsNoTracking() on a.Lotno equals f.LotNo
+                    join g in _jPDbContext.JobBillsize.AsNoTracking() on a.Billnumber equals g.Billnumber into gjG
                     from g in gjG.Where(x => a.SizeNoOrd == true).DefaultIfEmpty()
-                    where (h.SendType == "KM" || h.SendType == "KS") && !string.IsNullOrEmpty(h.Doc)
+                    where h.SendType == sendType && !string.IsNullOrEmpty(h.Doc)
                     orderby a.Lotno
                     select new TempPack
                     {
-                        Name = (from t in _jPDbContext.TempProfile where t.EmpCode == a.EmpCode select (t.TitleName ?? "") + " " + (t.Name ?? "")).FirstOrDefault() ?? string.Empty,
+                        Name = (from t in _jPDbContext.TempProfile.AsNoTracking() where t.EmpCode == a.EmpCode select (t.TitleName ?? "") + " " + (t.Name ?? "")).FirstOrDefault() ?? string.Empty,
                         EmpCode = a.EmpCode,
                         LotNo = a.Lotno,
                         JobBarcode = a.JobBarcode,
@@ -1325,7 +1335,7 @@ namespace JPStockPacking.Services.Implement
                         ListNo = a.ListNo,
                         BillDate = a.BillDate,
                         CheckBill = a.CheckBill,
-                        Username = Reporter != null && Reporter.Count > 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
+                        Username = reporterName,
                         Mdate = a.MDate,
                         SendPack = a.SendPack,
                         PackDoc = a.PackDoc,
@@ -1376,140 +1386,187 @@ namespace JPStockPacking.Services.Implement
                         CreatedBy = a.UserName
                     }).ToListAsync();
 
-                List<TempPack> filteredResult = [.. result.Where(r => lotNos.Contains(r.LotNo))];
+                return [.. result.Where(r => lotNos.Contains(r.LotNo))];
 
-                var storeInfo = (
-                    from r in filteredResult
-                    join s in _sPDbContext.Store on new { r.LotNo, r.BillNumber } equals new { s.LotNo, s.BillNumber }
-                    select new
-                    {
-                        s.LotNo,
-                        s.BillNumber,
-                    }
-                ).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
 
-                var meltInfo = (
-                    from r in filteredResult
-                    join s in _sPDbContext.Melt on new { r.LotNo, r.BillNumber } equals new { s.LotNo, s.BillNumber }
-                    join b in _sPDbContext.BreakDescription on s.BreakDescriptionId equals b.BreakDescriptionId
-                    select new
-                    {
-                        s.LotNo,
-                        s.BillNumber,
-                        BreakDes = b.Name,
-                    }
-                ).ToList();
+        // ส่งคลัง (KS) - ดึงรายการที่ยืนยันแล้ว พร้อม Unallocated จาก Store table
+        private async Task<List<TempPack>> GetConfirmedStoreForPrintAsync(string[] lotNos, string reporterName)
+        {
+            var filteredResult = await QueryJobBillSendStockForPrintAsync(lotNos, reporterName, "KS");
 
-                var lotNosInResult = filteredResult.Select(r => r.LotNo).Distinct().ToList();
-                var lots = await _sPDbContext.Lot
-                    .Where(l => lotNosInResult.Contains(l.LotNo))
-                    .ToDictionaryAsync(l => l.LotNo);
+            var storeInfo = (
+                from r in filteredResult
+                join s in _sPDbContext.Store.AsNoTracking() on new { r.LotNo, r.BillNumber } equals new { s.LotNo, s.BillNumber }
+                select new { s.LotNo, s.BillNumber }
+            ).ToList();
 
-                foreach (var item in filteredResult)
+            var lotNosInResult = filteredResult.Select(r => r.LotNo).Distinct().ToList();
+            var lots = await _sPDbContext.Lot.AsNoTracking()
+                .Where(l => lotNosInResult.Contains(l.LotNo))
+                .ToDictionaryAsync(l => l.LotNo);
+
+            foreach (var item in filteredResult)
+            {
+                if (lots.TryGetValue(item.LotNo, out var lot))
                 {
-                    if (lots.TryGetValue(item.LotNo, out var lot))
-                    {
-                        var storeMatched = storeInfo.FirstOrDefault(s => s.LotNo == item.LotNo && s.BillNumber == item.BillNumber);
-                        if (storeMatched != null)
-                        {
-                            item.Unallocated = lot.Unallocated ?? 0;
-                        }
+                    var storeMatched = storeInfo.FirstOrDefault(s => s.LotNo == item.LotNo && s.BillNumber == item.BillNumber);
+                    if (storeMatched != null)
+                        item.Unallocated = lot.Unallocated ?? 0;
+                }
+            }
 
-                        var meltMatched = meltInfo.FirstOrDefault(m => m.LotNo == item.LotNo && m.BillNumber == item.BillNumber);
-                        if (meltMatched != null)
-                        {
-                            item.BreakDescription = meltMatched.BreakDes;
-                            item.Unallocated = lot.Unallocated ?? 0;
-                        }
+            return filteredResult;
+        }
+
+        // หลอม (KM) - ดึงรายการที่ยืนยันแล้ว พร้อม BreakDescription และ Unallocated จาก Melt table
+        private async Task<List<TempPack>> GetConfirmedMeltForPrintAsync(string[] lotNos, string reporterName)
+        {
+            var filteredResult = await QueryJobBillSendStockForPrintAsync(lotNos, reporterName, "KM");
+
+            var meltInfo = (
+                from r in filteredResult
+                join s in _sPDbContext.Melt.AsNoTracking() on new { r.LotNo, r.BillNumber } equals new { s.LotNo, s.BillNumber }
+                join b in _sPDbContext.BreakDescription.AsNoTracking() on s.BreakDescriptionId equals b.BreakDescriptionId
+                select new { s.LotNo, s.BillNumber, BreakDes = b.Name }
+            ).ToList();
+
+            var lotNosInResult = filteredResult.Select(r => r.LotNo).Distinct().ToList();
+            var lots = await _sPDbContext.Lot.AsNoTracking()
+                .Where(l => lotNosInResult.Contains(l.LotNo))
+                .ToDictionaryAsync(l => l.LotNo);
+
+            foreach (var item in filteredResult)
+            {
+                if (lots.TryGetValue(item.LotNo, out var lot))
+                {
+                    var meltMatched = meltInfo.FirstOrDefault(m => m.LotNo == item.LotNo && m.BillNumber == item.BillNumber);
+                    if (meltMatched != null)
+                    {
+                        item.BreakDescription = meltMatched.BreakDes;
+                        item.Unallocated = lot.Unallocated ?? 0;
                     }
                 }
+            }
 
-                var assignedTables = await (
-                    from ass in _sPDbContext.Assignment
-                    join asmr in _sPDbContext.AssignmentReceived on ass.AssignmentId equals asmr.AssignmentId
-                    join asnt in _sPDbContext.AssignmentTable on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
-                    join wt in _sPDbContext.WorkTable on asnt.WorkTableId equals wt.Id
-                    join rev in _sPDbContext.Received on asmr.ReceivedId equals rev.ReceivedId
-                    where lotNos.Contains(rev.LotNo) && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
-                    select new { rev.LotNo, ass.AssignmentId, wt.Name }
-                ).ToListAsync();
+            return filteredResult;
+        }
 
-                var assignedTableDict = assignedTables
-                    .GroupBy(a => a.LotNo)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g
-                            .Select(x => new AssignedWorkTableModel
-                            {
-                                AssignmentId = x.AssignmentId,
-                                TableName = x.Name!
-                            })
-                            .DistinctBy(m => m.TableName)
-                            .ToList()
-                    );
+        // ส่งออก (KX) - ดึงรายการจาก ExportDetail ที่ยืนยันแล้ว
+        private async Task<List<TempPack>> GetConfirmedExportForPrintAsync(string[] lotNos, string reporterName)
+        {
+            return await (from expt in _sPDbContext.ExportDetail.AsNoTracking()
+                          join lot in _sPDbContext.Lot.AsNoTracking() on expt.LotNo equals lot.LotNo into gjLot
+                          from lot in gjLot.DefaultIfEmpty()
+                          join ord in _sPDbContext.Order.AsNoTracking() on lot.OrderNo equals ord.OrderNo into gjOrd
+                          from ord in gjOrd.DefaultIfEmpty()
+                          where lotNos.Contains(expt.LotNo) && !string.IsNullOrEmpty(expt.Doc) && expt.IsSended == true && expt.IsActive
+                          select new TempPack
+                          {
+                              LotNo = expt.LotNo,
+                              ListNo = lot.ListNo,
+                              OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                              CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                              Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                              Doc = expt.Doc ?? string.Empty,
+                              MdateSend = expt.CreateDate!.Value,
+                              Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                              FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                              FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                              Username = reporterName,
+                              IsOverQouta = expt.IsOverQuota,
+                              SendType = "KX",
+                              OkTtl = expt.TtQty,
+                              OkWg = (decimal)expt.TtWg!,
+                          }).ToListAsync();
+        }
 
-                List<TempPack> ExportTempPacks = await (from expt in _sPDbContext.ExportDetail
-                                                        join lot in _sPDbContext.Lot on expt.LotNo equals lot.LotNo into gjLot
-                                                        from lot in gjLot.DefaultIfEmpty()
-                                                        join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
-                                                        from ord in gjOrd.DefaultIfEmpty()
-                                                        where lotNos.Contains(expt.LotNo) && !string.IsNullOrEmpty(expt.Doc) && expt.IsSended == true && expt.IsActive
-                                                        select new TempPack
-                                                        {
-                                                            LotNo = expt.LotNo,
-                                                            ListNo = lot.ListNo,
-                                                            OrderNo = ord != null ? ord.OrderNo : string.Empty,
-                                                            CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
-                                                            Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                            Doc = expt.Doc ?? string.Empty,
-                                                            MdateSend = expt.CreateDate!.Value,
-                                                            Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
-                                                            FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
-                                                            FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
-                                                            Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
-                                                            IsOverQouta = expt.IsOverQuota,
-                                                            SendType = "KX",
-                                                            OkTtl = expt.TtQty,
-                                                            OkWg = (decimal)expt.TtWg!,
-                                                        }).ToListAsync();
+        // หาย (KL) - ดึงรายการจาก SendLostDetail ที่ยืนยันแล้ว พร้อม TableName จาก Assignment
+        private async Task<List<TempPack>> GetConfirmedLostForPrintAsync(string[] lotNos, string reporterName)
+        {
+            var assignedTables = await (
+                from ass in _sPDbContext.Assignment.AsNoTracking()
+                join asmr in _sPDbContext.AssignmentReceived.AsNoTracking() on ass.AssignmentId equals asmr.AssignmentId
+                join asnt in _sPDbContext.AssignmentTable.AsNoTracking() on asmr.AssignmentReceivedId equals asnt.AssignmentReceivedId
+                join wt in _sPDbContext.WorkTable.AsNoTracking() on asnt.WorkTableId equals wt.Id
+                join rev in _sPDbContext.Received.AsNoTracking() on asmr.ReceivedId equals rev.ReceivedId
+                where lotNos.Contains(rev.LotNo) && asmr.IsActive && ass.IsActive && asnt.IsActive && wt.IsActive
+                select new { rev.LotNo, ass.AssignmentId, wt.Name }
+            ).ToListAsync();
 
-                List<TempPack> LostTempPacks = await (from sl in _sPDbContext.SendLostDetail
-                                                      join lot in _sPDbContext.Lot on sl.LotNo equals lot.LotNo into gjLot
-                                                      from lot in gjLot.DefaultIfEmpty()
-                                                      join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
-                                                      from ord in gjOrd.DefaultIfEmpty()
-                                                      where lotNos.Contains(sl.LotNo) && !string.IsNullOrEmpty(sl.Doc) && sl.IsSended == true && sl.IsActive
-                                                      select new TempPack
-                                                      {
-                                                          LotNo = sl.LotNo,
-                                                          ListNo = lot.ListNo,
-                                                          OrderNo = ord != null ? ord.OrderNo : string.Empty,
-                                                          CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
-                                                          Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                          Doc = sl.Doc ?? string.Empty,
-                                                          MdateSend = sl.CreateDate!.Value,
-                                                          Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
-                                                          FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
-                                                          FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
-                                                          Username = Reporter != null && Reporter.Count != 0 ? $"{Reporter.FirstOrDefault()!.FirstName} {Reporter.FirstOrDefault()!.LastName}".Trim() : string.Empty,
-                                                          TableName = string.Empty,
-                                                          SendType = "KL",
-                                                          OkTtl = sl.TtQty,
-                                                          OkWg = (decimal)sl.TtWg!,
-                                                      }).ToListAsync();
+            var assignedTableDict = assignedTables
+                .GroupBy(a => a.LotNo)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .Select(x => new AssignedWorkTableModel { AssignmentId = x.AssignmentId, TableName = x.Name! })
+                        .DistinctBy(m => m.TableName)
+                        .ToList()
+                );
 
-                foreach (var item in LostTempPacks)
-                {
-                    if (assignedTableDict.TryGetValue(item.LotNo, out var tables))
-                    {
-                        item.TableName = string.Join(", ", tables.Select(t => t.TableName));
-                    }
-                }
+            List<TempPack> lostTempPacks = await (from sl in _sPDbContext.SendLostDetail.AsNoTracking()
+                                                   join lot in _sPDbContext.Lot.AsNoTracking() on sl.LotNo equals lot.LotNo into gjLot
+                                                   from lot in gjLot.DefaultIfEmpty()
+                                                   join ord in _sPDbContext.Order.AsNoTracking() on lot.OrderNo equals ord.OrderNo into gjOrd
+                                                   from ord in gjOrd.DefaultIfEmpty()
+                                                   where lotNos.Contains(sl.LotNo) && !string.IsNullOrEmpty(sl.Doc) && sl.IsSended == true && sl.IsActive
+                                                   select new TempPack
+                                                   {
+                                                       LotNo = sl.LotNo,
+                                                       ListNo = lot.ListNo,
+                                                       OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                                                       CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                                                       Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                                                       Doc = sl.Doc ?? string.Empty,
+                                                       MdateSend = sl.CreateDate!.Value,
+                                                       Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                                                       FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                                                       FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                                                       Username = reporterName,
+                                                       TableName = string.Empty,
+                                                       SendType = "KL",
+                                                       OkTtl = sl.TtQty,
+                                                       OkWg = (decimal)sl.TtWg!,
+                                                   }).ToListAsync();
 
-                filteredResult.AddRange(ExportTempPacks);
-                filteredResult.AddRange(LostTempPacks);
+            foreach (var item in lostTempPacks)
+            {
+                if (assignedTableDict.TryGetValue(item.LotNo, out var tables))
+                    item.TableName = string.Join(", ", tables.Select(t => t.TableName));
+            }
 
-                return filteredResult;
+            return lostTempPacks;
+        }
+
+        // Route ไปยังฟังก์ชันย่อยตาม sendType (KS/KM/KX/KL หรือ All)
+        public async Task<List<TempPack>> GetDocToPrintByType(string[] lotNos, string userid, string sendType)
+        {
+            string reporterName = await GetReporterNameAsync(userid);
+            return sendType switch
+            {
+                "KS" => await GetConfirmedStoreForPrintAsync(lotNos, reporterName),
+                "KM" => await GetConfirmedMeltForPrintAsync(lotNos, reporterName),
+                "KX" => await GetConfirmedExportForPrintAsync(lotNos, reporterName),
+                "KL" => await GetConfirmedLostForPrintAsync(lotNos, reporterName),
+                _ => [
+                    .. await GetConfirmedStoreForPrintAsync(lotNos, reporterName),
+                    .. await GetConfirmedMeltForPrintAsync(lotNos, reporterName),
+                    .. await GetConfirmedExportForPrintAsync(lotNos, reporterName),
+                    .. await GetConfirmedLostForPrintAsync(lotNos, reporterName),
+                ]
+            };
+        }
+
+        public async Task<List<TempPack>> GetAllDocToPrint(string[] lotNos, string userid)
+        {
+            try
+            {
+                return await GetDocToPrintByType(lotNos, userid, "All");
             }
             catch (Exception ex)
             {
