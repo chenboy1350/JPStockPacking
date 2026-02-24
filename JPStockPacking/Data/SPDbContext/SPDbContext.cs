@@ -64,6 +64,10 @@ public partial class SPDbContext : DbContext
 
     public virtual DbSet<SendQtyToPackDetailSize> SendQtyToPackDetailSize { get; set; }
 
+    public virtual DbSet<SendShowroom> SendShowroom { get; set; }
+
+    public virtual DbSet<SendShowroomDetail> SendShowroomDetail { get; set; }
+
     public virtual DbSet<Store> Store { get; set; }
 
     public virtual DbSet<WorkTable> WorkTable { get; set; }
@@ -127,6 +131,11 @@ public partial class SPDbContext : DbContext
         modelBuilder.Entity<SendLostDetail>(entity =>
         {
             entity.HasKey(e => e.SendLostId).HasName("PK_SendLost");
+        });
+
+        modelBuilder.Entity<SendShowroomDetail>(entity =>
+        {
+            entity.HasKey(e => e.SendShowroomId).HasName("PK_SendShowroomID");
         });
 
         modelBuilder.Entity<WorkTable>(entity =>

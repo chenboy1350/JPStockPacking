@@ -57,6 +57,7 @@
                             <li><a class="dropdown-item" href="#" onclick="confirmSendMelt()"><i class="fas fa-fire text-warning"></i> ยืนยันหลอม (Melt)</a></li>
                             <li><a class="dropdown-item" href="#" onclick="confirmSendExport()"><i class="fas fa-truck text-success"></i> ยืนยันส่งออก (Export)</a></li>
                             <li><a class="dropdown-item" href="#" onclick="confirmSendLost()"><i class="fas fa-question-circle text-danger"></i> ยืนยันหาย (Lost)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="confirmSendShowroom()"><i class="fas fa-store text-info"></i> ยืนยัน Showroom (Showroom)</a></li>
                         </ul>
                     </div>
                     <div class="btn-group d-none" id="btnPrintSendToStore">
@@ -70,6 +71,7 @@
                             <li><a class="dropdown-item" href="#" onclick="printSendByType('KM')"><i class="fas fa-fire text-warning"></i> หลอม (Melt)</a></li>
                             <li><a class="dropdown-item" href="#" onclick="printSendByType('KX')"><i class="fas fa-truck text-success"></i> ส่งออก (Export)</a></li>
                             <li><a class="dropdown-item" href="#" onclick="printSendByType('KL')"><i class="fas fa-question-circle text-danger"></i> หาย (Lost)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="printSendByType('KR')"><i class="fas fa-store text-info"></i> Showroom (Showroom)</a></li>
                         </ul>
                     </div>
                     <button class="btn btn-secondary btn-sm d-none action-btn" id="btnUnselect" onclick="hideSelection()">
@@ -221,6 +223,28 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modal-edit-showroom" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">แก้ไขจำนวน "ส่ง Showroom"</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modalShowroomLotNo">
+                    <input type="hidden" id="modalShowroomMaxQty">
+                    <div class="mb-2">
+                        <label class="form-label">จำนวน (สูงสุด: <span id="maxShowroomQtyLabel">0</span>)</label>
+                        <input type="number" id="modalShowroomQty" class="form-control" min="0" step="0.5" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-info" id="btnShowroomQtyConfirm">ยืนยัน</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal-force-send-to-export">
         <div class="modal-dialog modal-md">
             <div class="modal-content">
@@ -292,6 +316,7 @@
                 <li><a class="dropdown-item" href="#" onclick="confirmSendMelt()"><i class="fas fa-fire text-warning"></i> หลอม</a></li>
                 <li><a class="dropdown-item" href="#" onclick="confirmSendExport()"><i class="fas fa-truck text-success"></i> ส่งออก</a></li>
                 <li><a class="dropdown-item" href="#" onclick="confirmSendLost()"><i class="fas fa-question-circle text-danger"></i> หาย</a></li>
+                <li><a class="dropdown-item" href="#" onclick="confirmSendShowroom()"><i class="fas fa-store text-info"></i> Showroom</a></li>
             </ul>
         </div>
         <div class="dropup hidden" id="btnPrintFloat">
@@ -305,6 +330,7 @@
                 <li><a class="dropdown-item" href="#" onclick="printSendByType('KM')"><i class="fas fa-fire text-warning"></i> หลอม</a></li>
                 <li><a class="dropdown-item" href="#" onclick="printSendByType('KX')"><i class="fas fa-truck text-success"></i> ส่งออก</a></li>
                 <li><a class="dropdown-item" href="#" onclick="printSendByType('KL')"><i class="fas fa-question-circle text-danger"></i> หาย</a></li>
+                <li><a class="dropdown-item" href="#" onclick="printSendByType('KR')"><i class="fas fa-store text-info"></i> Showroom</a></li>
             </ul>
         </div>
         <button class="btn btn-secondary hidden" id="btnUnselectFloat" onclick="hideSelection()" title="ยกเลิก">

@@ -836,6 +836,7 @@ namespace JPStockPacking.Controllers
                 var b = await _packedMangementService.ConfirmToSendMeltAsync(lotNos, userId);
                 var c = await _packedMangementService.ConfirmToSendExportAsync(lotNos, userId);
                 var d = await _packedMangementService.ConfirmToSendLostAsync(lotNos, userId);
+                var e = await _packedMangementService.ConfirmToSendShowroomAsync(lotNos, userId);
 
                 var updatedLots = new List<OrderToStoreModel>();
                 foreach (var lotNo in lotNos)
@@ -847,11 +848,12 @@ namespace JPStockPacking.Controllers
                 string message = $"Store: {(a.IsSuccess ? "O" : "X")}\n" +
                                  $"Melt: {(b.IsSuccess ? "O" : "X")}\n" +
                                  $"Export: {(c.IsSuccess ? "O" : "X")}\n" +
-                                 $"Lost: {(d.IsSuccess ? "O" : "X")}";
+                                 $"Lost: {(d.IsSuccess ? "O" : "X")}\n" +
+                                 $"Showroom: {(e.IsSuccess ? "O" : "X")}";
 
                 return Ok(new
                 {
-                    IsSuccess = a.IsSuccess || b.IsSuccess || c.IsSuccess || d.IsSuccess,
+                    IsSuccess = a.IsSuccess || b.IsSuccess || c.IsSuccess || d.IsSuccess || e.IsSuccess,
                     Message = message,
                     Data = updatedLots
                 });
@@ -981,6 +983,38 @@ namespace JPStockPacking.Controllers
                 {
                     IsSuccess = result.IsSuccess,
                     Message = $"Lost: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
+                    Data = updatedLots
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmToSendShowroom([FromForm] string[] lotNos, [FromForm] string userId)
+        {
+            try
+            {
+                var result = await _packedMangementService.ConfirmToSendShowroomAsync(lotNos, userId);
+
+                var updatedLots = new List<OrderToStoreModel>();
+                foreach (var lotNo in lotNos)
+                {
+                    var lot = await _packedMangementService.GetOrderToStoreByLotAsync(lotNo);
+                    if (lot != null) updatedLots.Add(lot);
+                }
+
+                return Ok(new
+                {
+                    IsSuccess = result.IsSuccess,
+                    Message = $"Showroom: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
                     Data = updatedLots
                 });
             }

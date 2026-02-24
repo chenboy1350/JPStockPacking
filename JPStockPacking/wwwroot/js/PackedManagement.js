@@ -49,11 +49,13 @@ $(document).ready(function () {
         const melt_qty = getDraftQty($dataRow, 'melt');
         const export_qty = getDraftQty($dataRow, 'export');
         const lost_qty = getDraftQty($dataRow, 'lost');
+        const showroom_qty = getDraftQty($dataRow, 'showroom');
 
         const store_wg = calcWgFromQty($dataRow, store_qty);
         const melt_wg = parseFloat($dataRow.attr('data-melt-wg')) || 0;
         const export_wg = calcWgFromQty($dataRow, export_qty);
         const lost_wg = calcWgFromQty($dataRow, lost_qty);
+        const showroom_wg = calcWgFromQty($dataRow, showroom_qty);
 
         const melt_des = parseInt($dataRow.attr('data-melt-des')) || 0;
         const force_send_by = parseInt($dataRow.attr('data-force-user')) || 0;
@@ -78,6 +80,8 @@ $(document).ready(function () {
             KlWg: lost_wg,
             KxQty: export_qty,
             KxWg: export_wg,
+            KrQty: showroom_qty,
+            KrWg: showroom_wg,
             Approver: force_send_by,
             Unallocated: available,
             UserId: String(uid)
@@ -169,6 +173,17 @@ $(document).ready(function () {
 
             $currentInput = $inputRow.find('input.export_qty');
             $('#modal-edit-export').modal('show');
+            return;
+        }
+
+        if (type === 'showroom') {
+            $('#modalShowroomLotNo').val(lotNo);
+            $('#modalShowroomQty').val(currentQty);
+            $('#modalShowroomMaxQty').val(maxQty);
+            $('#maxShowroomQtyLabel').text(maxQty);
+
+            $currentInput = $inputRow.find('input.showroom_qty');
+            $('#modal-edit-showroom').modal('show');
             return;
         }
     });
@@ -337,6 +352,37 @@ $(document).ready(function () {
         }
     });
 
+    $(document).on('click', '#btnShowroomQtyConfirm', function () {
+        const draft = parseFloat($('#modalShowroomQty').val()) || 0;
+        const max = parseFloat($('#modalShowroomMaxQty').val()) || 0;
+
+        if (draft > max) {
+            swalWarning(`เกินยอดที่สามารถส่ง Showroom ได้ (${max})`);
+            return;
+        }
+
+        const $inputRow = $currentInput.closest('tr');
+        const lotNo = $inputRow.data('lot-no');
+        const $dataRow = $(`#tbl-sendToStore-body tr.data-row[data-lot-no="${lotNo}"]`);
+
+        const fixed = getFixedQty($dataRow, 'showroom');
+
+        $dataRow.data('showroom-draft-qty', draft);
+        $inputRow.find('input.showroom_qty').val(fixed + draft);
+
+        const wg = calcWgFromQty($dataRow, draft);
+        $dataRow.attr('data-showroom-wg', wg);
+
+        updateAvailableQty($dataRow);
+        $('#modal-edit-showroom').modal('hide');
+    });
+
+    $(document).on('keydown', '#modalShowroomQty', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnShowroomQtyConfirm').click();
+        }
+    });
 
     $(document).on('click', '.btn-edit', function () {
         const $dataRow = $(this).closest('tr');
@@ -348,6 +394,7 @@ $(document).ready(function () {
         $dataRow.data('old-melt', getDraftQty($dataRow, 'melt'));
         $dataRow.data('old-export', getDraftQty($dataRow, 'export'));
         $dataRow.data('old-lost', getDraftQty($dataRow, 'lost'));
+        $dataRow.data('old-showroom', getDraftQty($dataRow, 'showroom'));
 
         // Show edit buttons in input row
         $inputRow.find('.btn-edit-qty').removeClass('d-none');
@@ -369,22 +416,26 @@ $(document).ready(function () {
         const mDraft = $dataRow.data('old-melt') || 0;
         const eDraft = $dataRow.data('old-export') || 0;
         const lDraft = $dataRow.data('old-lost') || 0;
+        const srDraft = $dataRow.data('old-showroom') || 0;
 
         $dataRow.data('store-draft-qty', sDraft);
         $dataRow.data('melt-draft-qty', mDraft);
         $dataRow.data('export-draft-qty', eDraft);
         $dataRow.data('lost-draft-qty', lDraft);
+        $dataRow.data('showroom-draft-qty', srDraft);
 
         const sFix = getFixedQty($dataRow, 'store');
         const mFix = getFixedQty($dataRow, 'melt');
         const eFix = getFixedQty($dataRow, 'export');
         const lFix = getFixedQty($dataRow, 'lost');
+        const srFix = getFixedQty($dataRow, 'showroom');
 
         // Update inputs in input-row
         $inputRow.find('input.store_qty').val(sFix + sDraft);
         $inputRow.find('input.melt_qty').val(mFix + mDraft);
         $inputRow.find('input.export_qty').val(eFix + eDraft);
         $inputRow.find('input.lost_qty').val(lFix + lDraft);
+        $inputRow.find('input.showroom_qty').val(srFix + srDraft);
 
         // Hide edit buttons in input row
         $inputRow.find('.btn-edit-qty').addClass('d-none');
@@ -440,6 +491,10 @@ $(document).ready(function () {
         if (type === 'export') {
             $dataRow.attr('data-export-wg', 0);
             $dataRow.removeAttr('data-force-user');
+        }
+
+        if (type === 'showroom') {
+            $dataRow.attr('data-showroom-wg', 0);
         }
 
         updateAvailableQty($dataRow);
@@ -641,7 +696,7 @@ function FindOrderToStore() {
 
                 for (let i = currentIndex; i < endIndex; i++) {
                     const item = response[i];
-                    const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
+                    const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty) - (item.showroom_FixedQty + item.showroom_Qty);
 
                     // First row - data row (basic info + buttons)
                     const tr1 = document.createElement('tr');
@@ -671,6 +726,11 @@ function FindOrderToStore() {
                     tr1.setAttribute('data-lost-fixed-wg', item.lost_FixedWg || 0);
                     tr1.setAttribute('data-lost-draft-qty', item.lost_Qty || 0);
                     tr1.setAttribute('data-lost-wg', item.lost_Wg || 0);
+
+                    tr1.setAttribute('data-showroom-fixed-qty', item.showroom_FixedQty || 0);
+                    tr1.setAttribute('data-showroom-fixed-wg', item.showroom_FixedWg || 0);
+                    tr1.setAttribute('data-showroom-draft-qty', item.showroom_Qty || 0);
+                    tr1.setAttribute('data-showroom-wg', item.showroom_Wg || 0);
 
                     tr1.setAttribute('data-available-qty', available_qty);
 
@@ -773,6 +833,23 @@ function FindOrderToStore() {
                                 </div>
                                 <small class="text-muted"><i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.export_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.export_Qty)}</strong></small>
                             </div>
+
+                            <!-- Showroom -->
+                            <div class="input-group-col text-center">
+                                <div class="d-flex align-items-center gap-1 justify-content-center">
+                                    <span class="badge bg-info text-white"><i class="fas fa-store"></i> Showroom</span>
+                                    <input class="form-control form-control-sm text-center qty-input showroom_qty fw-bold"
+                                           type="number" min="0" step="any" style="width: 180px;"
+                                           value="${numRaw(item.showroom_Qty + item.showroom_FixedQty)}" readonly />
+                                    <button class="btn btn-sm btn-outline-info btn-edit-qty d-none" data-type="showroom">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary btn-clear-qty d-none" data-type="showroom">
+                                        <i class="fas fa-eraser"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted"><i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.showroom_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.showroom_Qty)}</strong></small>
+                            </div>
                         </div>
                     </td>
                 `;
@@ -799,7 +876,7 @@ function FindOrderToStore() {
 }
 
 function updateRowData(tr, item, keepChecked) {
-    const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty);
+    const available_qty = item.packed_Qty - (item.store_FixedQty + item.store_Qty) - (item.melt_FixedQty + item.melt_Qty) - (item.lost_FixedQty + item.lost_Qty) - (item.export_FixedQty + item.export_Qty) - (item.showroom_FixedQty + item.showroom_Qty);
     const rowIndex = $(tr).find('td:first').text();
     const lotNo = item.lotNo;
 
@@ -828,6 +905,11 @@ function updateRowData(tr, item, keepChecked) {
     tr.setAttribute('data-lost-fixed-wg', item.lost_FixedWg || 0);
     tr.setAttribute('data-lost-draft-qty', item.lost_Qty || 0);
     tr.setAttribute('data-lost-wg', item.lost_Wg || 0);
+
+    tr.setAttribute('data-showroom-fixed-qty', item.showroom_FixedQty || 0);
+    tr.setAttribute('data-showroom-fixed-wg', item.showroom_FixedWg || 0);
+    tr.setAttribute('data-showroom-draft-qty', item.showroom_Qty || 0);
+    tr.setAttribute('data-showroom-wg', item.showroom_Wg || 0);
 
     tr.setAttribute('data-available-qty', available_qty);
 
@@ -928,6 +1010,23 @@ function updateRowData(tr, item, keepChecked) {
                         </div>
                         <small class="text-muted"><i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.export_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.export_Qty)}</strong></small>
                     </div>
+
+                    <!-- Showroom -->
+                    <div class="input-group-col text-center">
+                        <div class="d-flex align-items-center gap-1 justify-content-center">
+                            <span class="badge bg-info text-white"><i class="fas fa-store"></i> Showroom</span>
+                            <input class="form-control form-control-sm text-center qty-input showroom_qty fw-bold"
+                                   type="number" min="0" step="any" style="width: 180px;"
+                                   value="${numRaw(item.showroom_Qty + item.showroom_FixedQty)}" readonly />
+                            <button class="btn btn-sm btn-outline-info btn-edit-qty d-none" data-type="showroom">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary btn-clear-qty d-none" data-type="showroom">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted"><i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.showroom_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.showroom_Qty)}</strong></small>
+                    </div>
                 </div>
             </td>
         `;
@@ -981,29 +1080,28 @@ async function confirmSendGeneric(url, typeName) {
     });
 }
 
-// ยืนยันทั้งหมด (Store, Melt, Export, Lost)
 async function confirmSendAll() {
     await confirmSendGeneric(urlConfirmToSendAll, 'All');
 }
 
-// ยืนยันส่งคลัง (Store)
 async function confirmSendStore() {
     await confirmSendGeneric(urlConfirmToSendStore, 'Store');
 }
 
-// ยืนยันหลอม (Melt)
 async function confirmSendMelt() {
     await confirmSendGeneric(urlConfirmToSendMelt, 'Melt');
 }
 
-// ยืนยันส่งออก (Export)
 async function confirmSendExport() {
     await confirmSendGeneric(urlConfirmToSendExport, 'Export');
 }
 
-// ยืนยันหาย (Lost)
 async function confirmSendLost() {
     await confirmSendGeneric(urlConfirmToSendLost, 'Lost');
+}
+
+async function confirmSendShowroom() {
+    await confirmSendGeneric(urlConfirmToSendShowroom, 'Showroom');
 }
 
 async function printSendToStore() {
@@ -1113,37 +1211,37 @@ function showSelection() {
     $(".btn-edit").addClass("d-none");
     $(".btn-save").addClass("d-none");
     $(".btn-cancel").addClass("d-none");
-    // Hide edit qty and clear qty buttons in input-rows
     $(".btn-edit-qty").addClass("d-none");
     $(".btn-clear-qty").addClass("d-none");
 
-    // Clear/restore values like btn-cancel for all rows
     $("#tbl-sendToStore-body tr.data-row").each(function () {
         const $dataRow = $(this);
         const lotNo = $dataRow.data('lot-no');
         const $inputRow = $(`#tbl-sendToStore-body tr.input-row[data-lot-no="${lotNo}"]`);
 
-        // Restore old draft values
         const sDraft = $dataRow.data('old-store') || 0;
         const mDraft = $dataRow.data('old-melt') || 0;
         const eDraft = $dataRow.data('old-export') || 0;
         const lDraft = $dataRow.data('old-lost') || 0;
+        const srDraft = $dataRow.data('old-showroom') || 0;
 
         $dataRow.data('store-draft-qty', sDraft);
         $dataRow.data('melt-draft-qty', mDraft);
         $dataRow.data('export-draft-qty', eDraft);
         $dataRow.data('lost-draft-qty', lDraft);
+        $dataRow.data('showroom-draft-qty', srDraft);
 
         const sFix = getFixedQty($dataRow, 'store');
         const mFix = getFixedQty($dataRow, 'melt');
         const eFix = getFixedQty($dataRow, 'export');
         const lFix = getFixedQty($dataRow, 'lost');
+        const srFix = getFixedQty($dataRow, 'showroom');
 
-        // Update inputs in input-row
         $inputRow.find('input.store_qty').val(sFix + sDraft);
         $inputRow.find('input.melt_qty').val(mFix + mDraft);
         $inputRow.find('input.export_qty').val(eFix + eDraft);
         $inputRow.find('input.lost_qty').val(lFix + lDraft);
+        $inputRow.find('input.showroom_qty').val(srFix + srDraft);
 
         updateAvailableQty($dataRow);
     });
@@ -1183,13 +1281,6 @@ function updateAvailableQty($row) {
 
     $row.find('.col-available').text(formatted == 0 ? '-' : formatted);
     $row.attr('data-available-qty', available);
-
-
-    //if (available < 0) {
-    //    $row.find('.col-available').addClass('text-danger fw-bold fs-5');
-    //} else {$row
-    //    $row.find('.col-available').removeClass('text-danger fw-bold fs-5');
-    //}
 }
 
 function ShowForceSendToModal(button) {
@@ -1260,6 +1351,7 @@ function getFixedQty($row, type) {
     if (type === 'melt') return parseFloat($row.data('melt-fixed-qty')) || 0;
     if (type === 'export') return parseFloat($row.data('export-fixed-qty')) || 0;
     if (type === 'lost') return parseFloat($row.data('lost-fixed-qty')) || 0;
+    if (type === 'showroom') return parseFloat($row.data('showroom-fixed-qty')) || 0;
     return 0;
 }
 
@@ -1274,13 +1366,15 @@ function calculateAvailable($row) {
     const mFix = getFixedQty($row, 'melt');
     const eFix = getFixedQty($row, 'export');
     const lFix = getFixedQty($row, 'lost');
+    const srFix = getFixedQty($row, 'showroom');
 
     const sDrf = getDraftQty($row, 'store');
     const mDrf = getDraftQty($row, 'melt');
     const eDrf = getDraftQty($row, 'export');
     const lDrf = getDraftQty($row, 'lost');
+    const srDrf = getDraftQty($row, 'showroom');
 
-    const available = packed - (sFix + mFix + eFix + lFix + sDrf + mDrf + eDrf + lDrf);
+    const available = packed - (sFix + mFix + eFix + lFix + srFix + sDrf + mDrf + eDrf + lDrf + srDrf);
     return available;
 }
 
@@ -1302,9 +1396,9 @@ function reloadRow(lotNo) {
                 - (item.store_FixedQty + item.store_Qty)
                 - (item.melt_FixedQty + item.melt_Qty)
                 - (item.lost_FixedQty + item.lost_Qty)
-                - (item.export_FixedQty + item.export_Qty);
+                - (item.export_FixedQty + item.export_Qty)
+                - (item.showroom_FixedQty + item.showroom_Qty);
 
-            // Update data-row attributes
             $dataRow.attr('data-ttwg', item.ttWg || 0);
             $dataRow.attr('data-percentage', item.percentage || 0);
             $dataRow.attr('data-sendtopack-qty', item.sendToPack_Qty || 0);
@@ -1330,15 +1424,19 @@ function reloadRow(lotNo) {
             $dataRow.attr('data-lost-draft-qty', item.lost_Qty || 0);
             $dataRow.attr('data-lost-wg', item.lost_Wg || 0);
 
+            $dataRow.attr('data-showroom-fixed-qty', item.showroom_FixedQty || 0);
+            $dataRow.attr('data-showroom-fixed-wg', item.showroom_FixedWg || 0);
+            $dataRow.attr('data-showroom-draft-qty', item.showroom_Qty || 0);
+            $dataRow.attr('data-showroom-wg', item.showroom_Wg || 0);
+
             $dataRow.attr('data-available-qty', available_qty);
 
-            // Update jQuery .data() cache
             $dataRow.data('store-draft-qty', item.store_Qty || 0);
             $dataRow.data('melt-draft-qty', item.melt_Qty || 0);
             $dataRow.data('export-draft-qty', item.export_Qty || 0);
             $dataRow.data('lost-draft-qty', item.lost_Qty || 0);
+            $dataRow.data('showroom-draft-qty', item.showroom_Qty || 0);
 
-            // Update display values in data-row
             $dataRow.find('td:eq(3)').html(item.ttQty != 0 ? numRaw(item.ttQty) : '-');
             $dataRow.find('td:eq(4)').html(item.si != 0 ? numRaw(item.si) : '-');
             $dataRow.find('td:eq(5)').html(item.sendPack_Qty != 0 ? numRaw(item.sendPack_Qty) : '-');
@@ -1346,14 +1444,13 @@ function reloadRow(lotNo) {
             $dataRow.find('.col-packed').html(item.packed_Qty != 0 ? numRaw(item.packed_Qty) : '-');
             $dataRow.find('.col-available strong').html(available_qty != 0 ? numRaw(available_qty) : '-');
 
-            // Update qty inputs in input-row
             if ($inputRow.length > 0) {
                 $inputRow.find('input.store_qty').val(numRaw(item.store_Qty + item.store_FixedQty));
                 $inputRow.find('input.melt_qty').val(numRaw(item.melt_Qty + item.melt_FixedQty));
                 $inputRow.find('input.lost_qty').val(numRaw(item.lost_Qty + item.lost_FixedQty));
                 $inputRow.find('input.export_qty').val(numRaw(item.export_Qty + item.export_FixedQty));
+                $inputRow.find('input.showroom_qty').val(numRaw(item.showroom_Qty + item.showroom_FixedQty));
 
-                // Update fixed/draft labels in input-row
                 $inputRow.find('input.store_qty').closest('.input-group-col').find('small').html(
                     `<i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.store_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.store_Qty)}</strong>`
                 );
@@ -1365,6 +1462,9 @@ function reloadRow(lotNo) {
                 );
                 $inputRow.find('input.export_qty').closest('.input-group-col').find('small').html(
                     `<i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.export_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.export_Qty)}</strong>`
+                );
+                $inputRow.find('input.showroom_qty').closest('.input-group-col').find('small').html(
+                    `<i class="fas fa-download"></i>: <strong class="text-info">${numRaw(item.showroom_FixedQty)}</strong> / <i class="fas fa-marker"></i>: <strong class="text-warning">${numRaw(item.showroom_Qty)}</strong>`
                 );
             }
         }
@@ -1379,15 +1479,17 @@ function calculateMaxQty($row, type) {
     const mFix = getFixedQty($row, 'melt');
     const eFix = getFixedQty($row, 'export');
     const lFix = getFixedQty($row, 'lost');
+    const srFix = getFixedQty($row, 'showroom');
 
     const sDrf = getDraftQty($row, 'store');
     const mDrf = getDraftQty($row, 'melt');
     const eDrf = getDraftQty($row, 'export');
     const lDrf = getDraftQty($row, 'lost');
+    const srDrf = getDraftQty($row, 'showroom');
 
     const currentDraft = getDraftQty($row, type);
 
-    const available = packed - (sFix + mFix + eFix + lFix + sDrf + mDrf + eDrf + lDrf) + currentDraft;
+    const available = packed - (sFix + mFix + eFix + lFix + srFix + sDrf + mDrf + eDrf + lDrf + srDrf) + currentDraft;
 
     if (type === 'export') {
 

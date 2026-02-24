@@ -96,6 +96,22 @@ namespace JPStockPacking.Services.Implement
                 }
             ).ToDictionaryAsync(x => x.LotNo);
 
+            var dictShowroom = await (
+                from s in _sPDbContext.SendShowroomDetail
+                join l in _sPDbContext.Lot on s.LotNo equals l.LotNo
+                where s.IsActive && l.OrderNo == orderNo
+                group s by s.LotNo into g
+                select new
+                {
+                    LotNo = g.Key,
+                    ShowroomFixedQty = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    ShowroomFixedWg = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    ShowroomDraftQty = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    ShowroomDraftWg = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    HasShowroomSent = g.Any(x => !string.IsNullOrEmpty(x.Doc))
+                }
+            ).ToDictionaryAsync(x => x.LotNo);
+
             var baseData = await (
                 from ord in _sPDbContext.Order
                 join lot in _sPDbContext.Lot on ord.OrderNo equals lot.OrderNo
@@ -123,6 +139,7 @@ namespace JPStockPacking.Services.Implement
                 dictMelt.TryGetValue(x.lot.LotNo, out var ml);
                 dictLost.TryGetValue(x.lot.LotNo, out var ls);
                 dictExport.TryGetValue(x.lot.LotNo, out var ex);
+                dictShowroom.TryGetValue(x.lot.LotNo, out var sr);
 
                 return new OrderToStoreModel
                 {
@@ -163,6 +180,12 @@ namespace JPStockPacking.Services.Implement
                     IsExportSended = ex?.HasExportSent ?? false,
                     Export_FixedQty = ex?.ExportFixedQty ?? 0,
                     Export_FixedWg = ex?.ExportFixedWg ?? 0,
+
+                    Showroom_Qty = sr?.ShowroomDraftQty ?? 0,
+                    Showroom_Wg = sr?.ShowroomDraftWg ?? 0,
+                    IsShowroomSended = sr?.HasShowroomSent ?? false,
+                    Showroom_FixedQty = sr?.ShowroomFixedQty ?? 0,
+                    Showroom_FixedWg = sr?.ShowroomFixedWg ?? 0,
                 };
             }).ToList();
 
@@ -234,6 +257,20 @@ namespace JPStockPacking.Services.Implement
                 }
             ).FirstOrDefaultAsync();
 
+            var showroomData = await (
+                from s in _sPDbContext.SendShowroomDetail
+                where s.IsActive && s.LotNo == lotNo
+                group s by s.LotNo into g
+                select new
+                {
+                    ShowroomFixedQty = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    ShowroomFixedWg = g.Where(x => !string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    ShowroomDraftQty = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (decimal?)x.TtQty) ?? 0,
+                    ShowroomDraftWg = g.Where(x => string.IsNullOrEmpty(x.Doc)).Sum(x => (double?)x.TtWg) ?? 0,
+                    HasShowroomSent = g.Any(x => !string.IsNullOrEmpty(x.Doc))
+                }
+            ).FirstOrDefaultAsync();
+
             var baseRow = await (
                 from ord in _sPDbContext.Order
                 join l in _sPDbContext.Lot on ord.OrderNo equals l.OrderNo
@@ -297,6 +334,12 @@ namespace JPStockPacking.Services.Implement
                 IsExportSended = exportData?.HasExportSent ?? false,
                 Export_FixedQty = exportData?.ExportFixedQty ?? 0,
                 Export_FixedWg = exportData?.ExportFixedWg ?? 0,
+
+                Showroom_Qty = showroomData?.ShowroomDraftQty ?? 0,
+                Showroom_Wg = showroomData?.ShowroomDraftWg ?? 0,
+                IsShowroomSended = showroomData?.HasShowroomSent ?? false,
+                Showroom_FixedQty = showroomData?.ShowroomFixedQty ?? 0,
+                Showroom_FixedWg = showroomData?.ShowroomFixedWg ?? 0,
             };
         }
 
@@ -488,6 +531,39 @@ namespace JPStockPacking.Services.Implement
                     export.IsOverQuota = input.Approver != 0;
                     export.UpdateDate = DateTime.Now;
                     export.UpdateBy = int.TryParse(input.UserId, out int updateBy) ? updateBy : null;
+                }
+
+                // ===== SHOWROOM (KR) =====
+                var showroom = await _sPDbContext.SendShowroomDetail.FirstOrDefaultAsync(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc));
+
+                if (showroom == null && input.KrQty > 0)
+                {
+                    _sPDbContext.SendShowroomDetail.Add(new SendShowroomDetail
+                    {
+                        LotNo = input.LotNo,
+                        Doc = string.Empty,
+                        TtQty = input.KrQty,
+                        TtWg = (double)input.KrWg,
+                        IsSended = false,
+                        IsActive = true,
+                        CreateDate = DateTime.Now,
+                        UpdateDate = DateTime.Now,
+                        CreateBy = int.TryParse(input.UserId, out int srUserId) ? srUserId : null,
+                        UpdateBy = int.TryParse(input.UserId, out int srUpdateBy) ? srUpdateBy : null
+                    });
+                }
+                else if (input.KrQty == 0)
+                {
+                    await _sPDbContext.SendShowroomDetail
+                        .Where(x => x.LotNo == input.LotNo && string.IsNullOrEmpty(x.Doc))
+                        .ExecuteDeleteAsync();
+                }
+                else if (showroom != null && showroom.TtQty != input.KrQty)
+                {
+                    showroom.TtQty = input.KrQty;
+                    showroom.TtWg = (double)input.KrWg;
+                    showroom.UpdateDate = DateTime.Now;
+                    showroom.UpdateBy = int.TryParse(input.UserId, out int srUpdateBy) ? srUpdateBy : null;
                 }
 
                 lot.Unallocated = input.Unallocated;
@@ -691,6 +767,20 @@ namespace JPStockPacking.Services.Implement
 
             List<TempPack> filteredResult = [.. result.Where(r => lotNos.Contains(r.LotNo))];
 
+            foreach (var item in filteredResult)
+            {
+                if (item.ChkSize && string.IsNullOrEmpty(item.S1) && string.IsNullOrEmpty(item.S2)
+                    && string.IsNullOrEmpty(item.S3) && string.IsNullOrEmpty(item.S4)
+                    && string.IsNullOrEmpty(item.S5) && string.IsNullOrEmpty(item.S6)
+                    && string.IsNullOrEmpty(item.S7) && string.IsNullOrEmpty(item.S8)
+                    && string.IsNullOrEmpty(item.S9) && string.IsNullOrEmpty(item.S10)
+                    && string.IsNullOrEmpty(item.S11) && string.IsNullOrEmpty(item.S12))
+                {
+                    item.S1 = "52";
+                    item.OkQ1 = item.OkTtl;
+                }
+            }
+
             return filteredResult;
         }
 
@@ -791,6 +881,20 @@ namespace JPStockPacking.Services.Implement
             ).ToListAsync();
 
             List<TempPack> filteredResult = [.. result.Where(r => lotNos.Contains(r.LotNo))];
+
+            foreach (var item in filteredResult)
+            {
+                if (item.ChkSize && string.IsNullOrEmpty(item.S1) && string.IsNullOrEmpty(item.S2)
+                    && string.IsNullOrEmpty(item.S3) && string.IsNullOrEmpty(item.S4)
+                    && string.IsNullOrEmpty(item.S5) && string.IsNullOrEmpty(item.S6)
+                    && string.IsNullOrEmpty(item.S7) && string.IsNullOrEmpty(item.S8)
+                    && string.IsNullOrEmpty(item.S9) && string.IsNullOrEmpty(item.S10)
+                    && string.IsNullOrEmpty(item.S11) && string.IsNullOrEmpty(item.S12))
+                {
+                    item.S1 = "52";
+                    item.OkQ1 = item.OkTtl;
+                }
+            }
 
             return filteredResult;
         }
@@ -1292,6 +1396,94 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
+        private async Task<List<TempPack>> GetShowroomAsync(string[] lotNos)
+        {
+            List<TempPack> tempPacks = await (from sr in _sPDbContext.SendShowroomDetail
+                                              join lot in _sPDbContext.Lot on sr.LotNo equals lot.LotNo into gjLot
+                                              from lot in gjLot.DefaultIfEmpty()
+                                              join ord in _sPDbContext.Order on lot.OrderNo equals ord.OrderNo into gjOrd
+                                              from ord in gjOrd.DefaultIfEmpty()
+                                              where lotNos.Contains(sr.LotNo) && (sr.Doc == "" || sr.Doc == null)
+                                              select new TempPack
+                                              {
+                                                  LotNo = sr.LotNo,
+                                                  OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                                                  CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                                                  Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                                                  SendDate = sr.CreateDate!.Value,
+                                                  Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                                                  FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                                                  FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                                                  SendType = "KR",
+                                                  OkTtl = sr.TtQty,
+                                                  OkWg = (decimal)sr.TtWg,
+                                              }).ToListAsync();
+            return tempPacks;
+        }
+
+        public async Task<BaseResponseModel> ConfirmToSendShowroomAsync(string[] lotNos, string userId)
+        {
+            List<TempPack> tempPacks = await GetShowroomAsync(lotNos);
+
+            if (tempPacks == null || tempPacks.Count == 0) return new BaseResponseModel { IsSuccess = false };
+
+            await using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var receiveNo = await GenerateSPReceiveNoAsync();
+
+                SendShowroom sendShowroom = new()
+                {
+                    Doc = receiveNo,
+                    IsActive = true,
+                    CreateDate = DateTime.Now,
+                    CreateBy = int.TryParse(userId, out int userIdInt) ? userIdInt : null,
+                    UpdateDate = DateTime.Now,
+                    UpdateBy = int.TryParse(userId, out int userIdInt2) ? userIdInt2 : null,
+                };
+
+                _sPDbContext.SendShowroom.Add(sendShowroom);
+
+                foreach (var pack in tempPacks)
+                {
+                    var showroomDetails = await _sPDbContext.SendShowroomDetail.Where(x => x.LotNo == pack.LotNo).ToListAsync();
+
+                    var detail = showroomDetails.FirstOrDefault(x => x.LotNo == pack.LotNo && (x.Doc == null || x.Doc == ""));
+                    if (detail != null)
+                    {
+                        detail.Doc = receiveNo;
+                        detail.IsSended = true;
+                        detail.UpdateDate = DateTime.Now;
+
+                        _sPDbContext.SendShowroomDetail.UpdateRange(detail);
+                    }
+
+                    var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo);
+                    var showroomQty = showroomDetails.Where(x => x.LotNo == pack.LotNo && x.IsSended == true && x.Doc != null && x.Doc != "").Sum(x => x.TtQty);
+
+                    if (lot != null && showroomQty >= lot.TtQty)
+                    {
+                        lot.IsSuccess = true;
+                        lot.UpdateDate = DateTime.Now;
+                    }
+                }
+
+                await _sPDbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new BaseResponseModel
+                {
+                    IsSuccess = true,
+                    Message = $"ยืนยันส่ง Showroom สำเร็จ เลขที่อ้างอิง: {receiveNo}"
+                };
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         // ดึงชื่อผู้รายงานจาก userid
         private async Task<string> GetReporterNameAsync(string? userid)
         {
@@ -1543,7 +1735,33 @@ namespace JPStockPacking.Services.Implement
             return lostTempPacks;
         }
 
-        // Route ไปยังฟังก์ชันย่อยตาม sendType (KS/KM/KX/KL หรือ All)
+        private async Task<List<TempPack>> GetConfirmedShowroomForPrintAsync(string[] lotNos, string reporterName)
+        {
+            return await (from sr in _sPDbContext.SendShowroomDetail.AsNoTracking()
+                          join lot in _sPDbContext.Lot.AsNoTracking() on sr.LotNo equals lot.LotNo into gjLot
+                          from lot in gjLot.DefaultIfEmpty()
+                          join ord in _sPDbContext.Order.AsNoTracking() on lot.OrderNo equals ord.OrderNo into gjOrd
+                          from ord in gjOrd.DefaultIfEmpty()
+                          where lotNos.Contains(sr.LotNo) && !string.IsNullOrEmpty(sr.Doc) && sr.IsSended == true && sr.IsActive
+                          select new TempPack
+                          {
+                              LotNo = sr.LotNo,
+                              ListNo = lot.ListNo,
+                              OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                              CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                              Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                              Doc = sr.Doc ?? string.Empty,
+                              MdateSend = sr.CreateDate!.Value,
+                              Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                              FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                              FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                              Username = reporterName,
+                              SendType = "KR",
+                              OkTtl = sr.TtQty,
+                              OkWg = (decimal)sr.TtWg,
+                          }).ToListAsync();
+        }
+
         public async Task<List<TempPack>> GetDocToPrintByType(string[] lotNos, string userid, string sendType)
         {
             string reporterName = await GetReporterNameAsync(userid);
@@ -1553,11 +1771,13 @@ namespace JPStockPacking.Services.Implement
                 "KM" => await GetConfirmedMeltForPrintAsync(lotNos, reporterName),
                 "KX" => await GetConfirmedExportForPrintAsync(lotNos, reporterName),
                 "KL" => await GetConfirmedLostForPrintAsync(lotNos, reporterName),
+                "KR" => await GetConfirmedShowroomForPrintAsync(lotNos, reporterName),
                 _ => [
                     .. await GetConfirmedStoreForPrintAsync(lotNos, reporterName),
                     .. await GetConfirmedMeltForPrintAsync(lotNos, reporterName),
                     .. await GetConfirmedExportForPrintAsync(lotNos, reporterName),
                     .. await GetConfirmedLostForPrintAsync(lotNos, reporterName),
+                    .. await GetConfirmedShowroomForPrintAsync(lotNos, reporterName),
                 ]
             };
         }

@@ -18,6 +18,8 @@
             KlWg = 0;
             KxQty = 0;
             KxWg = 0;
+            KrQty = 0;
+            KrWg = 0;
             ReturnFound = false;
             UserId = string.Empty;
         }
@@ -42,6 +44,9 @@
         public decimal KxQty { get; set; } = 0;
         public decimal KxWg { get; set; } = 0;
         public int Approver { get; set; } = 0;
+
+        public decimal KrQty { get; set; } = 0;
+        public decimal KrWg { get; set; } = 0;
 
         public bool ReturnFound { get; set; } = false;
         public string UserId { get; set; } = string.Empty;
@@ -89,6 +94,12 @@
         public double Export_FixedWg { get; set; } = 0;
         public bool IsExportSended { get; set; } = false;
         public bool HasDraftExport { get; set; } = false;
+
+        public decimal Showroom_Qty { get; set; } = 0;
+        public double Showroom_Wg { get; set; } = 0;
+        public decimal Showroom_FixedQty { get; set; } = 0;
+        public double Showroom_FixedWg { get; set; } = 0;
+        public bool IsShowroomSended { get; set; } = false;
 
         public decimal Percentage { get; set; } = 0;
     }
