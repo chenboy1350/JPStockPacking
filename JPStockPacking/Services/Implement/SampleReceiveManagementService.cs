@@ -1,6 +1,7 @@
 using JPStockPacking.Data.JPDbContext;
 using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
+using JPStockPacking.Data.SWDbContext;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,11 @@ using System.Globalization;
 
 namespace JPStockPacking.Services.Implement
 {
-    public class SampleReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext) : ISampleReceiveManagementService
+    public class SampleReceiveManagementService(JPDbContext jPDbContext, SPDbContext sPDbContext, SWDbContext sWDbContext) : ISampleReceiveManagementService
     {
         private readonly JPDbContext _jPDbContext = jPDbContext;
         private readonly SPDbContext _sPDbContext = sPDbContext;
+        private readonly SWDbContext _sWDbContext = sWDbContext;
 
         public async Task UpdateLotItemsAsync(string receiveNo, string[] orderNos, int[] receiveIds)
         {
@@ -168,9 +170,9 @@ namespace JPStockPacking.Services.Implement
                     if (lot == null) continue;
 
                     lot.ReceivedQty = (lot.ReceivedQty ?? 0m) + s.SumQty;
-                    lot.AssignedQty = (lot.ReceivedQty ?? 0m);
-                    lot.ReturnedQty = (lot.ReceivedQty ?? 0m);
-                    lot.Unallocated = (lot.ReceivedQty ?? 0m);
+                    lot.AssignedQty = lot.ReceivedQty ?? 0m;
+                    lot.ReturnedQty = lot.ReceivedQty ?? 0m;
+                    lot.Unallocated = lot.ReceivedQty ?? 0m;
                     lot.UpdateDate = now;
                 }
 
@@ -274,6 +276,13 @@ namespace JPStockPacking.Services.Implement
                     .Select(r => r.ReceiveId)
                     .ToHashSetAsync();
 
+                var stockIdSet = await _sWDbContext.Stock
+                    .Where(r => r.ReceiveNo == receiveNo && r.IsActive)
+                    .Select(r => r.ReceiveId)
+                    .ToHashSetAsync();
+
+                receivedIdSet.UnionWith(stockIdSet);
+
                 bool isComplete = detailIds.All(id => receivedIdSet.Contains(id));
 
                 if (header.Mupdate != isComplete)
@@ -300,7 +309,9 @@ namespace JPStockPacking.Services.Implement
                                 where a.OrderNo == orderNo
                                       && (a.FactoryDate!.Value.Year == DateTime.Now.Year || a.FactoryDate!.Value.Year == 2025 || a.FactoryDate!.Value.Year == 2024)
                                       && a.Factory == true
-                                      && (a.OrderNo.StartsWith("S") || (a.CustCode == "SAMPLE") || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))
+                                      && (a.OrderNo.StartsWith("S")
+                                      || (a.CustCode == "SAMPLE")
+                                      || _jPDbContext.JobOrder.Any(j => j.OrderNo == a.OrderNo && j.Owner == "SAMPLE"))
 
                                 orderby a.FactoryDate descending
 
@@ -422,22 +433,35 @@ namespace JPStockPacking.Services.Implement
                 query = query.Where(b => _jPDbContext.Spdreceive.Any(sr => sr.Lotno.Contains(lotNo) && sr.ReceiveNo == b.ReceiveNo));
             }
 
-            var receives = await query.OrderByDescending(o => o.Mdate).Take(200).ToListAsync();
+            var receives = await query.OrderByDescending(o => o.Mdate).Take(500).ToListAsync();
 
             var receiveNos = receives.Select(r => r.ReceiveNo).ToList();
 
-            var receivedLookup = await _sPDbContext.Received
+            var swReceivedLookup = await _sWDbContext.Stock
+                .Where(r => receiveNos.Contains(r.ReceiveNo))
+                .GroupBy(r => r.ReceiveNo)
+                .Select(g => new { ReceiveNo = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ReceiveNo, x => x.Count);
+
+            var spReceivedLookup = await _sPDbContext.Received
                 .Where(r => receiveNos.Contains(r.ReceiveNo) && r.IsReceived)
                 .GroupBy(r => r.ReceiveNo)
                 .Select(g => new { ReceiveNo = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.ReceiveNo, x => x.Count);
 
-            var result = receives.Select(r => new ReceivedListModel
+            var result = receives.Select(r =>
             {
-                ReceiveNo = r.ReceiveNo,
-                Mdate = r.Mdate.ToString("dd MMMM yyyy", new CultureInfo("th-TH")),
-                IsReceived = r.Mupdate,
-                HasRevButNotAll = receivedLookup.TryGetValue(r.ReceiveNo, out var receivedCount) && receivedCount > 0 && receivedCount < r.TotalDetail
+                var swCount = swReceivedLookup.TryGetValue(r.ReceiveNo, out var swc) ? swc : 0;
+                var spCount = spReceivedLookup.TryGetValue(r.ReceiveNo, out var spc) ? spc : 0;
+                var totalReceived = swCount + spCount;
+
+                return new ReceivedListModel
+                {
+                    ReceiveNo = r.ReceiveNo,
+                    Mdate = r.Mdate.ToString("dd MMMM yyyy", new CultureInfo("th-TH")),
+                    IsReceived = r.Mupdate,
+                    HasRevButNotAll = totalReceived > 0 && totalReceived < r.TotalDetail
+                };
             }).ToList();
 
             return result;
@@ -475,10 +499,17 @@ namespace JPStockPacking.Services.Implement
                 allReceived = [.. allReceived.Where(x => x.Lotno.Contains(lotNo))];
             }
 
-            var existingIds = await _sPDbContext.Received
+            var swExistingIds = await _sWDbContext.Stock
+                .Where(x => x.ReceiveNo == receiveNo)
+                .Select(x => x.ReceiveId)
+                .ToHashSetAsync();
+
+            var spExistingIds = await _sPDbContext.Received
                 .Where(x => x.ReceiveNo == receiveNo && x.IsReceived)
                 .Select(x => x.ReceiveId)
                 .ToHashSetAsync();
+
+            var existingIds = swExistingIds.Union(spExistingIds).ToHashSet();
 
             var result = allReceived.Select(x => new ReceivedListModel
             {
@@ -492,7 +523,8 @@ namespace JPStockPacking.Services.Implement
                 Article = x.Article,
                 OrderNo = x.OrderNo,
                 ListNo = x.ListNo,
-                IsReceived = existingIds.Contains(x.Id)
+                IsReceived = existingIds.Contains(x.Id),
+                IsInStock = swExistingIds.Contains(x.Id)
             }).ToList();
 
             result = [.. result.OrderBy(x => x.LotNo).ThenBy(x => x.OrderNo).ThenBy(x => x.ListNo)];

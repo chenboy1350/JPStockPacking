@@ -323,6 +323,7 @@ namespace JPStockPacking.Services.Implement
                                 "KM" => "ใบส่งสินค้าหลอม 925",
                                 "KX" => "ใบส่งสินค้าส่งออก",
                                 "KL" => "รายการสินค้าสูญหาย",
+                                "KR" => "ใบส่งสินค้าห้องโชว์",
                                 _ => "ไม่ทราบประเภท"
                             },
                             SendTo = g.First().SendType switch
@@ -331,6 +332,7 @@ namespace JPStockPacking.Services.Implement
                                 "KM" => "Spare Part Stock",
                                 "KX" => "Export",
                                 "KL" => "Audit",
+                                "KR" => "Showroom",
                                 _ => "Unknow"
                             },
                             SendType = g.First().SendType switch
@@ -339,6 +341,7 @@ namespace JPStockPacking.Services.Implement
                                 "KM" => "KM",
                                 "KX" => "KX",
                                 "KL" => "KL",
+                                "KR" => "KR",
                                 _ => "N/A"
                             },
                             OrderNoAndCusCode = $"{g.First().CustCode.Trim()}/{g.First().OrderNo}",

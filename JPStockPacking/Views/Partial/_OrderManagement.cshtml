@@ -178,20 +178,15 @@
                                                                 {
                                                                     progressText = $"{lot.ReceivedQty} / {lot.TtQty}";
                                                                 }
-                                                                else if (lot.IsAllReceived && !lot.IsPacking)
+                                                                else if (!lot.IsPacking)
                                                                 {
-                                                                    progressText = $"{lot.ReceivedQty} / {lot.TtQty} ";
+                                                                    progressText = $"{lot.ReceivedQty} / {lot.TtQty}";
                                                                 }
-                                                                else if (lot.IsPacking && !lot.IsAllReturned)
+                                                                else if (!lot.IsAllReturned)
                                                                 {
-                                                                    var packPercent = lot.TtQty > 0 ? (lot.ReturnedQty * 100 / lot.TtQty) : 0;
                                                                     progressText = $"{lot.ReturnedQty} / {lot.TtQty}";
                                                                 }
-                                                                else if (lot.IsAllReturned && lot.IsSuccess)
-                                                                {
-                                                                    progressText = $"{lot.TtQty} / {lot.TtQty}";
-                                                                }
-                                                                else if (lot.IsAllReturned)
+                                                                else
                                                                 {
                                                                     progressText = $"{lot.TtQty} / {lot.TtQty}";
                                                                 }
@@ -200,31 +195,31 @@
                                                         </small>
                                                     </td>
                                                     <td class="project-state">
+                                                        @* Group 1: สถานะการรับของ (แสดงทีละ 1) *@
                                                         @if (lot.ReceivedQty < lot.TtQty)
                                                         {
                                                             <span class="badge badge-orange">รอนำส่ง</span>
                                                         }
-
-                                                        @if (lot.TtQty > 0 && lot.ReceivedQty >= lot.TtQty)
+                                                        else if (lot.TtQty > 0 && lot.ReceivedQty >= lot.TtQty)
                                                         {
                                                             <span class="badge badge-orange">รับครบแล้ว</span>
                                                         }
 
-                                                        @if (lot.IsAllReceived && !lot.IsPacking && !lot.IsAllAssigned)
-                                                        {
-                                                            <span class="badge badge-light-orange">รอจ่ายงาน</span>
-                                                        }
-
-                                                        @if (lot.IsPacking && !lot.IsAllReturned)
-                                                        {
-                                                            <span class="badge badge-warning">กำลังบรรจุ</span>
-                                                        }
-
+                                                        @* Group 2: สถานะการบรรจุ (แสดงทีละ 1) *@
                                                         @if (lot.IsAllReturned)
                                                         {
                                                             <span class="badge badge-info">บรรจุครบแล้ว</span>
                                                         }
+                                                        else if (lot.IsPacking)
+                                                        {
+                                                            <span class="badge badge-warning">กำลังบรรจุ</span>
+                                                        }
+                                                        else if (lot.IsAllReceived && !lot.IsAllAssigned)
+                                                        {
+                                                            <span class="badge badge-light-orange">รอจ่ายงาน</span>
+                                                        }
 
+                                                        @* Group 3-5: แสดงอิสระ *@
                                                         @if (lot.HasRepair)
                                                         {
                                                             <span class="badge badge-danger">ส่งซ่อม</span>

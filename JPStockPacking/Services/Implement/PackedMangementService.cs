@@ -5,7 +5,6 @@ using JPStockPacking.Data.SPDbContext;
 using JPStockPacking.Data.SPDbContext.Entities;
 using JPStockPacking.Models;
 using JPStockPacking.Services.Interface;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Data;
@@ -576,6 +575,11 @@ namespace JPStockPacking.Services.Implement
 
                     await UpdateOrderSuccessAsync(lot.OrderNo);
                 }
+                else
+                {
+                    lot.IsSuccess = false;
+                    lot.UpdateDate = DateTime.Now;
+                }
 
                 await _sPDbContext.SaveChangesAsync();
 
@@ -1090,6 +1094,7 @@ namespace JPStockPacking.Services.Implement
                         Store.UpdateBy = int.TryParse(pack.Username, out int userId) ? userId : null;
                         _sPDbContext.Store.UpdateRange(Store);
                     }
+
                 }
 
                 await _sPDbContext.SaveChangesAsync();
@@ -1272,6 +1277,7 @@ namespace JPStockPacking.Services.Implement
                         Melt.UpdateBy = int.TryParse(pack.Username, out int userId) ? userId : null;
                         _sPDbContext.Melt.UpdateRange(Melt);
                     }
+
                 }
 
                 await _sPDbContext.SaveChangesAsync();
@@ -1373,7 +1379,7 @@ namespace JPStockPacking.Services.Implement
 
                     if (lot != null)
                     {
-                        if(exportedQty >= lot.TtQty)
+                        if (exportedQty >= lot.TtQty)
                         {
                             lot.IsSuccess = true;
                             lot.UpdateDate = DateTime.Now;
@@ -1430,7 +1436,7 @@ namespace JPStockPacking.Services.Implement
             await using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
             try
             {
-                var receiveNo = await GenerateSPReceiveNoAsync();
+                var receiveNo = await GenerateSPSWReceiveNoAsync();
 
                 SendShowroom sendShowroom = new()
                 {
@@ -1443,6 +1449,7 @@ namespace JPStockPacking.Services.Implement
                 };
 
                 _sPDbContext.SendShowroom.Add(sendShowroom);
+                await _sPDbContext.SaveChangesAsync();
 
                 foreach (var pack in tempPacks)
                 {
@@ -1458,14 +1465,6 @@ namespace JPStockPacking.Services.Implement
                         _sPDbContext.SendShowroomDetail.UpdateRange(detail);
                     }
 
-                    var lot = await _sPDbContext.Lot.FirstOrDefaultAsync(x => x.LotNo == pack.LotNo);
-                    var showroomQty = showroomDetails.Where(x => x.LotNo == pack.LotNo && x.IsSended == true && x.Doc != null && x.Doc != "").Sum(x => x.TtQty);
-
-                    if (lot != null && showroomQty >= lot.TtQty)
-                    {
-                        lot.IsSuccess = true;
-                        lot.UpdateDate = DateTime.Now;
-                    }
                 }
 
                 await _sPDbContext.SaveChangesAsync();
@@ -1702,29 +1701,29 @@ namespace JPStockPacking.Services.Implement
                 );
 
             List<TempPack> lostTempPacks = await (from sl in _sPDbContext.SendLostDetail.AsNoTracking()
-                                                   join lot in _sPDbContext.Lot.AsNoTracking() on sl.LotNo equals lot.LotNo into gjLot
-                                                   from lot in gjLot.DefaultIfEmpty()
-                                                   join ord in _sPDbContext.Order.AsNoTracking() on lot.OrderNo equals ord.OrderNo into gjOrd
-                                                   from ord in gjOrd.DefaultIfEmpty()
-                                                   where lotNos.Contains(sl.LotNo) && !string.IsNullOrEmpty(sl.Doc) && sl.IsSended == true && sl.IsActive
-                                                   select new TempPack
-                                                   {
-                                                       LotNo = sl.LotNo,
-                                                       ListNo = lot.ListNo,
-                                                       OrderNo = ord != null ? ord.OrderNo : string.Empty,
-                                                       CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
-                                                       Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
-                                                       Doc = sl.Doc ?? string.Empty,
-                                                       MdateSend = sl.CreateDate!.Value,
-                                                       Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
-                                                       FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
-                                                       FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
-                                                       Username = reporterName,
-                                                       TableName = string.Empty,
-                                                       SendType = "KL",
-                                                       OkTtl = sl.TtQty,
-                                                       OkWg = (decimal)sl.TtWg!,
-                                                   }).ToListAsync();
+                                                  join lot in _sPDbContext.Lot.AsNoTracking() on sl.LotNo equals lot.LotNo into gjLot
+                                                  from lot in gjLot.DefaultIfEmpty()
+                                                  join ord in _sPDbContext.Order.AsNoTracking() on lot.OrderNo equals ord.OrderNo into gjOrd
+                                                  from ord in gjOrd.DefaultIfEmpty()
+                                                  where lotNos.Contains(sl.LotNo) && !string.IsNullOrEmpty(sl.Doc) && sl.IsSended == true && sl.IsActive
+                                                  select new TempPack
+                                                  {
+                                                      LotNo = sl.LotNo,
+                                                      ListNo = lot.ListNo,
+                                                      OrderNo = ord != null ? ord.OrderNo : string.Empty,
+                                                      CustCode = ord != null ? ord.CustCode ?? string.Empty : string.Empty,
+                                                      Article = lot != null ? lot.Article ?? string.Empty : string.Empty,
+                                                      Doc = sl.Doc ?? string.Empty,
+                                                      MdateSend = sl.CreateDate!.Value,
+                                                      Unit = lot != null ? lot.Unit ?? string.Empty : string.Empty,
+                                                      FinishingEN = lot != null ? lot.EdesFn ?? string.Empty : string.Empty,
+                                                      FinishingTH = lot != null ? lot.TdesFn ?? string.Empty : string.Empty,
+                                                      Username = reporterName,
+                                                      TableName = string.Empty,
+                                                      SendType = "KL",
+                                                      OkTtl = sl.TtQty,
+                                                      OkWg = (decimal)sl.TtWg!,
+                                                  }).ToListAsync();
 
             foreach (var item in lostTempPacks)
             {
@@ -1790,7 +1789,6 @@ namespace JPStockPacking.Services.Implement
             }
             catch (Exception ex)
             {
-                // log ไว้ดู เช่น _logger.LogError(ex, "GetAllDocToPrint failed | lotNos: {LotNos}, userid: {UserId}", string.Join(",", lotNos), userid);
                 throw;
             }
         }
@@ -1834,6 +1832,8 @@ namespace JPStockPacking.Services.Implement
                 {
                     b.LotNo,
                     Article = c.Article ?? string.Empty,
+                    b.TtQty,
+                    b.TtWg
                 }
             ).ToListAsync();
 
@@ -1854,6 +1854,12 @@ namespace JPStockPacking.Services.Implement
                 if (spLot.Article != item.Article)
                 {
                     spLot.Article = item.Article;
+                }
+
+                if (spLot.TtQty != item.TtQty)
+                {
+                    spLot.TtQty = item.TtQty;
+                    spLot.TtWg = (double)item.TtWg!;
                 }
             }
 
@@ -1949,6 +1955,35 @@ namespace JPStockPacking.Services.Implement
             string basePrefix = $"{year}{prefix}{month}";
 
             string? lastDoc = await _sPDbContext.Export
+                .Where(r => r.Doc != null && r.Doc.StartsWith(basePrefix))
+                .OrderByDescending(r => r.Doc)
+                .Select(r => r.Doc)
+                .FirstOrDefaultAsync();
+
+            int nextSeq = 1;
+
+            if (!string.IsNullOrWhiteSpace(lastDoc) && lastDoc.Length >= 10)
+            {
+                string seqPart = lastDoc.Substring(6, 4);
+                if (int.TryParse(seqPart, out int lastSeq))
+                {
+                    nextSeq = lastSeq + 1;
+                }
+            }
+
+            string newDoc = $"{basePrefix}{nextSeq:D4}";
+
+            return newDoc;
+        }
+
+        private async Task<string> GenerateSPSWReceiveNoAsync()
+        {
+            string prefix = "SW";
+            string year = DateTime.Now.ToString("yy");
+            string month = DateTime.Now.ToString("MM");
+            string basePrefix = $"{year}{prefix}{month}";
+
+            string? lastDoc = await _sPDbContext.SendShowroom
                 .Where(r => r.Doc != null && r.Doc.StartsWith(basePrefix))
                 .OrderByDescending(r => r.Doc)
                 .Select(r => r.Doc)

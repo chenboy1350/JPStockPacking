@@ -615,28 +615,31 @@ function renderLotRow(order, lot, index = "#") {
     let progressText = '';
     if (!lot.isAllReceived) {
         progressText = `${lot.receivedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
-    } else if (lot.isAllReceived && !lot.isPacking) {
+    } else if (!lot.isPacking) {
         progressText = `${lot.receivedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
-    } else if (lot.isPacking && !lot.isAllReturned) {
+    } else if (!lot.isAllReturned) {
         progressText = `${lot.returnedQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
-    } else if (lot.isAllReturned && lot.isSuccess) {
-        progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
-    } else if (lot.isAllReturned) {
+    } else {
         progressText = `${lot.ttQty.toFixed(1)} / ${lot.ttQty.toFixed(1)}`;
     }
 
     // Status Badges
+    // Group 1: สถานะการรับของ (แสดงทีละ 1)
     let statusHtml = '';
     if (lot.receivedQty < lot.ttQty)
         statusHtml += `<span class="badge badge-orange">รอนำส่ง</span>`;
-    if (lot.ttQty > 0 && lot.receivedQty >= lot.ttQty)
+    else if (lot.ttQty > 0 && lot.receivedQty >= lot.ttQty)
         statusHtml += `<span class="badge badge-orange">รับครบแล้ว</span>`;
-    if (lot.isAllReceived && !lot.isPacking && !lot.isAllAssigned)
-        statusHtml += `<span class="badge badge-light-orange">รอจ่ายงาน</span>`;
-    if (lot.isPacking && !lot.isAllReturned)
-        statusHtml += `<span class="badge badge-warning">กำลังบรรจุ</span>`;
+
+    // Group 2: สถานะการบรรจุ (แสดงทีละ 1)
     if (lot.isAllReturned)
         statusHtml += `<span class="badge badge-info">บรรจุครบแล้ว</span>`;
+    else if (lot.isPacking)
+        statusHtml += `<span class="badge badge-warning">กำลังบรรจุ</span>`;
+    else if (lot.isAllReceived && !lot.isAllAssigned)
+        statusHtml += `<span class="badge badge-light-orange">รอจ่ายงาน</span>`;
+
+    // Group 3-5: แสดงอิสระ
     if (lot.hasRepair)
         statusHtml += `<span class="badge badge-danger">ส่งซ่อม</span>`;
     if (lot.hasLost)

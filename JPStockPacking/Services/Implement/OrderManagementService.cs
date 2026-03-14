@@ -20,7 +20,7 @@ namespace JPStockPacking.Services.Implement
         {
             var today = DateTime.Now.Date;
 
-            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive && !o.IsSample);
+            var ordersQuery = _sPDbContext.Order.Where(o => o.IsActive);
 
             if (!string.IsNullOrEmpty(orderNo))
                 ordersQuery = ordersQuery.Where(o => o.OrderNo.Contains(orderNo));

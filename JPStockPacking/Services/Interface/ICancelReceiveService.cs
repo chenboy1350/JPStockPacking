@@ -20,5 +20,9 @@ namespace JPStockPacking.Services.Interface
         Task<BaseResponseModel> CancelSendLostByLotNoAsync(string receiveNo, string[] lotNos, int userId);
         Task<BaseResponseModel> CancelExportByReceiveNoAsync(string receiveNo, int userId);
         Task<BaseResponseModel> CancelExportByLotNoAsync(string receiveNo, string[] lotNos, int userId);
+        Task<List<ReceivedListModel>> GetTopShowroomReceivedAsync(string? receiveNo, string? orderNo, string? lotNo);
+        Task<List<ReceivedListModel>> GetShowroomReceivedByReceiveNoAsync(string receiveNo, string? orderNo, string? lotNo);
+        Task<BaseResponseModel> CancelShowroomByReceiveNoAsync(string receiveNo, int userId);
+        Task<BaseResponseModel> CancelShowroomByLotNoAsync(string receiveNo, string[] lotNos, int userId);
     }
 }

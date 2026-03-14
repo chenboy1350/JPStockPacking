@@ -8,6 +8,7 @@
         #tab-cancel-melt.active { background-color: var(--bs-warning); color: #1f2d3d; }
         #tab-cancel-lost.active { background-color: var(--bs-danger); color: #fff; }
         #tab-cancel-export.active { background-color: var(--bs-success); color: #fff; }
+        #tab-cancel-showroom.active { background-color: var(--bs-purple); color: #fff; }
     </style>
     <div class="row">
         <div class="card">
@@ -67,6 +68,11 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="tab-cancel-export" data-bs-toggle="tab" data-bs-target="#content-cancel-export" type="button" role="tab" aria-controls="content-cancel-export" aria-selected="false">
                             <i class="fas fa-shipping-fast"></i> ส่งออก
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-cancel-showroom" data-bs-toggle="tab" data-bs-target="#content-cancel-showroom" type="button" role="tab" aria-controls="content-cancel-showroom" aria-selected="false">
+                            <i class="fas fa-store"></i> ส่ง Showroom
                         </button>
                     </li>
                 </ul>
@@ -193,6 +199,25 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tbl-cancel-export-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: ส่ง Showroom -->
+                    <div class="tab-pane fade" id="content-cancel-showroom" role="tabpanel" aria-labelledby="tab-cancel-showroom">
+                        <div class="table-responsive" style="height:75vh; padding: 0px !important;">
+                            <table id="tbl-cancel-showroom" class="table table-head-fixed text-nowrap table-packed-custom" style="overflow: auto !important;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">#</th>
+                                        <th class="text-start">เลขที่ใบส่ง</th>
+                                        <th class="text-start">วันที่ส่ง</th>
+                                        <th class="text-start">สถานะ</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbl-cancel-showroom-body">
                                 </tbody>
                             </table>
                         </div>

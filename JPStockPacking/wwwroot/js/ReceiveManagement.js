@@ -302,18 +302,20 @@ function showModalCancelLot(receiveNo) {
             const rows = items.map(function (x, i) {
                 const safeId = ('chk_' + String(x.receiveNo ?? ('row' + i))).replace(/[^A-Za-z0-9_-]/g, '_');
 
-                const isReceived = x.isReceived === false;
-                const checkedAttr = isReceived ? '' : 'checked';
-                const disabledAttr = isReceived ? 'disabled' : '';
-                const rowClass = isReceived ? 'text-muted' : '';
+                const notReceived = x.isReceived === false;
+                const inStock = x.isInStock === true;
+                const disabled = notReceived || inStock;
+                const checkedAttr = disabled ? '' : 'checked';
+                const disabledAttr = disabled ? 'disabled' : '';
+                const rowClass = disabled ? 'text-muted' : '';
 
-                const lotNoDisplay = isReceived ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
-                const orderNoDisplay = isReceived ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
-                const cusCodeDisplay = isReceived ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
-                const barcodeDisplay = isReceived ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
-                const articleDisplay = isReceived ? `<del>${html(x.article)}</del>` : html(x.article);
-                const qtyDisplay = isReceived ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
-                const wgDisplay = isReceived ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
+                const lotNoDisplay = disabled ? `<del>${html(x.lotNo)}</del>` : `<strong>${html(x.lotNo)}</strong>`;
+                const orderNoDisplay = disabled ? `<del>${html(x.orderNo)}</del>` : html(x.orderNo);
+                const cusCodeDisplay = disabled ? `<del>${html(x.custCode)}</del>` : html(x.custCode);
+                const barcodeDisplay = disabled ? `<del>${html(x.barcode)}</del>` : html(x.barcode);
+                const articleDisplay = disabled ? `<del>${html(x.article)}</del>` : html(x.article);
+                const qtyDisplay = disabled ? `<del>${num(x.ttQty)}</del>` : num(x.ttQty);
+                const wgDisplay = disabled ? `<del>${num(x.ttWg)}</del>` : num(x.ttWg);
 
                 return `
             <tr class="${rowClass}" 

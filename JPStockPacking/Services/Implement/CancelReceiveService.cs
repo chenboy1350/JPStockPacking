@@ -1099,5 +1099,178 @@ namespace JPStockPacking.Services.Implement
                 };
             }
         }
+
+        public async Task<List<ReceivedListModel>> GetTopShowroomReceivedAsync(string? receiveNo, string? orderNo, string? lotNo)
+        {
+            var query =
+                from a in _sPDbContext.SendShowroom
+                where a.IsActive
+                select new
+                {
+                    a.Doc,
+                    a.CreateDate
+                };
+
+            if (!string.IsNullOrWhiteSpace(receiveNo))
+            {
+                query = query.Where(b => b.Doc.Contains(receiveNo));
+            }
+
+            if (!string.IsNullOrWhiteSpace(lotNo))
+            {
+                query = query.Where(b => _sPDbContext.SendShowroomDetail.Any(sd => sd.LotNo.Contains(lotNo) && sd.Doc == b.Doc));
+            }
+
+            var receives = await query.OrderByDescending(o => o.CreateDate).Take(100).ToListAsync();
+
+            var result = receives.Select(r => new ReceivedListModel
+            {
+                ReceiveNo = r.Doc,
+                Mdate = r.CreateDate.HasValue
+                    ? r.CreateDate.Value.ToString("dd MMMM yyyy", new CultureInfo("th-TH"))
+                    : string.Empty,
+                IsReceived = false,
+            }).ToList();
+
+            return result;
+        }
+
+        public async Task<List<ReceivedListModel>> GetShowroomReceivedByReceiveNoAsync(string receiveNo, string? orderNo, string? lotNo)
+        {
+            var allReceived = await (
+                from a in _sPDbContext.SendShowroomDetail
+                join c in _sPDbContext.Lot on a.LotNo equals c.LotNo
+                join d in _sPDbContext.Order on c.OrderNo equals d.OrderNo
+                where a.Doc == receiveNo && !string.IsNullOrEmpty(a.LotNo) && a.IsActive
+                select new
+                {
+                    a.SendShowroomId,
+                    a.Doc,
+                    a.LotNo,
+                    a.TtQty,
+                    a.TtWg,
+                    c.Barcode,
+                    c.Article,
+                    c.OrderNo,
+                    c.ListNo,
+                    d.CustCode
+                }
+            ).ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(orderNo))
+            {
+                allReceived = [.. allReceived.Where(x => x.OrderNo.Contains(orderNo))];
+            }
+
+            if (!string.IsNullOrWhiteSpace(lotNo))
+            {
+                allReceived = [.. allReceived.Where(x => x.LotNo.Contains(lotNo))];
+            }
+
+            var result = allReceived.Select(x => new ReceivedListModel
+            {
+                ReceivedID = x.SendShowroomId,
+                ReceiveNo = x.Doc,
+                CustCode = x.CustCode,
+                LotNo = x.LotNo,
+                TtQty = x.TtQty,
+                TtWg = x.TtWg,
+                Barcode = x.Barcode,
+                Article = x.Article,
+                OrderNo = x.OrderNo,
+                ListNo = x.ListNo,
+                IsReceived = false
+            }).ToList();
+
+            result = [.. result.OrderBy(x => x.LotNo).ThenBy(x => x.OrderNo).ThenBy(x => x.ListNo)];
+
+            return result;
+        }
+
+        public async Task<BaseResponseModel> CancelShowroomByReceiveNoAsync(string receiveNo, int userId)
+        {
+            using var transaction = await _sPDbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var receiveHeader = _sPDbContext.SendShowroom.FirstOrDefault(s => s.Doc == receiveNo && s.IsActive);
+                if (receiveHeader != null)
+                {
+                    var details = _sPDbContext.SendShowroomDetail.Where(sd => sd.Doc == receiveNo && sd.IsActive).ToList();
+
+                    foreach (var detail in details)
+                    {
+                        detail.IsActive = false;
+                        detail.UpdateBy = userId;
+                        detail.UpdateDate = DateTime.Now;
+
+                        _sPDbContext.SendShowroomDetail.Update(detail);
+                    }
+
+                    receiveHeader.IsActive = false;
+                    receiveHeader.UpdateBy = userId;
+                    receiveHeader.UpdateDate = DateTime.Now;
+                }
+
+                await _sPDbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new BaseResponseModel
+                {
+                    Code = 200,
+                    IsSuccess = true,
+                    Message = "Cancel Showroom successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = $"Error occurred while canceling Showroom: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponseModel> CancelShowroomByLotNoAsync(string receiveNo, string[] lotNos, int userId)
+        {
+            var transaction = await _sPDbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var receiveHeader = _sPDbContext.SendShowroom.FirstOrDefault(s => s.Doc == receiveNo && s.IsActive);
+                if (receiveHeader != null)
+                {
+                    var details = _sPDbContext.SendShowroomDetail
+                        .Where(sd => sd.Doc == receiveNo && lotNos.Contains(sd.LotNo) && sd.IsActive)
+                        .ToList();
+                    foreach (var detail in details)
+                    {
+                        detail.IsActive = false;
+                        detail.UpdateBy = userId;
+                        detail.UpdateDate = DateTime.Now;
+                        _sPDbContext.SendShowroomDetail.Update(detail);
+                    }
+                }
+                await _sPDbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return new BaseResponseModel
+                {
+                    Code = 200,
+                    IsSuccess = true,
+                    Message = "Cancel Showroom by Lot No successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new BaseResponseModel
+                {
+                    Code = 500,
+                    IsSuccess = false,
+                    Message = $"Error occurred while canceling Showroom by Lot No: {ex.Message}"
+                };
+            }
+        }
     }
 }

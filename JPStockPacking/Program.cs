@@ -8,6 +8,7 @@ using JPStockPacking.Services.Interface;
 using JPStockPacking.Services.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using JPStockPacking.Data.SWDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddDbContext<JPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("JPDBEntries")));
 builder.Services.AddDbContext<SPDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SPDBEntries")));
 builder.Services.AddDbContext<BMDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("BMDBEntries")));
+builder.Services.AddDbContext<SWDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SWDBEntries")));
 
 builder.Services.Configure<AppSettingModel>(builder.Configuration.GetSection("AppSettings"));
 builder.Services.Configure<SendQtyModel>(builder.Configuration.GetSection("SendQtySettings"));

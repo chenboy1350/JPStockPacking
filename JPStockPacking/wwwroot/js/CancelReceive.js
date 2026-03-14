@@ -3,7 +3,8 @@ let tabDataLoaded = {
     store: false,
     melt: false,
     lost: false,
-    export: false
+    export: false,
+    showroom: false
 };
 
 // ตั้ง event listeners
@@ -24,6 +25,9 @@ $(document).ready(function () {
                 break;
             case 'tab-cancel-export':
                 loadCancelExportData();
+                break;
+            case 'tab-cancel-showroom':
+                loadCancelShowroomData();
                 break;
         }
     });
@@ -53,6 +57,9 @@ function FindReceiveToCancel() {
         case 'tab-cancel-export':
             loadCancelExportData();
             break;
+        case 'tab-cancel-showroom':
+            loadCancelShowroomData();
+            break;
     }
 }
 
@@ -67,13 +74,15 @@ function ClearFindByReceiveToCancel() {
     $('#tbl-cancel-melt-body').html('');
     $('#tbl-cancel-lost-body').html('');
     $('#tbl-cancel-export-body').html('');
+    $('#tbl-cancel-showroom-body').html('');
 
     // รีเซ็ตสถานะการโหลดข้อมูล
     tabDataLoaded = {
         store: false,
         melt: false,
         lost: false,
-        export: false
+        export: false,
+        showroom: false
     };
 
     // โหลดข้อมูลใหม่สำหรับ tab ที่ active
@@ -90,6 +99,9 @@ function ClearFindByReceiveToCancel() {
             break;
         case 'tab-cancel-export':
             loadCancelExportData();
+            break;
+        case 'tab-cancel-showroom':
+            loadCancelShowroomData();
             break;
     }
 }
@@ -182,6 +194,28 @@ function loadCancelExportData() {
     });
 }
 
+// โหลดข้อมูล ส่ง Showroom
+function loadCancelShowroomData() {
+    const receiveNo = $('#txtFindReceivedNoToCancel').val();
+    const lotNo = $('#txtFindLotNoCancel').val();
+    const tbody = $('#tbl-cancel-showroom-body');
+
+    tbody.html('<tr><td colspan="5" class="text-center text-muted">กำลังโหลดข้อมูล...</td></tr>');
+
+    $.ajax({
+        url: urlGetCancelShowroomList,
+        method: 'GET',
+        data: { receiveNo: receiveNo, lotNo: lotNo },
+        success: function (rows) {
+            renderCancelTable(tbody, rows, 'showroom');
+            tabDataLoaded.showroom = true;
+        },
+        error: function (xhr) {
+            tbody.html(`<tr><td colspan="5" class="text-danger text-center">เกิดข้อผิดพลาด (${xhr.status} ${xhr.statusText})</td></tr>`);
+        }
+    });
+}
+
 // ฟังก์ชัน render ตาราง
 function renderCancelTable(tbody, rows, type) {
     if (!rows || rows.length === 0) {
@@ -215,6 +249,10 @@ function renderCancelTable(tbody, rows, type) {
                 status = r.isExported
                     ? '<i class="fas fa-check text-success" title="ส่งออกแล้ว"></i>'
                     : '<i class="fas fa-times text-danger" title="ยังไม่ส่งออก"></i>';
+                break;
+            case 'showroom':
+                canCancel = true;
+                status = '<i class="fas fa-store text-purple" title="ส่ง Showroom"></i>';
                 break;
         }
 
@@ -265,6 +303,7 @@ function showCancelDetail(receiveNo, type) {
         case 'melt': url = urlGetCancelMeltDetail; break;
         case 'lost': url = urlGetCancelLostDetail; break;
         case 'export': url = urlGetCancelExportDetail; break;
+        case 'showroom': url = urlGetCancelShowroomDetail; break;
     }
 
     $.ajax({
@@ -420,6 +459,7 @@ async function cancelSelectedItems() {
         case 'tab-cancel-melt': url = urlCancelMeltByLotNo; break;
         case 'tab-cancel-lost': url = urlCancelLostByLotNo; break;
         case 'tab-cancel-export': url = urlCancelExportByLotNo; break;
+        case 'tab-cancel-showroom': url = urlCancelShowroomByLotNo; break;
         default:
             await swalWarning('ยังไม่รองรับการยกเลิกสำหรับประเภทนี้');
             return;
@@ -451,6 +491,7 @@ async function cancelSelectedItems() {
                         case 'tab-cancel-melt': loadCancelMeltData(); break;
                         case 'tab-cancel-lost': loadCancelLostData(); break;
                         case 'tab-cancel-export': loadCancelExportData(); break;
+                        case 'tab-cancel-showroom': loadCancelShowroomData(); break;
                     }
 
                     swalToastSuccess(`ยกเลิกแล้ว ${lotNos.length} รายการ`);
@@ -474,6 +515,7 @@ async function cancelReceive(receiveNo, type) {
         case 'melt': url = urlCancelMeltByReceiveNo; break;
         case 'lost': url = urlCancelLostByReceiveNo; break;
         case 'export': url = urlCancelExportByReceiveNo; break;
+        case 'showroom': url = urlCancelShowroomByReceiveNo; break;
         default:
             await swalWarning('ยังไม่รองรับการยกเลิกสำหรับประเภทนี้');
             return;
@@ -503,6 +545,7 @@ async function cancelReceive(receiveNo, type) {
                         case 'store': loadCancelStoreData(); break;
                         case 'melt': loadCancelMeltData(); break;
                         case 'export': loadCancelExportData(); break;
+                        case 'showroom': loadCancelShowroomData(); break;
                     }
 
                     swalToastSuccess(`ยกเลิกใบส่ง ${receiveNo} เรียบร้อย`);

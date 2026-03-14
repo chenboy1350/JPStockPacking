@@ -657,10 +657,10 @@ namespace JPStockPacking.Services.Helper
                             {
                                 columns.RelativeColumn(1);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
-                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") columns.RelativeColumn(2);
-                                if (tempack.SendType == "KX" || tempack.SendType == "KL") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") columns.RelativeColumn(2);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(3);
-                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") columns.RelativeColumn(2);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") columns.RelativeColumn(2);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") columns.RelativeColumn(2);
                                 if (tempack.SendType == "KM") columns.RelativeColumn(2);
                                 if (tempack.TempPacks.Any(x => x.Unallocated > 0))
@@ -672,10 +672,10 @@ namespace JPStockPacking.Services.Helper
 
                             table.Cell().Element(CellStyle).AlignCenter().Text("ListNo").FontSize(8);
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("เลขที่งานช่าง\nครั้งที่ส่ง").FontSize(8);
-                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
-                            if (tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text("FN").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") table.Cell().Element(CellStyle).AlignCenter().Text("รหัสสินค้า").FontSize(8);
+                            if (tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") table.Cell().Element(CellStyle).AlignCenter().Text("FN").FontSize(8);
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("ชื่อช่าง").FontSize(8);
-                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
+                            if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") table.Cell().Element(CellStyle).AlignCenter().Text("จำนวน").FontSize(8);
                             if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("น้ำหนักรวม\n(กรัม)").FontSize(8);
                             if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text("สาเหตุ").FontSize(8);
                             if (tempack.TempPacks.Any(x => x.Unallocated > 0))
@@ -687,11 +687,11 @@ namespace JPStockPacking.Services.Helper
                             {
                                 table.Cell().Element(CellStyle).AlignCenter().Text($"{item.ListNo}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.JobBarcode}\n{item.NumSend}").FontSize(8);
-                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
-                                if (tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.FinishingEN} / {item.FinishingTH}").FontSize(8);
+                                if (tempack.SendType == "KS" || tempack.SendType == "KM" || tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.Article}").FontSize(8);
+                                if (tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.FinishingEN} / {item.FinishingTH}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"({item.EmpCode}) {item.Name}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OkTtl}").FontSize(8);
-                                if (tempack.SendType == "KX" || tempack.SendType == "KL") table.Cell().Element(CellStyle).AlignCenter().Text($"{(int)item.OkTtl} {item.Unit}").FontSize(8);
+                                if (tempack.SendType == "KX" || tempack.SendType == "KL" || tempack.SendType == "KR") table.Cell().Element(CellStyle).AlignCenter().Text($"{(int)item.OkTtl} {item.Unit}").FontSize(8);
                                 if (tempack.SendType == "KS" || tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.OkWg}").FontSize(8);
                                 if (tempack.SendType == "KM") table.Cell().Element(CellStyle).AlignCenter().Text($"{item.BreakDescription}").FontSize(8);
                                 if (tempack.TempPacks.Any(x => x.Unallocated > 0))
@@ -804,10 +804,10 @@ namespace JPStockPacking.Services.Helper
         {
             int count = 1;
             if (sendType is "KS" or "KM") count += 1;
-            if (sendType is "KS" or "KM" or "KX" or "KL") count += 1;
-            if (sendType is "KX" or "KL") count += 1;
+            if (sendType is "KS" or "KM" or "KX" or "KL" or "KR") count += 1;
+            if (sendType is "KX" or "KL" or "KR") count += 1;
             if (sendType is "KS" or "KM") count += 1;
-            if (sendType is "KS" or "KM" or "KX" or "KL") count += 1;
+            if (sendType is "KS" or "KM" or "KX" or "KL" or "KR") count += 1;
             if (sendType is "KS" or "KM") count += 1;
             if (sendType is "KM") count += 1;
 

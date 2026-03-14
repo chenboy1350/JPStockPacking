@@ -86,7 +86,6 @@ namespace JPStockPacking.Controllers
         {
             var result = await _sampleReceiveManagementService.GetTopJPReceivedAsync(null, null, null);
             _logger.Information("GetTopJPReceivedAsync (Sample) : {@result}", result);
-
             return PartialView("~/Views/Partial/_SampleReceiveManagement.cshtml", result);
         }
 
@@ -216,6 +215,40 @@ namespace JPStockPacking.Controllers
         {
             var userId = User.GetUserId() ?? 0;
             var result = await _cancelReceiveService.CancelExportByLotNoAsync(receiveNo, lotNos, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelShowroomList(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetTopShowroomReceivedAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCancelShowroomDetail(string receiveNo, string orderNo, string lotNo)
+        {
+            var result = await _cancelReceiveService.GetShowroomReceivedByReceiveNoAsync(receiveNo, orderNo, lotNo);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelShowroomByReceiveNo([FromForm] string receiveNo)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelShowroomByReceiveNoAsync(receiveNo, userId);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelShowroomByLotNo([FromForm] string receiveNo, [FromForm] string[] lotNos)
+        {
+            var userId = User.GetUserId() ?? 0;
+            var result = await _cancelReceiveService.CancelShowroomByLotNoAsync(receiveNo, lotNos, userId);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
@@ -885,7 +918,7 @@ namespace JPStockPacking.Controllers
 
                 return Ok(new
                 {
-                    IsSuccess = result.IsSuccess,
+                    result.IsSuccess,
                     Message = $"Store: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
                     Data = updatedLots
                 });
@@ -917,7 +950,7 @@ namespace JPStockPacking.Controllers
 
                 return Ok(new
                 {
-                    IsSuccess = result.IsSuccess,
+                    result.IsSuccess,
                     Message = $"Melt: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
                     Data = updatedLots
                 });
@@ -949,7 +982,7 @@ namespace JPStockPacking.Controllers
 
                 return Ok(new
                 {
-                    IsSuccess = result.IsSuccess,
+                    result.IsSuccess,
                     Message = $"Export: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
                     Data = updatedLots
                 });
@@ -981,7 +1014,7 @@ namespace JPStockPacking.Controllers
 
                 return Ok(new
                 {
-                    IsSuccess = result.IsSuccess,
+                    result.IsSuccess,
                     Message = $"Lost: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
                     Data = updatedLots
                 });
@@ -1013,7 +1046,7 @@ namespace JPStockPacking.Controllers
 
                 return Ok(new
                 {
-                    IsSuccess = result.IsSuccess,
+                    result.IsSuccess,
                     Message = $"Showroom: {(result.IsSuccess ? "สำเร็จ" : "ไม่สำเร็จ")}",
                     Data = updatedLots
                 });
@@ -1029,7 +1062,6 @@ namespace JPStockPacking.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> PrintSendToAllReport([FromForm] string[] lotNos, [FromForm] string userId)
         {
             try
@@ -1053,7 +1085,6 @@ namespace JPStockPacking.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> PrintSendToReportByType([FromForm] string[] lotNos, [FromForm] string userId, [FromForm] string sendType)
         {
             try
