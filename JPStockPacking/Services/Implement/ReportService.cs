@@ -647,6 +647,8 @@ namespace JPStockPacking.Services.Implement
                                     columns.RelativeColumn(2);      // Exported
                                     columns.RelativeColumn(2);      // Stored
                                     columns.RelativeColumn(2);      // Melted
+                                    columns.RelativeColumn(2);      // Send Lost
+                                    columns.RelativeColumn(2);      // Send Showroom
                                     columns.RelativeColumn(2);      // Unallocated
                                 });
 
@@ -659,6 +661,8 @@ namespace JPStockPacking.Services.Implement
                                 table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Exported").FontSize(8).SemiBold();
                                 table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Stored").FontSize(8).SemiBold();
                                 table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Melted").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Send Lost").FontSize(8).SemiBold();
+                                table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Send Showroom").FontSize(8).SemiBold();
                                 table.Cell().Element(CellStyle).AlignCenter().AlignMiddle().Text("Unallocated").FontSize(8).SemiBold();
 
                                 int i = pageIndex * rowsPerPage + 1;
@@ -673,6 +677,8 @@ namespace JPStockPacking.Services.Implement
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.ExportedQty)}").FontSize(8);
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.StoredQty)}").FontSize(8);
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.MeltedQty)}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.SendLostQty)}").FontSize(8);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.SendShowroomQty)}").FontSize(8);
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(item.UnallocatedQty)}").FontSize(8);
 
                                     i++;
@@ -685,6 +691,8 @@ namespace JPStockPacking.Services.Implement
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.ExportedQty))}").FontSize(8).SemiBold();
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.StoredQty))}").FontSize(8).SemiBold();
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.MeltedQty))}").FontSize(8).SemiBold();
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.SendLostQty))}").FontSize(8).SemiBold();
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.SendShowroomQty))}").FontSize(8).SemiBold();
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{FormatNumber(model.Sum(x => x.UnallocatedQty))}").FontSize(8).SemiBold();
                                 }
                             });

@@ -1568,6 +1568,7 @@ namespace JPStockPacking.Services.Implement
                         Unit = b.Unit,
                         OrderNo = b.OrderNo,
                         ListGem = c.ListGem,
+                        FinishingEN = f.EdesFn ?? string.Empty,
                         FinishingTH = c.TdesFn,
                         WgActual = c.WgActual,
                         CustCode = d.CustCode,

@@ -216,12 +216,14 @@ function FindUnalocateLot() {
                         <td class="text-right">${(item.exportedQty || 0).toLocaleString()}</td>
                         <td class="text-right">${(item.storedQty || 0).toLocaleString()}</td>
                         <td class="text-right">${(item.meltedQty || 0).toLocaleString()}</td>
+                        <td class="text-right">${(item.sendLostQty || 0).toLocaleString()}</td>
+                        <td class="text-right">${(item.sendShowroomQty || 0).toLocaleString()}</td>
                         <td class="text-right font-weight-bold text-danger">${(item.unallocatedQty || 0).toLocaleString()}</td>
                     </tr>`;
                     tbody.append(row);
                 });
             } else {
-                tbody.append('<tr><td colspan="8" class="text-center">ไม่พบข้อมูล</td></tr>');
+                tbody.append('<tr><td colspan="10" class="text-center">ไม่พบข้อมูล</td></tr>');
             }
         },
         error: async (xhr) => {

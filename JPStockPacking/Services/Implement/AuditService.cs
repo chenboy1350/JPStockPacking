@@ -357,13 +357,10 @@ namespace JPStockPacking.Services.Implement
             {
                 var lot = await (from l in _sPDbContext.Lot
                                  join o in _sPDbContext.Order on l.OrderNo equals o.OrderNo
-                                 where l.LotNo == lotNo
+                                 where l.LotNo == lotNo && o.IsSample == comparedInvoiceFilterModel.IsSample
                                  select new { l, o }).FirstOrDefaultAsync();
 
                 if (lot == null) continue;
-
-                // กรองตาม IsSample
-                if (comparedInvoiceFilterModel.IsSample != lot.o.IsSample) continue;
                 
                 var lotData = lot.l;
 
@@ -388,10 +385,22 @@ namespace JPStockPacking.Services.Implement
                             .Where(x => x.LotNo == lotNo && x.IsActive)
                             .ToListAsync();
 
+                        // ดึงข้อมูล SendLost
+                        var sendLostList = await _sPDbContext.SendLostDetail
+                            .Where(x => x.LotNo == lotNo && x.IsActive)
+                            .ToListAsync();
+
+                        // ดึงข้อมูล SendShowroom
+                        var sendShowroomList = await _sPDbContext.SendShowroomDetail
+                            .Where(x => x.LotNo == lotNo && x.IsActive)
+                            .ToListAsync();
+
                         // คำนวณจำนวนแต่ละประเภท
                         decimal exportedQty = exportList.Sum(x => x.TtQty);
                         decimal storedQty = storeList.Sum(x => x.TtQty);
                         decimal meltedQty = meltList.Sum(x => x.TtQty);
+                        decimal sendLostQty = sendLostList.Sum(x => x.TtQty);
+                        decimal sendShowroomQty = sendShowroomList.Sum(x => x.TtQty);
 
                         // เพิ่มข้อมูลลง list เฉพาะที่มี Export เกิดขึ้นในช่วง 30 วัน
                         if (exportList.Count > 0)
@@ -405,6 +414,8 @@ namespace JPStockPacking.Services.Implement
                                 ExportedQty = exportedQty,
                                 StoredQty = storedQty,
                                 MeltedQty = meltedQty,
+                                SendLostQty = sendLostQty,
+                                SendShowroomQty = sendShowroomQty,
                                 UnallocatedQty = lotData.Unallocated ?? 0
                             });
                         }
@@ -470,6 +481,8 @@ namespace JPStockPacking.Services.Implement
         public decimal ExportedQty { get; set; } = 0;
         public decimal StoredQty { get; set; } = 0;
         public decimal MeltedQty { get; set; } = 0;
+        public decimal SendLostQty { get; set; } = 0;
+        public decimal SendShowroomQty { get; set; } = 0;
         public decimal UnallocatedQty { get; set; } = 0;
     }
 }
