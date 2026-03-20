@@ -5,7 +5,9 @@
       "Bash(node -e:*)",
       "Bash(grep -E \"\\\\.\\(cs|json\\)$\")",
       "Bash(xargs grep:*)",
-      "Bash(grep -E \"\\\\.cs$\")"
+      "Bash(grep -E \"\\\\.cs$\")",
+      "Bash(find e:repoJPStockPackingJPStockPackingwwwroot -type f -name *.js -o -name *.css)",
+      "Bash(xargs ls:*)"
     ]
   }
 }
