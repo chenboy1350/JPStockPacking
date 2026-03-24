@@ -245,6 +245,32 @@
         </div>
     </div>
 
+    <!-- Preview Modal before confirm send -->
+    <div class="modal fade" id="modal-confirm-preview" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" id="previewModalHeader">
+                    <h5 class="modal-title" id="previewModalTitle">ยืนยันรายการ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-2">
+                    <table class="table table-sm table-bordered table-hover text-nowrap mb-0">
+                        <thead class="table-light" id="previewTableHead"></thead>
+                        <tbody id="previewTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> ยกเลิก
+                    </button>
+                    <button class="btn btn-success" id="btnConfirmPreview">
+                        <i class="fas fa-check"></i> ยืนยัน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal-force-send-to-export">
         <div class="modal-dialog modal-md">
             <div class="modal-content">

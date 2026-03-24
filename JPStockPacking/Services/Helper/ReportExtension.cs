@@ -703,6 +703,9 @@ namespace JPStockPacking.Services.Helper
                                 }
                             }
 
+                            table.Cell().ColumnSpan((uint)columnCount).Padding(2).AlignLeft()
+                                .Text($"รวมจำนวน : {tempack.TempPacks.Count} รายการ").FontSize(10).Bold();
+
                             table.Cell().ColumnSpan((uint)columnCount).Padding(2).Column(row =>
                             {
                                 row.Item()

@@ -953,6 +953,50 @@ namespace JPStockPacking.Services.Implement
             return tempPacks;
         }
 
+        public async Task<List<ConfirmPreviewItem>> GetPreviewForConfirmAsync(string[] lotNos, string type)
+        {
+            var allPacks = new List<TempPack>();
+
+            if (type is "All" or "Store")   allPacks.AddRange(await GetStoreAsync(lotNos));
+            if (type is "All" or "Melt")    allPacks.AddRange(await GetMeltAsync(lotNos));
+            if (type is "All" or "Export")  allPacks.AddRange(await GetExportAsync(lotNos));
+            if (type is "All" or "Lost")    allPacks.AddRange(await GetSendLostAsync(lotNos));
+            if (type is "All" or "Showroom") allPacks.AddRange(await GetShowroomAsync(lotNos));
+
+            var missingLots = allPacks
+                .Where(p => string.IsNullOrEmpty(p.ListNo))
+                .Select(p => p.LotNo)
+                .Distinct()
+                .ToArray();
+
+            if (missingLots.Length > 0)
+            {
+                var listNoMap = await _sPDbContext.Lot
+                    .Where(l => missingLots.Contains(l.LotNo))
+                    .ToDictionaryAsync(l => l.LotNo, l => l.ListNo ?? string.Empty);
+
+                foreach (var pack in allPacks.Where(p => string.IsNullOrEmpty(p.ListNo)))
+                {
+                    if (listNoMap.TryGetValue(pack.LotNo, out var ln))
+                        pack.ListNo = ln;
+                }
+            }
+
+            return [.. allPacks
+                .GroupBy(p => new { p.LotNo, p.SendType })
+                .Select(g => new ConfirmPreviewItem
+                {
+                    LotNo = g.Key.LotNo,
+                    Article = g.First().Article,
+                    ListNo = g.First().ListNo,
+                    SendType = g.Key.SendType,
+                    TtQty = g.Sum(p => p.OkTtl),
+                    TtWg = g.Sum(p => p.OkWg)
+                })
+                .OrderBy(x => x.ListNo)
+                .ThenBy(x => x.SendType)];
+        }
+
         public async Task<BaseResponseModel> ConfirmToSendStoreAsync(string[] lotNos, string userId)
         {
             List<TempPack> tempPacks = await GetStoreAsync(lotNos);
@@ -1794,6 +1838,61 @@ namespace JPStockPacking.Services.Implement
             }
         }
 
+        public async Task<List<TempPack>> GetDocToPrintByReceiveNo(string receiveNo, string sendType, string userid)
+        {
+            string reporterName = await GetReporterNameAsync(userid);
+
+            switch (sendType)
+            {
+                case "KS":
+                case "KM":
+                {
+                    var lotNos = await (from h in _jPDbContext.JobBillSendStock.AsNoTracking()
+                                        join a in _jPDbContext.JobBill.AsNoTracking() on h.Billnumber equals a.Billnumber
+                                        where h.Doc == receiveNo && h.SendType == sendType
+                                        select a.Lotno)
+                                       .Distinct()
+                                       .ToArrayAsync();
+                    if (lotNos.Length == 0) return [];
+                    return sendType == "KS"
+                        ? await GetConfirmedStoreForPrintAsync(lotNos, reporterName)
+                        : await GetConfirmedMeltForPrintAsync(lotNos, reporterName);
+                }
+                case "KX":
+                {
+                    var lotNos = await _sPDbContext.ExportDetail.AsNoTracking()
+                        .Where(x => x.Doc == receiveNo && x.IsSended && x.IsActive)
+                        .Select(x => x.LotNo)
+                        .Distinct()
+                        .ToArrayAsync();
+                    if (lotNos.Length == 0) return [];
+                    return await GetConfirmedExportForPrintAsync(lotNos, reporterName);
+                }
+                case "KL":
+                {
+                    var lotNos = await _sPDbContext.SendLostDetail.AsNoTracking()
+                        .Where(x => x.Doc == receiveNo && x.IsSended && x.IsActive)
+                        .Select(x => x.LotNo)
+                        .Distinct()
+                        .ToArrayAsync();
+                    if (lotNos.Length == 0) return [];
+                    return await GetConfirmedLostForPrintAsync(lotNos, reporterName);
+                }
+                case "KR":
+                {
+                    var lotNos = await _sPDbContext.SendShowroomDetail.AsNoTracking()
+                        .Where(x => x.Doc == receiveNo && x.IsSended && x.IsActive)
+                        .Select(x => x.LotNo)
+                        .Distinct()
+                        .ToArrayAsync();
+                    if (lotNos.Length == 0) return [];
+                    return await GetConfirmedShowroomForPrintAsync(lotNos, reporterName);
+                }
+                default:
+                    return [];
+            }
+        }
+
         public async Task UpdateOrderSuccessAsync(string orderNo)
         {
             if (string.IsNullOrWhiteSpace(orderNo))
@@ -1914,8 +2013,8 @@ namespace JPStockPacking.Services.Implement
         private async Task<string> GenerateReceiveNoAsync(ReceiveType type, bool IsDuplicate)
         {
             string middleCode = "RS";
-            string year = DateTime.Now.ToString("yy");
-            string month = DateTime.Now.ToString("MM");
+            string year = DateTime.Now.ToString("yy", System.Globalization.CultureInfo.InvariantCulture);
+            string month = DateTime.Now.ToString("MM", System.Globalization.CultureInfo.InvariantCulture);
 
             int count = type switch
             {
@@ -1951,8 +2050,8 @@ namespace JPStockPacking.Services.Implement
         private async Task<string> GenerateSPReceiveNoAsync()
         {
             string prefix = "SP";
-            string year = DateTime.Now.ToString("yy");
-            string month = DateTime.Now.ToString("MM");
+            string year = DateTime.Now.ToString("yy", System.Globalization.CultureInfo.InvariantCulture);
+            string month = DateTime.Now.ToString("MM", System.Globalization.CultureInfo.InvariantCulture);
             string basePrefix = $"{year}{prefix}{month}";
 
             string? lastDoc = await _sPDbContext.Export
@@ -1980,8 +2079,8 @@ namespace JPStockPacking.Services.Implement
         private async Task<string> GenerateSPSWReceiveNoAsync()
         {
             string prefix = "SW";
-            string year = DateTime.Now.ToString("yy");
-            string month = DateTime.Now.ToString("MM");
+            string year = DateTime.Now.ToString("yy", System.Globalization.CultureInfo.InvariantCulture);
+            string month = DateTime.Now.ToString("MM", System.Globalization.CultureInfo.InvariantCulture);
             string basePrefix = $"{year}{prefix}{month}";
 
             string? lastDoc = await _sPDbContext.SendShowroom

@@ -1062,6 +1062,25 @@ namespace JPStockPacking.Controllers
         }
 
         [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> PreviewConfirmSend([FromForm] string[] lotNos, [FromForm] string type)
+        {
+            try
+            {
+                var preview = await _packedMangementService.GetPreviewForConfirmAsync(lotNos, type);
+                return Ok(new { isSuccess = true, data = preview });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> PrintSendToAllReport([FromForm] string[] lotNos, [FromForm] string userId)
         {
             try
@@ -1094,6 +1113,29 @@ namespace JPStockPacking.Controllers
                 byte[] pdfBytes = _reportService.GenerateSenToReport(result);
 
                 string contentDisposition = $"inline; filename=SendToReport_{sendType}_{DateTime.Now:yyyyMMdd}.pdf";
+                Response.Headers.Append("Content-Disposition", contentDisposition);
+
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BaseResponseModel
+                {
+                    IsSuccess = false,
+                    Message = $"เกิดข้อผิดพลาด: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PrintReceiveReport([FromForm] string receiveNo, [FromForm] string sendType, [FromForm] string userId)
+        {
+            try
+            {
+                List<TempPack> result = await _packedMangementService.GetDocToPrintByReceiveNo(receiveNo, sendType, userId);
+                byte[] pdfBytes = _reportService.GenerateSenToReport(result);
+
+                string contentDisposition = $"inline; filename=ReceiveReport_{receiveNo}_{DateTime.Now:yyyyMMdd}.pdf";
                 Response.Headers.Append("Content-Disposition", contentDisposition);
 
                 return File(pdfBytes, "application/pdf");

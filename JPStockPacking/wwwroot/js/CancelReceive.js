@@ -223,6 +223,9 @@ function renderCancelTable(tbody, rows, type) {
         return;
     }
 
+    const sendTypeMap = { store: 'KS', melt: 'KM', lost: 'KL', export: 'KX', showroom: 'KR' };
+    const sendType = sendTypeMap[type] || '';
+
     const body = rows.map((r, index) => {
         let status = '';
         let canCancel = false; // ตรวจสอบว่าแสดงปุ่มยกเลิกได้หรือไม่
@@ -262,12 +265,18 @@ function renderCancelTable(tbody, rows, type) {
                </button>`
             : '';
 
+        const printBtn = `<button class="btn btn-info btn-sm" onclick="printReceiveReport('${html(r.receiveNo)}', '${sendType}')">
+                <i class="fas fa-print"></i> พิมพ์
+            </button>`;
+
         const action = r.isCancel
-            ? `<span class="text-muted"><i class="fas fa-ban"></i> ยกเลิกแล้ว</span>`
+            ? `<span class="text-muted"><i class="fas fa-ban"></i> ยกเลิกแล้ว</span>
+            ${printBtn}`
             : `<button class="btn btn-warning btn-sm" onclick="showCancelDetail('${html(r.receiveNo)}', '${type}')">
                 <i class="fas fa-folder"></i> ดูรายการ
             </button>
-            ${cancelBtn}`;
+            ${cancelBtn}
+            ${printBtn}`;
 
         return `
             <tr data-receive-no="${html(r.receiveNo)}">
@@ -504,6 +513,39 @@ async function cancelSelectedItems() {
             });
         }
     );
+}
+
+// พิมพ์รายงานใบส่ง
+async function printReceiveReport(receiveNo, sendType) {
+    const uid = $('#hddUserID').val();
+    let pdfWindow = window.open('', '_blank');
+
+    const formData = new FormData();
+    formData.append("receiveNo", receiveNo);
+    formData.append("sendType", sendType);
+    formData.append("userId", uid);
+
+    $.ajax({
+        url: urlPrintReceiveReport,
+        type: 'POST',
+        processData: false,
+        contentType: false,
+        data: formData,
+        xhrFields: { responseType: 'blob' },
+        beforeSend: () => $('#loadingIndicator').show(),
+        success: (data) => {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            if (pdfWindow) pdfWindow.location = blobUrl;
+            $('#loadingIndicator').hide();
+        },
+        error: async (xhr) => {
+            $('#loadingIndicator').hide();
+            if (pdfWindow) pdfWindow.close();
+            let msg = xhr.responseJSON?.message || xhr.responseText || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+            await swalWarning(`เกิดข้อผิดพลาด (${xhr.status} ${msg})`);
+        }
+    });
 }
 
 // ยกเลิกทั้งใบส่ง

@@ -1047,6 +1047,100 @@ async function confirmSendGeneric(url, typeName) {
         return;
     }
 
+    // Fetch preview from server (reads same source as actual confirm)
+    $('#loadingIndicator').show();
+    const formData = new FormData();
+    selectedLots.forEach(no => formData.append('lotNos', no));
+    formData.append('type', typeName);
+
+    let previewItems = [];
+    try {
+        const res = await $.ajax({
+            url: urlPreviewConfirmSend,
+            type: 'POST',
+            processData: false,
+            contentType: false,
+            data: formData
+        });
+        previewItems = res.data || [];
+    } catch (xhr) {
+        $('#loadingIndicator').hide();
+        const msg = xhr.responseJSON?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล preview';
+        await swalWarning(msg);
+        return;
+    } finally {
+        $('#loadingIndicator').hide();
+    }
+
+    if (previewItems.length === 0) {
+        await swalWarning('ไม่มีรายการที่พร้อมยืนยันสำหรับประเภทที่เลือก');
+        return;
+    }
+
+    // Config: sendType code → display
+    const sendTypeConfig = {
+        'KS': { label: 'ส่งคลัง',  badgeClass: 'bg-primary' },
+        'KM': { label: 'หลอม',     badgeClass: 'bg-warning text-dark' },
+        'KX': { label: 'ส่งออก',   badgeClass: 'bg-success' },
+        'KL': { label: 'หาย',      badgeClass: 'bg-danger' },
+        'KR': { label: 'Showroom', badgeClass: 'bg-info' },
+    };
+
+    const titleMap = {
+        'All':      { text: 'ยืนยันทั้งหมด',         headerClass: 'bg-success text-white' },
+        'Store':    { text: 'ยืนยันส่งคลัง (Store)',  headerClass: 'bg-primary text-white' },
+        'Melt':     { text: 'ยืนยันหลอม (Melt)',      headerClass: 'bg-warning text-dark' },
+        'Export':   { text: 'ยืนยันส่งออก (Export)',  headerClass: 'bg-success text-white' },
+        'Lost':     { text: 'ยืนยันหาย (Lost)',       headerClass: 'bg-danger text-white' },
+        'Showroom': { text: 'ยืนยัน Showroom',        headerClass: 'bg-info text-white' },
+    };
+    const title = titleMap[typeName] || { text: `ยืนยัน ${typeName}`, headerClass: 'bg-success text-white' };
+    $('#previewModalTitle').text(title.text);
+    $('#previewModalHeader').attr('class', `modal-header ${title.headerClass}`);
+
+    // Build table — group items by listNo+article, columns per sendType present
+    const sendTypesPresent = [...new Set(previewItems.map(i => i.sendType))].sort();
+
+    let headHtml = '<tr><th class="text-center">#</th><th class="text-center">รหัสสินค้า</th><th class="text-center">ListNo</th>';
+    sendTypesPresent.forEach(st => {
+        const cfg = sendTypeConfig[st] || { label: st, badgeClass: 'bg-secondary' };
+        headHtml += `<th class="text-center"><span class="badge ${cfg.badgeClass}">${cfg.label}</span></th>`;
+    });
+    headHtml += '</tr>';
+    $('#previewTableHead').html(headHtml);
+
+    // Group by lotNo for display (one row per lot, columns per type)
+    const byLot = {};
+    previewItems.forEach(item => {
+        if (!byLot[item.lotNo]) byLot[item.lotNo] = { article: item.article, listNo: item.listNo, types: {} };
+        byLot[item.lotNo].types[item.sendType] = item.ttQty;
+    });
+
+    let bodyHtml = '';
+    Object.entries(byLot).forEach(([lotNo, data], idx) => {
+        bodyHtml += `<tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="text-center"><strong>${data.article}</strong></td>
+            <td class="text-center">${data.listNo}</td>`;
+        sendTypesPresent.forEach(st => {
+            const q = data.types[st];
+            bodyHtml += `<td class="text-center">${q > 0 ? `<strong>${numRaw(q)}</strong>` : '<span class="text-muted">-</span>'}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    $('#previewTableBody').html(bodyHtml);
+
+    // Show modal and wire confirm button
+    const $modal = $('#modal-confirm-preview');
+    $modal.modal('show');
+
+    $('#btnConfirmPreview').off('click').on('click', function () {
+        $modal.modal('hide');
+        doConfirmSend(url, uid, selectedLots);
+    });
+}
+
+function doConfirmSend(url, uid, selectedLots) {
     const formData = new FormData();
     selectedLots.forEach(no => formData.append("lotNos", no));
     formData.append("userId", uid);
@@ -1057,7 +1151,7 @@ async function confirmSendGeneric(url, typeName) {
         processData: false,
         contentType: false,
         data: formData,
-        beforeSend: async () => $('#loadingIndicator').show(),
+        beforeSend: () => $('#loadingIndicator').show(),
         success: async (res) => {
             $('#loadingIndicator').hide();
 

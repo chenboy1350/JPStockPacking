@@ -119,6 +119,9 @@
                                                     @if (item.IsCancel)
                                                     {
                                                         <span class="text-muted"><i class="fas fa-ban"></i> ยกเลิกแล้ว</span>
+                                                        <button class="btn btn-info btn-sm" onclick="printReceiveReport('@item.ReceiveNo', 'KS')">
+                                                            <i class="fas fa-print"></i> พิมพ์
+                                                        </button>
                                                     }
                                                     else
                                                     {
@@ -131,6 +134,9 @@
                                                                 <i class="fas fa-times"></i> ยกเลิกใบส่ง
                                                             </button>
                                                         }
+                                                        <button class="btn btn-info btn-sm" onclick="printReceiveReport('@item.ReceiveNo', 'KS')">
+                                                            <i class="fas fa-print"></i> พิมพ์
+                                                        </button>
                                                     }
                                                 </td>
                                             </tr>

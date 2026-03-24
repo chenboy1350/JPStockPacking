@@ -1,4 +1,24 @@
-﻿$(document).ready(function () {
+﻿function initSingleDatePicker(selector) {
+    $(selector).daterangepicker({
+        singleDatePicker: true,
+        showDropdowns: true,
+        autoUpdateInput: false,
+        locale: {
+            format: 'DD/MM/YYYY',
+            cancelLabel: 'Clear'
+        }
+    });
+
+    $(selector).on('apply.daterangepicker', function (ev, picker) {
+        $(this).val(picker.startDate.format('DD/MM/YYYY'));
+    });
+
+    $(selector).on('cancel.daterangepicker', function () {
+        $(this).val('');
+    });
+}
+
+$(document).ready(function () {
     $(document).on('keydown', '#txtInvOrderNo, #txtInvoice', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -29,8 +49,8 @@ function FindInvoice() {
     const selected = $('input[name="r1"]:checked').val();
 
     let model = {
-        FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
-        ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
+        FromDate: dtInvFromDate ? moment(dtInvFromDate, 'DD/MM/YYYY').toISOString() : null,
+        ToDate: dtInvToDate ? moment(dtInvToDate, 'DD/MM/YYYY').toISOString() : null,
         InvoiceNo: txtInvoice,
         OrderNo: txtInvOrderNo,
         InvoiceType: parseInt(selected) || 0
@@ -187,8 +207,8 @@ function FindUnalocateLot() {
     if (!dtInvFromDate || !dtInvToDate) return swalWarning('กรุณาเลือกวันที่ให้ครบถ้วน');
 
     let model = {
-        FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
-        ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
+        FromDate: dtInvFromDate ? moment(dtInvFromDate, 'DD/MM/YYYY').toISOString() : null,
+        ToDate: dtInvToDate ? moment(dtInvToDate, 'DD/MM/YYYY').toISOString() : null,
         OrderNo: txtInvOrderNo,
         IsOver30Days: isOver30Days,
         IsSample: isSample
@@ -246,8 +266,8 @@ function PrintUnalocateLot() {
     if (!dtInvFromDate || !dtInvToDate) return swalWarning('กรุณาเลือกวันที่ให้ครบถ้วน');
 
     let model = {
-        FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
-        ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
+        FromDate: dtInvFromDate ? moment(dtInvFromDate, 'DD/MM/YYYY').toISOString() : null,
+        ToDate: dtInvToDate ? moment(dtInvToDate, 'DD/MM/YYYY').toISOString() : null,
         OrderNo: txtInvOrderNo,
         IsOver30Days: isOver30Days,
         IsSample: isSample
@@ -290,8 +310,8 @@ function PrintUnalocateLot() {
 function ClearLocInput() {
     $('#txtLocOrderNo').val('');
 
-    $('#dtLocToDate').val(null);
-    $('#dtLocFromDate').val(null);
+    $('#dtLocToDate').val('');
+    $('#dtLocFromDate').val('');
     $('#tblUnallocated tbody').empty();
     $('#rdOver30').prop('checked', true);
 }
@@ -303,8 +323,8 @@ function FindSendLostList() {
     var dtInvToDate = $('#dtSendLostToDate').val();
 
     let model = {
-        FromDate: dtInvFromDate ? new Date(dtInvFromDate).toISOString() : null,
-        ToDate: dtInvToDate ? new Date(dtInvToDate).toISOString() : null,
+        FromDate: dtInvFromDate ? moment(dtInvFromDate, 'DD/MM/YYYY').toISOString() : null,
+        ToDate: dtInvToDate ? moment(dtInvToDate, 'DD/MM/YYYY').toISOString() : null,
         OrderNo: txtInvOrderNo
     };
 
@@ -347,8 +367,8 @@ function FindSendLostList() {
 
 function ClearSendLostInput() {
     $('#txtSendLostOrderNo').val('');
-    $('#dtSendLostFromDate').val(null);
-    $('#dtSendLostToDate').val(null);
+    $('#dtSendLostFromDate').val('');
+    $('#dtSendLostToDate').val('');
     $('#tblSendLostList tbody').empty();
 }
 
@@ -356,8 +376,8 @@ function ClearInvoice() {
     $('#txtInvoice').val('');
     $('#txtInvOrderNo').val('');
 
-    $('#dtInvFromDate').val(null);
-    $('#dtInvToDate').val(null);
+    $('#dtInvFromDate').val('');
+    $('#dtInvToDate').val('');
 
     $('#btnMarkInvoiceAsRead').addClass('d-none');
     $('#btnFindConfirmedInvoice').addClass('d-none');
